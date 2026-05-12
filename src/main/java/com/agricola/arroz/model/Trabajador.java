@@ -3,6 +3,7 @@ package com.agricola.arroz.model;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;  // ← Importante
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "trabajadores")
@@ -33,6 +35,10 @@ public class Trabajador {
     @JoinColumn(name = "id_cargo")
     @JsonIgnore  // ← Ignora el objeto Cargo en el JSON
     private Cargo cargo;
+
+    @Transient
+    @JsonProperty("cargoId")
+    private Integer cargoId;
     
     @Enumerated(EnumType.STRING)
     private TipoPago tipoPago;
@@ -82,6 +88,19 @@ public class Trabajador {
     
     public void setCargo(Cargo cargo) {
         this.cargo = cargo;
+    }
+
+    public Integer getCargoId() {
+        return cargoId != null ? cargoId : (cargo != null ? cargo.getIdCargo() : null);
+    }
+
+    public void setCargoId(Integer cargoId) {
+        this.cargoId = cargoId;
+    }
+
+    @JsonProperty("cargoNombre")
+    public String getCargoNombre() {
+        return cargo != null ? cargo.getNomCargo() : null;
     }
     
     public TipoPago getTipoPago() {

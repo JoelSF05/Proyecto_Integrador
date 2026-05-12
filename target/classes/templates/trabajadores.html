@@ -58,6 +58,16 @@
         .boton:hover {
             background-color: #2e7d32;
         }
+        .boton {
+            min-width: 170px;
+            text-align: center;
+        }
+        .action-row {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
         .loading {
             text-align: center;
             padding: 40px;
@@ -85,6 +95,41 @@
             margin-bottom: 20px;
             text-align: center;
         }
+        .form-container {
+            background-color: #f7f7f7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #d0d0d0;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            flex: 1 1 200px;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -92,6 +137,54 @@
         <h1>Lista de Trabajadores</h1>
         
         <div id="stats" class="stats" style="display: none;"></div>
+        
+        <div id="form-container" class="form-container" style="display: none;">
+            <form id="trabajadorForm" onsubmit="enviarFormulario(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nomTrab">Nombre</label>
+                        <input id="nomTrab" name="nomTrab" type="text" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="apeTrab">Apellido</label>
+                        <input id="apeTrab" name="apeTrab" type="text" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="dniTrab">DNI</label>
+                        <input id="dniTrab" name="dniTrab" type="text" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cargoId">Cargo</label>
+                        <select id="cargoId" name="cargoId" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipoPago">Tipo de Pago</label>
+                        <select id="tipoPago" name="tipoPago" required>
+                            <option value="">Seleccione...</option>
+                            <option value="tiempo">Por día</option>
+                            <option value="rendimiento">Por saco</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sueldoBaseDia">Sueldo Base</label>
+                        <input id="sueldoBaseDia" name="sueldoBaseDia" type="number" step="0.01" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pagoPorSaco">Pago por Saco</label>
+                        <input id="pagoPorSaco" name="pagoPorSaco" type="number" step="0.01" min="0" />
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="formSubmitBtn" class="boton">Guardar trabajador</button>
+                    <button type="button" onclick="ocultarFormulario()" class="boton" style="background-color:#757575;">Cancelar</button>
+                    <div id="formMessage" style="margin-left: 10px; color:#2e7d32;"></div>
+                </div>
+            </form>
+        </div>
         
         <div id="loading" class="loading">
             <div>Cargando trabajadores...</div>
@@ -103,9 +196,11 @@
             <table id="tabla">
                 <thead>
                     <tr>
+                        <th></th>
                         <th>ID</th>
                         <th>Nombre</th>
                         <th>Apellido</th>
+                        <th>Cargo</th>
                         <th>DNI</th>
                         <th>Tipo de Pago</th>
                         <th>Sueldo Base</th>
@@ -118,12 +213,20 @@
         
         <div id="error-container" class="error" style="display: none;"></div>
         
-        <br>
-        <a href="/" class="boton">← Volver al Inicio</a>
-        <button onclick="recargarDatos()" class="boton" style="margin-left: 10px;">⟳ Recargar</button>
+        <div class="action-row">
+            <a href="/" class="boton">Volver al inicio</a>
+            <button onclick="recargarDatos()" class="boton">Recargar</button>
+            <button type="button" onclick="mostrarFormulario()" class="boton" id="toggleFormBtn">Agregar trabajador</button>
+            <button type="button" onclick="editarTrabajadorSeleccionado()" class="boton" id="editTrabBtn">Editar trabajador</button>
+            <button type="button" onclick="eliminarTrabajadorSeleccionado()" class="boton" id="deleteTrabBtn">Eliminar trabajador</button>
+        </div>
+        <div id="tableActionMessage" style="margin-top: 10px; color: #d32f2f;"></div>
     </div>
 
     <script>
+        let trabajadoresCache = [];
+        let currentEditId = null;
+
         function recargarDatos() {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('tabla-container').style.display = 'none';
@@ -131,7 +234,216 @@
             cargarTrabajadores();
         }
         
+        function mostrarFormulario() {
+            const container = document.getElementById('form-container');
+            const button = document.getElementById('toggleFormBtn');
+            const visible = container.style.display === 'block';
+            container.style.display = visible ? 'none' : 'block';
+            button.textContent = visible ? 'Agregar trabajador' : 'Ocultar formulario';
+            if (!visible) {
+                currentEditId = null;
+                document.getElementById('formSubmitBtn').textContent = 'Guardar trabajador';
+                document.getElementById('trabajadorForm').reset();
+                document.getElementById('formMessage').textContent = '';
+                document.getElementById('nomTrab').focus();
+            }
+        }
+
+        function ocultarFormulario() {
+            document.getElementById('form-container').style.display = 'none';
+            document.getElementById('toggleFormBtn').textContent = 'Agregar trabajador';
+            document.getElementById('formSubmitBtn').textContent = 'Guardar trabajador';
+            currentEditId = null;
+            document.getElementById('formMessage').textContent = '';
+            document.getElementById('trabajadorForm').reset();
+        }
+
+        function cargarCargos() {
+            fetch('/api/trabajadores/cargos')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error cargando cargos: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(cargos => {
+                    const select = document.getElementById('cargoId');
+                    select.innerHTML = '<option value="">Seleccione...</option>';
+                    cargos.forEach(cargo => {
+                        const option = document.createElement('option');
+                        option.value = cargo.idCargo;
+                        option.textContent = cargo.nomCargo;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error cargando cargos:', error);
+                    const select = document.getElementById('cargoId');
+                    select.innerHTML = '<option value="">No se pudieron cargar cargos</option>';
+                });
+        }
+
+        function getSelectedTrabajadorId() {
+            const selected = document.querySelector('input[name="selectedTrab"]:checked');
+            return selected ? parseInt(selected.value, 10) : null;
+        }
+
+        function editarTrabajadorSeleccionado() {
+            const trabajadorId = getSelectedTrabajadorId();
+            const mensaje = document.getElementById('tableActionMessage');
+            mensaje.textContent = '';
+
+            if (!trabajadorId) {
+                mensaje.textContent = 'Selecciona un trabajador antes de editar.';
+                return;
+            }
+
+            const trabajador = trabajadoresCache.find(t => t.idTrab === trabajadorId);
+            if (!trabajador) {
+                mensaje.textContent = 'No se encontró el trabajador seleccionado.';
+                return;
+            }
+
+            currentEditId = trabajadorId;
+            document.getElementById('formSubmitBtn').textContent = 'Actualizar trabajador';
+            document.getElementById('nomTrab').value = trabajador.nomTrab || '';
+            document.getElementById('apeTrab').value = trabajador.apeTrab || '';
+            document.getElementById('dniTrab').value = trabajador.dniTrab || '';
+            document.getElementById('cargoId').value = trabajador.cargoId || '';
+            document.getElementById('tipoPago').value = trabajador.tipoPago || '';
+            document.getElementById('sueldoBaseDia').value = trabajador.sueldoBaseDia || '';
+            document.getElementById('pagoPorSaco').value = trabajador.pagoPorSaco || '';
+            document.getElementById('formMessage').textContent = '';
+            document.getElementById('form-container').style.display = 'block';
+            document.getElementById('toggleFormBtn').textContent = 'Ocultar formulario';
+            document.getElementById('nomTrab').focus();
+        }
+
+        function eliminarTrabajadorSeleccionado() {
+            const mensaje = document.getElementById('tableActionMessage');
+            mensaje.style.color = '#d32f2f';
+            mensaje.textContent = '';
+
+            const trabajadorId = getSelectedTrabajadorId();
+            if (!trabajadorId) {
+                mensaje.textContent = 'Selecciona un trabajador antes de eliminar.';
+                return;
+            }
+
+            if (!confirm('¿Eliminar trabajador seleccionado? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            fetch(`/api/trabajadores/${trabajadorId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`No se pudo eliminar el trabajador (${response.status}).`);
+                }
+                mensaje.style.color = '#2e7d32';
+                mensaje.textContent = 'Trabajador eliminado correctamente.';
+                cargarTrabajadores();
+            })
+            .catch(error => {
+                console.error('Error eliminando trabajador:', error);
+                mensaje.textContent = 'Error al eliminar el trabajador. Revisa la consola.';
+            });
+        }
+
+        function enviarFormulario(event) {
+            event.preventDefault();
+
+            const nomTrab = document.getElementById('nomTrab').value.trim();
+            const apeTrab = document.getElementById('apeTrab').value.trim();
+            const dniTrab = document.getElementById('dniTrab').value.trim();
+            const cargoId = parseInt(document.getElementById('cargoId').value, 10);
+            const tipoPago = document.getElementById('tipoPago').value;
+            const sueldoBaseDiaValue = document.getElementById('sueldoBaseDia').value;
+            const pagoPorSacoValue = document.getElementById('pagoPorSaco').value;
+            const sueldoBaseDia = parseFloat(sueldoBaseDiaValue) || 0;
+            const pagoPorSaco = parseFloat(pagoPorSacoValue) || 0;
+            const mensaje = document.getElementById('formMessage');
+
+            mensaje.style.color = 'red';
+            mensaje.textContent = '';
+
+            if (!nomTrab || !apeTrab || !dniTrab || isNaN(cargoId) || !tipoPago) {
+                mensaje.textContent = 'Completa los campos obligatorios.';
+                return;
+            }
+
+            const dniValido = /^\d{8}$/.test(dniTrab);
+            if (!dniValido) {
+                mensaje.textContent = 'El DNI debe tener 8 dígitos numéricos.';
+                return;
+            }
+
+            if (tipoPago === 'tiempo' && sueldoBaseDia <= 0) {
+                mensaje.textContent = 'Ingresa un sueldo base válido mayor a 0 para pago por día.';
+                return;
+            }
+
+            if (tipoPago === 'rendimiento' && pagoPorSaco <= 0) {
+                mensaje.textContent = 'Ingresa un pago por saco válido mayor a 0 para pago por saco.';
+                return;
+            }
+
+            if (sueldoBaseDiaValue !== '' && sueldoBaseDia < 0) {
+                mensaje.textContent = 'El sueldo base no puede ser negativo.';
+                return;
+            }
+
+            if (pagoPorSacoValue !== '' && pagoPorSaco < 0) {
+                mensaje.textContent = 'El pago por saco no puede ser negativo.';
+                return;
+            }
+
+            const trabajador = {
+                nomTrab,
+                apeTrab,
+                dniTrab,
+                cargoId,
+                tipoPago,
+                sueldoBaseDia,
+                pagoPorSaco
+            };
+
+            const url = currentEditId ? `/api/trabajadores/${currentEditId}` : '/api/trabajadores';
+            const method = currentEditId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(trabajador)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Error al guardar trabajador: ${response.status} ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                mensaje.style.color = '#2e7d32';
+                mensaje.textContent = currentEditId ? 'Trabajador actualizado correctamente.' : 'Trabajador agregado correctamente.';
+                document.getElementById('trabajadorForm').reset();
+                currentEditId = null;
+                document.getElementById('formSubmitBtn').textContent = 'Guardar trabajador';
+                cargarTrabajadores();
+            })
+            .catch(error => {
+                console.error('Error creando trabajador:', error);
+                mensaje.style.color = 'red';
+                mensaje.textContent = 'No se pudo guardar el trabajador. ' + error.message;
+            });
+        }
+
         function cargarTrabajadores() {
+            document.getElementById('tableActionMessage').textContent = '';
             console.log("Cargando trabajadores...");
             
             fetch('/api/trabajadores')
@@ -165,6 +477,7 @@
                     document.getElementById('stats').style.display = 'block';
                     document.getElementById('stats').innerHTML = `Total de trabajadores: <strong>${trabajadores.length}</strong>`;
                     
+                    trabajadoresCache = trabajadores;
                     // Mostrar tabla
                     document.getElementById('successMsg').innerHTML = `Se encontraron ${trabajadores.length} trabajador(es)`;
                     document.getElementById('tabla-container').style.display = 'block';
@@ -175,13 +488,21 @@
                     
                     trabajadores.forEach(t => {
                         const row = tbody.insertRow();
-                        row.insertCell(0).textContent = t.idTrab || '-';
-                        row.insertCell(1).textContent = t.nomTrab || t.nombre || '-';
-                        row.insertCell(2).textContent = t.apeTrab || t.apellido || '-';
-                        row.insertCell(3).textContent = t.dniTrab || t.dni || '-';
-                        row.insertCell(4).textContent = t.tipoPago || '-';
-                        row.insertCell(5).textContent = t.sueldoBaseDia ? `S/. ${t.sueldoBaseDia}` : '-';
-                        row.insertCell(6).textContent = t.pagoPorSaco ? `S/. ${t.pagoPorSaco}` : '-';
+                        const selectCell = row.insertCell(0);
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'selectedTrab';
+                        radio.value = t.idTrab;
+                        selectCell.appendChild(radio);
+                        row.insertCell(1).textContent = t.idTrab || '-';
+                        row.insertCell(2).textContent = t.nomTrab || t.nombre || '-';
+                        row.insertCell(3).textContent = t.apeTrab || t.apellido || '-';
+                        row.insertCell(4).textContent = t.cargoNombre || '-';
+                        row.insertCell(5).textContent = t.dniTrab || t.dni || '-';
+                        row.insertCell(6).textContent = t.tipoPago || '-';
+                        row.insertCell(7).textContent = t.sueldoBaseDia ? `S/. ${t.sueldoBaseDia}` : '-';
+                        row.insertCell(8).textContent = t.pagoPorSaco ? `S/. ${t.pagoPorSaco}` : '-';
+                        row.addEventListener('click', () => { radio.checked = true; });
                     });
                 })
                 .catch(error => {
@@ -200,6 +521,7 @@
         }
         
         // Cargar al iniciar
+        cargarCargos();
         cargarTrabajadores();
     </script>
 </body>
