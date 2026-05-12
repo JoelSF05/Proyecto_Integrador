@@ -1,0 +1,10 @@
+com\agricola\arroz\controller\TrabajadorController.class
+com\agricola\arroz\model\TipoPago.class
+com\agricola\arroz\repository\TrabajadorRepository.class
+com\agricola\arroz\SistemaArrozApplication.class
+com\agricola\arroz\controller\WebController.class
+com\agricola\arroz\repository\AsistenciaRepository.class
+com\agricola\arroz\model\Trabajador.class
+com\agricola\arroz\controller\AsistenciaController.class
+com\agricola\arroz\model\Asistencia.class
+com\agricola\arroz\model\Cargo.class

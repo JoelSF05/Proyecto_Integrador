@@ -1,0 +1,2170 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict 2RQzeeXXrQMFd73pD1nrZuYSgey9W6tbVudMriSAS7ug79xIvvPHsgIpuLhHZYH
+
+-- Dumped from database version 18.0
+-- Dumped by pg_dump version 18.0
+
+-- Started on 2026-05-11 16:08:13
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 269 (class 1255 OID 32769)
+-- Name: obtener_indicadores(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.obtener_indicadores() RETURNS TABLE(indicador character varying, valor bigint)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 'Hectáreas activas'::VARCHAR, COUNT(*)::BIGINT
+    FROM hectareas WHERE activo = TRUE;
+    
+    RETURN QUERY
+    SELECT 'Trabajadores activos'::VARCHAR, COUNT(*)::BIGINT
+    FROM trabajadores WHERE activo = TRUE;
+    
+    RETURN QUERY
+    SELECT 'Cosechas este mes'::VARCHAR, COUNT(*)::BIGINT
+    FROM cosechas 
+    WHERE DATE_TRUNC('month', fec_cosecha) = DATE_TRUNC('month', CURRENT_DATE);
+    
+    RETURN QUERY
+    SELECT 'Productos con stock bajo'::VARCHAR, COUNT(*)::BIGINT
+    FROM materiales 
+    WHERE activo = TRUE AND stock_actual <= stock_minimo;
+    
+    RETURN QUERY
+    SELECT 'Ciclos en curso'::VARCHAR, COUNT(*)::BIGINT
+    FROM ciclos_cultivo 
+    WHERE estado NOT IN ('Barbecho', 'Cosechado');
+END;
+$$;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 219 (class 1259 OID 32770)
+-- Name: asistencia; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.asistencia (
+    id_asist integer NOT NULL,
+    id_trab integer NOT NULL,
+    fec_asist date NOT NULL,
+    hora_entrada time without time zone,
+    hora_salida time without time zone,
+    presente boolean DEFAULT true,
+    sacos_cosechados integer DEFAULT 0
+);
+
+
+--
+-- TOC entry 220 (class 1259 OID 32778)
+-- Name: asistencia_id_asist_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.asistencia_id_asist_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5345 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: asistencia_id_asist_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.asistencia_id_asist_seq OWNED BY public.asistencia.id_asist;
+
+
+--
+-- TOC entry 221 (class 1259 OID 32779)
+-- Name: cargos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cargos (
+    id_cargo integer NOT NULL,
+    nom_cargo character varying(50) NOT NULL
+);
+
+
+--
+-- TOC entry 222 (class 1259 OID 32784)
+-- Name: cargos_id_cargo_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cargos_id_cargo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5346 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: cargos_id_cargo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cargos_id_cargo_seq OWNED BY public.cargos.id_cargo;
+
+
+--
+-- TOC entry 223 (class 1259 OID 32785)
+-- Name: ciclos_cultivo; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ciclos_cultivo (
+    id_ciclo integer NOT NULL,
+    id_hect integer NOT NULL,
+    nombre_ciclo character varying(50) NOT NULL,
+    fecha_siembra date NOT NULL,
+    fecha_cosecha_estimada date,
+    fecha_cosecha_real date,
+    estado character varying(20) DEFAULT 'Preparación'::character varying,
+    rendimiento_real_kg_ha numeric(10,2),
+    CONSTRAINT ciclos_cultivo_estado_check CHECK (((estado)::text = ANY (ARRAY[('Preparación'::character varying)::text, ('Sembrado'::character varying)::text, ('Crecimiento'::character varying)::text, ('Floración'::character varying)::text, ('Maduración'::character varying)::text, ('Cosechado'::character varying)::text, ('Barbecho'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 224 (class 1259 OID 32794)
+-- Name: ciclos_cultivo_id_ciclo_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ciclos_cultivo_id_ciclo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5347 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: ciclos_cultivo_id_ciclo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ciclos_cultivo_id_ciclo_seq OWNED BY public.ciclos_cultivo.id_ciclo;
+
+
+--
+-- TOC entry 225 (class 1259 OID 32795)
+-- Name: compras; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.compras (
+    id_compra integer NOT NULL,
+    id_proveedor integer,
+    fecha_compra date DEFAULT CURRENT_DATE NOT NULL,
+    tipo_compra character varying(30),
+    monto_total numeric(12,2) NOT NULL,
+    factura_numero character varying(50),
+    CONSTRAINT compras_monto_total_check CHECK ((monto_total > (0)::numeric)),
+    CONSTRAINT compras_tipo_compra_check CHECK (((tipo_compra)::text = ANY (ARRAY[('Insumos'::character varying)::text, ('Maquinaria'::character varying)::text, ('Servicios'::character varying)::text, ('Otros'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 226 (class 1259 OID 32804)
+-- Name: compras_id_compra_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.compras_id_compra_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5348 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: compras_id_compra_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.compras_id_compra_seq OWNED BY public.compras.id_compra;
+
+
+--
+-- TOC entry 227 (class 1259 OID 32805)
+-- Name: control_calidad; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.control_calidad (
+    id_calidad integer NOT NULL,
+    id_cosecha integer NOT NULL,
+    fecha_analisis date DEFAULT CURRENT_DATE NOT NULL,
+    porcentaje_granos_enteros numeric(5,2),
+    porcentaje_granos_partidos numeric(5,2),
+    porcentaje_granos_verdes numeric(5,2),
+    porcentaje_impurezas numeric(5,2),
+    porcentaje_humedad numeric(5,2),
+    grado_comercial character varying(10),
+    observaciones text,
+    CONSTRAINT control_calidad_grado_comercial_check CHECK (((grado_comercial)::text = ANY (ARRAY[('Extra'::character varying)::text, ('Primera'::character varying)::text, ('Segunda'::character varying)::text, ('Tercera'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 228 (class 1259 OID 32815)
+-- Name: control_calidad_id_calidad_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.control_calidad_id_calidad_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5349 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: control_calidad_id_calidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.control_calidad_id_calidad_seq OWNED BY public.control_calidad.id_calidad;
+
+
+--
+-- TOC entry 229 (class 1259 OID 32816)
+-- Name: cosechas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cosechas (
+    id_cosecha integer NOT NULL,
+    id_hect integer NOT NULL,
+    id_tipo_cosecha integer NOT NULL,
+    fec_cosecha date NOT NULL,
+    hora_inicio time without time zone,
+    hora_fin time without time zone,
+    metodo_cosecha character varying(30),
+    id_maq integer,
+    cantidad_sacos integer,
+    peso_total_kg numeric(12,2),
+    humedad_porcentaje numeric(5,2),
+    calidad_arroz character varying(20),
+    observaciones text,
+    CONSTRAINT cosechas_calidad_arroz_check CHECK (((calidad_arroz)::text = ANY (ARRAY[('Extra'::character varying)::text, ('Superior'::character varying)::text, ('Corriente'::character varying)::text]))),
+    CONSTRAINT cosechas_cantidad_sacos_check CHECK ((cantidad_sacos >= 0)),
+    CONSTRAINT cosechas_metodo_cosecha_check CHECK (((metodo_cosecha)::text = ANY (ARRAY[('Manual'::character varying)::text, ('Mecanizada'::character varying)::text]))),
+    CONSTRAINT cosechas_peso_total_kg_check CHECK ((peso_total_kg >= (0)::numeric))
+);
+
+
+--
+-- TOC entry 230 (class 1259 OID 32829)
+-- Name: cosechas_id_cosecha_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cosechas_id_cosecha_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5350 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: cosechas_id_cosecha_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cosechas_id_cosecha_seq OWNED BY public.cosechas.id_cosecha;
+
+
+--
+-- TOC entry 231 (class 1259 OID 32830)
+-- Name: detalle_compras; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.detalle_compras (
+    id_detalle integer NOT NULL,
+    id_compra integer NOT NULL,
+    id_mat integer,
+    cantidad numeric(10,2) NOT NULL,
+    precio_unitario numeric(10,2) NOT NULL
+);
+
+
+--
+-- TOC entry 232 (class 1259 OID 32837)
+-- Name: detalle_compras_id_detalle_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.detalle_compras_id_detalle_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5351 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: detalle_compras_id_detalle_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.detalle_compras_id_detalle_seq OWNED BY public.detalle_compras.id_detalle;
+
+
+--
+-- TOC entry 233 (class 1259 OID 32838)
+-- Name: gestion_cultivos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gestion_cultivos (
+    id_gestion integer NOT NULL,
+    id_ciclo integer NOT NULL,
+    id_hect integer NOT NULL,
+    id_cosecha integer,
+    id_calidad integer,
+    anio_cosecha integer NOT NULL,
+    temporada character varying(20),
+    gastos_totales numeric(12,2) DEFAULT 0,
+    ingresos_totales numeric(12,2) DEFAULT 0,
+    rentabilidad numeric(8,2),
+    CONSTRAINT gestion_cultivos_temporada_check CHECK (((temporada)::text = ANY (ARRAY[('Lluviosa'::character varying)::text, ('Secas'::character varying)::text, ('Invierno'::character varying)::text, ('Verano'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 234 (class 1259 OID 32848)
+-- Name: gestion_cultivos_id_gestion_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gestion_cultivos_id_gestion_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5352 (class 0 OID 0)
+-- Dependencies: 234
+-- Name: gestion_cultivos_id_gestion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gestion_cultivos_id_gestion_seq OWNED BY public.gestion_cultivos.id_gestion;
+
+
+--
+-- TOC entry 235 (class 1259 OID 32849)
+-- Name: hectareas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hectareas (
+    id_hect integer NOT NULL,
+    ubi_hect character varying(100),
+    tam_hect numeric(8,2),
+    variedad_arroz character varying(50) NOT NULL,
+    activo boolean DEFAULT true,
+    CONSTRAINT hectareas_tam_hect_check CHECK ((tam_hect > (0)::numeric))
+);
+
+
+--
+-- TOC entry 236 (class 1259 OID 32856)
+-- Name: hectareas_id_hect_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.hectareas_id_hect_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5353 (class 0 OID 0)
+-- Dependencies: 236
+-- Name: hectareas_id_hect_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.hectareas_id_hect_seq OWNED BY public.hectareas.id_hect;
+
+
+--
+-- TOC entry 237 (class 1259 OID 32857)
+-- Name: maquinaria; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.maquinaria (
+    id_maq integer NOT NULL,
+    nom_maq character varying(50) NOT NULL,
+    tipo_maq character varying(50) NOT NULL,
+    costo_alquiler_hora numeric(10,2),
+    activo boolean DEFAULT true,
+    CONSTRAINT maquinaria_costo_alquiler_hora_check CHECK ((costo_alquiler_hora >= (0)::numeric))
+);
+
+
+--
+-- TOC entry 238 (class 1259 OID 32865)
+-- Name: maquinaria_id_maq_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.maquinaria_id_maq_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5354 (class 0 OID 0)
+-- Dependencies: 238
+-- Name: maquinaria_id_maq_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.maquinaria_id_maq_seq OWNED BY public.maquinaria.id_maq;
+
+
+--
+-- TOC entry 239 (class 1259 OID 32866)
+-- Name: materiales; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.materiales (
+    id_mat integer NOT NULL,
+    nom_mat character varying(50) NOT NULL,
+    tipo_mat character varying(30),
+    stock_actual numeric(10,2) DEFAULT 0,
+    stock_minimo numeric(10,2) DEFAULT 0,
+    unidad_medida character varying(10),
+    activo boolean DEFAULT true,
+    CONSTRAINT materiales_stock_actual_check CHECK ((stock_actual >= (0)::numeric))
+);
+
+
+--
+-- TOC entry 240 (class 1259 OID 32875)
+-- Name: materiales_id_mat_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.materiales_id_mat_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5355 (class 0 OID 0)
+-- Dependencies: 240
+-- Name: materiales_id_mat_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.materiales_id_mat_seq OWNED BY public.materiales.id_mat;
+
+
+--
+-- TOC entry 241 (class 1259 OID 32876)
+-- Name: monitoreo_plagas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitoreo_plagas (
+    id_monitoreo integer NOT NULL,
+    id_ciclo integer NOT NULL,
+    id_plaga integer NOT NULL,
+    fecha_deteccion date DEFAULT CURRENT_DATE NOT NULL,
+    nivel_infestacion character varying(20),
+    accion_tomada text,
+    costo_control numeric(10,2),
+    CONSTRAINT monitoreo_plagas_nivel_infestacion_check CHECK (((nivel_infestacion)::text = ANY (ARRAY[('Bajo'::character varying)::text, ('Medio'::character varying)::text, ('Alto'::character varying)::text, ('Crítico'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 242 (class 1259 OID 32887)
+-- Name: monitoreo_plagas_id_monitoreo_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitoreo_plagas_id_monitoreo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5356 (class 0 OID 0)
+-- Dependencies: 242
+-- Name: monitoreo_plagas_id_monitoreo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitoreo_plagas_id_monitoreo_seq OWNED BY public.monitoreo_plagas.id_monitoreo;
+
+
+--
+-- TOC entry 243 (class 1259 OID 32888)
+-- Name: movimientos_caja; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.movimientos_caja (
+    id_mov integer NOT NULL,
+    fec_mov date DEFAULT CURRENT_DATE NOT NULL,
+    hora_mov time without time zone DEFAULT CURRENT_TIME NOT NULL,
+    tipo_mov character varying(10) NOT NULL,
+    categoria character varying(50) NOT NULL,
+    monto numeric(12,2) NOT NULL,
+    id_trab integer,
+    id_cosecha integer,
+    comprobante_url text,
+    descripcion text,
+    CONSTRAINT movimientos_caja_monto_check CHECK ((monto > (0)::numeric)),
+    CONSTRAINT movimientos_caja_tipo_mov_check CHECK (((tipo_mov)::text = ANY (ARRAY[('Ingreso'::character varying)::text, ('Egreso'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 244 (class 1259 OID 32903)
+-- Name: movimientos_caja_id_mov_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.movimientos_caja_id_mov_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5357 (class 0 OID 0)
+-- Dependencies: 244
+-- Name: movimientos_caja_id_mov_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.movimientos_caja_id_mov_seq OWNED BY public.movimientos_caja.id_mov;
+
+
+--
+-- TOC entry 245 (class 1259 OID 32904)
+-- Name: plagas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.plagas (
+    id_plaga integer NOT NULL,
+    nombre_cientifico character varying(100),
+    nombre_comun character varying(60) NOT NULL,
+    tipo character varying(20),
+    CONSTRAINT plagas_tipo_check CHECK (((tipo)::text = ANY (ARRAY[('Plaga'::character varying)::text, ('Enfermedad'::character varying)::text, ('Maleza'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 246 (class 1259 OID 32910)
+-- Name: plagas_id_plaga_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.plagas_id_plaga_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5358 (class 0 OID 0)
+-- Dependencies: 246
+-- Name: plagas_id_plaga_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.plagas_id_plaga_seq OWNED BY public.plagas.id_plaga;
+
+
+--
+-- TOC entry 247 (class 1259 OID 32911)
+-- Name: proveedores; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.proveedores (
+    id_proveedor integer NOT NULL,
+    ruc character(11),
+    razon_social character varying(100) NOT NULL,
+    telefono character varying(15),
+    email character varying(100),
+    direccion text
+);
+
+
+--
+-- TOC entry 248 (class 1259 OID 32918)
+-- Name: proveedores_id_proveedor_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.proveedores_id_proveedor_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5359 (class 0 OID 0)
+-- Dependencies: 248
+-- Name: proveedores_id_proveedor_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.proveedores_id_proveedor_seq OWNED BY public.proveedores.id_proveedor;
+
+
+--
+-- TOC entry 249 (class 1259 OID 32919)
+-- Name: regadio; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.regadio (
+    id_reg integer NOT NULL,
+    id_hect integer NOT NULL,
+    fec_reg date DEFAULT CURRENT_DATE NOT NULL,
+    hora_inicio time without time zone,
+    hora_fin time without time zone,
+    cantidad_agua_m3 numeric(10,2),
+    id_responsable integer,
+    CONSTRAINT hora_valida CHECK ((hora_fin > hora_inicio)),
+    CONSTRAINT regadio_cantidad_agua_m3_check CHECK ((cantidad_agua_m3 >= (0)::numeric))
+);
+
+
+--
+-- TOC entry 250 (class 1259 OID 32928)
+-- Name: regadio_id_reg_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.regadio_id_reg_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5360 (class 0 OID 0)
+-- Dependencies: 250
+-- Name: regadio_id_reg_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.regadio_id_reg_seq OWNED BY public.regadio.id_reg;
+
+
+--
+-- TOC entry 251 (class 1259 OID 32929)
+-- Name: roles_permisos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.roles_permisos (
+    id_rol integer NOT NULL,
+    nombre_rol character varying(30) NOT NULL,
+    descripcion text,
+    nivel_acceso integer DEFAULT 1
+);
+
+
+--
+-- TOC entry 252 (class 1259 OID 32937)
+-- Name: roles_permisos_id_rol_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.roles_permisos_id_rol_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5361 (class 0 OID 0)
+-- Dependencies: 252
+-- Name: roles_permisos_id_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.roles_permisos_id_rol_seq OWNED BY public.roles_permisos.id_rol;
+
+
+--
+-- TOC entry 253 (class 1259 OID 32938)
+-- Name: tipo_cosecha; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tipo_cosecha (
+    id_tipo_cosecha integer NOT NULL,
+    nombre_tipo character varying(30) NOT NULL,
+    descripcion text,
+    rendimiento_esperado_kg_ha numeric(10,2),
+    orden_ciclo integer
+);
+
+
+--
+-- TOC entry 254 (class 1259 OID 32945)
+-- Name: tipo_cosecha_id_tipo_cosecha_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tipo_cosecha_id_tipo_cosecha_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5362 (class 0 OID 0)
+-- Dependencies: 254
+-- Name: tipo_cosecha_id_tipo_cosecha_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.tipo_cosecha_id_tipo_cosecha_seq OWNED BY public.tipo_cosecha.id_tipo_cosecha;
+
+
+--
+-- TOC entry 255 (class 1259 OID 32946)
+-- Name: trabajadores; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.trabajadores (
+    id_trab integer NOT NULL,
+    nom_trab character varying(50) NOT NULL,
+    ape_trab character varying(50) NOT NULL,
+    dni_trab character(8) NOT NULL,
+    id_cargo integer NOT NULL,
+    tipo_pago character varying(12) DEFAULT 'tiempo'::character varying,
+    sueldo_base_dia numeric(10,2),
+    pago_por_saco numeric(10,2),
+    fecha_contrato date DEFAULT CURRENT_DATE,
+    activo boolean DEFAULT true,
+    CONSTRAINT trabajadores_pago_por_saco_check CHECK ((pago_por_saco >= (0)::numeric)),
+    CONSTRAINT trabajadores_sueldo_base_dia_check CHECK ((sueldo_base_dia >= (0)::numeric)),
+    CONSTRAINT trabajadores_tipo_pago_check CHECK (((tipo_pago)::text = ANY (ARRAY[('tiempo'::character varying)::text, ('rendimiento'::character varying)::text])))
+);
+
+
+--
+-- TOC entry 256 (class 1259 OID 32960)
+-- Name: trabajadores_id_trab_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.trabajadores_id_trab_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5363 (class 0 OID 0)
+-- Dependencies: 256
+-- Name: trabajadores_id_trab_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.trabajadores_id_trab_seq OWNED BY public.trabajadores.id_trab;
+
+
+--
+-- TOC entry 257 (class 1259 OID 32961)
+-- Name: uso_materiales; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.uso_materiales (
+    id_uso integer NOT NULL,
+    id_mat integer NOT NULL,
+    id_hect integer NOT NULL,
+    fec_uso date DEFAULT CURRENT_DATE NOT NULL,
+    hora_uso time without time zone DEFAULT CURRENT_TIME,
+    cantidad numeric(10,2),
+    CONSTRAINT uso_materiales_cantidad_check CHECK ((cantidad > (0)::numeric))
+);
+
+
+--
+-- TOC entry 258 (class 1259 OID 32971)
+-- Name: uso_materiales_id_uso_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.uso_materiales_id_uso_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5364 (class 0 OID 0)
+-- Dependencies: 258
+-- Name: uso_materiales_id_uso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.uso_materiales_id_uso_seq OWNED BY public.uso_materiales.id_uso;
+
+
+--
+-- TOC entry 259 (class 1259 OID 32972)
+-- Name: usuario_roles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.usuario_roles (
+    id_usuario_rol integer NOT NULL,
+    id_usuario integer NOT NULL,
+    id_rol integer NOT NULL,
+    fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- TOC entry 260 (class 1259 OID 32979)
+-- Name: usuario_roles_id_usuario_rol_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.usuario_roles_id_usuario_rol_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5365 (class 0 OID 0)
+-- Dependencies: 260
+-- Name: usuario_roles_id_usuario_rol_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.usuario_roles_id_usuario_rol_seq OWNED BY public.usuario_roles.id_usuario_rol;
+
+
+--
+-- TOC entry 261 (class 1259 OID 32980)
+-- Name: usuarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.usuarios (
+    id_usuario integer NOT NULL,
+    id_trab integer NOT NULL,
+    nombre_usuario character varying(50) NOT NULL,
+    contrasena_hash character varying(255) NOT NULL,
+    email character varying(100),
+    ultimo_login timestamp without time zone,
+    intentos_fallidos integer DEFAULT 0,
+    bloqueado boolean DEFAULT false,
+    activo boolean DEFAULT true,
+    fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- TOC entry 262 (class 1259 OID 32991)
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.usuarios_id_usuario_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 5366 (class 0 OID 0)
+-- Dependencies: 262
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuarios.id_usuario;
+
+
+--
+-- TOC entry 263 (class 1259 OID 32992)
+-- Name: vista_alerta_stock; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vista_alerta_stock AS
+ SELECT nom_mat,
+    stock_actual,
+    stock_minimo,
+    unidad_medida,
+        CASE
+            WHEN (stock_actual <= stock_minimo) THEN 'CRÍTICO - Comprar urgente'::text
+            WHEN (stock_actual <= (stock_minimo * 1.5)) THEN 'BAJO - Revisar stock'::text
+            ELSE 'NORMAL'::text
+        END AS estado_stock
+   FROM public.materiales
+  WHERE (activo = true)
+  ORDER BY (stock_actual / NULLIF(stock_minimo, (0)::numeric));
+
+
+--
+-- TOC entry 264 (class 1259 OID 32996)
+-- Name: vista_ciclos_activos; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vista_ciclos_activos AS
+ SELECT cc.id_ciclo,
+    cc.nombre_ciclo,
+    h.ubi_hect,
+    h.variedad_arroz,
+    cc.fecha_siembra,
+    cc.fecha_cosecha_estimada,
+    cc.estado,
+    cc.rendimiento_real_kg_ha
+   FROM (public.ciclos_cultivo cc
+     JOIN public.hectareas h ON ((cc.id_hect = h.id_hect)))
+  WHERE ((cc.estado)::text <> ALL (ARRAY[('Barbecho'::character varying)::text, ('Cosechado'::character varying)::text]));
+
+
+--
+-- TOC entry 265 (class 1259 OID 33001)
+-- Name: vista_pagos_trabajadores; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vista_pagos_trabajadores AS
+ SELECT t.id_trab,
+    t.nom_trab,
+    t.ape_trab,
+    t.tipo_pago,
+    a.fec_asist,
+    a.sacos_cosechados,
+        CASE
+            WHEN (((t.tipo_pago)::text = 'tiempo'::text) AND (a.presente = true)) THEN t.sueldo_base_dia
+            WHEN ((t.tipo_pago)::text = 'rendimiento'::text) THEN ((a.sacos_cosechados)::numeric * COALESCE(t.pago_por_saco, (0)::numeric))
+            ELSE (0)::numeric
+        END AS monto_a_pagar
+   FROM (public.trabajadores t
+     JOIN public.asistencia a ON ((t.id_trab = a.id_trab)))
+  WHERE (t.activo = true);
+
+
+--
+-- TOC entry 266 (class 1259 OID 33006)
+-- Name: vista_resumen_cosechas; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vista_resumen_cosechas AS
+ SELECT c.id_cosecha,
+    h.ubi_hect,
+    h.variedad_arroz,
+    tc.nombre_tipo AS tipo_cosecha,
+    c.fec_cosecha,
+    c.cantidad_sacos,
+    c.calidad_arroz
+   FROM ((public.cosechas c
+     JOIN public.hectareas h ON ((c.id_hect = h.id_hect)))
+     JOIN public.tipo_cosecha tc ON ((c.id_tipo_cosecha = tc.id_tipo_cosecha)))
+  WHERE (h.activo = true);
+
+
+--
+-- TOC entry 267 (class 1259 OID 33011)
+-- Name: vista_resumen_financiero; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vista_resumen_financiero AS
+ SELECT date_trunc('month'::text, (fec_mov)::timestamp with time zone) AS mes,
+    tipo_mov,
+    count(*) AS cantidad_movimientos,
+    sum(monto) AS total_mes
+   FROM public.movimientos_caja
+  WHERE (fec_mov >= date_trunc('year'::text, (CURRENT_DATE)::timestamp with time zone))
+  GROUP BY (date_trunc('month'::text, (fec_mov)::timestamp with time zone)), tipo_mov
+  ORDER BY (date_trunc('month'::text, (fec_mov)::timestamp with time zone)) DESC, tipo_mov;
+
+
+--
+-- TOC entry 268 (class 1259 OID 33015)
+-- Name: vw_login; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.vw_login AS
+ SELECT u.nombre_usuario,
+    u.contrasena_hash,
+    u.activo,
+    u.bloqueado,
+    t.nom_trab,
+    t.ape_trab,
+    c.nom_cargo,
+    rp.nombre_rol
+   FROM ((((public.usuarios u
+     JOIN public.trabajadores t ON ((u.id_trab = t.id_trab)))
+     JOIN public.cargos c ON ((t.id_cargo = c.id_cargo)))
+     LEFT JOIN public.usuario_roles ur ON ((u.id_usuario = ur.id_usuario)))
+     LEFT JOIN public.roles_permisos rp ON ((ur.id_rol = rp.id_rol)))
+  WHERE (u.activo = true);
+
+
+--
+-- TOC entry 4986 (class 2604 OID 33020)
+-- Name: asistencia id_asist; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asistencia ALTER COLUMN id_asist SET DEFAULT nextval('public.asistencia_id_asist_seq'::regclass);
+
+
+--
+-- TOC entry 4989 (class 2604 OID 33021)
+-- Name: cargos id_cargo; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cargos ALTER COLUMN id_cargo SET DEFAULT nextval('public.cargos_id_cargo_seq'::regclass);
+
+
+--
+-- TOC entry 4990 (class 2604 OID 33022)
+-- Name: ciclos_cultivo id_ciclo; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ciclos_cultivo ALTER COLUMN id_ciclo SET DEFAULT nextval('public.ciclos_cultivo_id_ciclo_seq'::regclass);
+
+
+--
+-- TOC entry 4992 (class 2604 OID 33023)
+-- Name: compras id_compra; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.compras ALTER COLUMN id_compra SET DEFAULT nextval('public.compras_id_compra_seq'::regclass);
+
+
+--
+-- TOC entry 4994 (class 2604 OID 33024)
+-- Name: control_calidad id_calidad; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.control_calidad ALTER COLUMN id_calidad SET DEFAULT nextval('public.control_calidad_id_calidad_seq'::regclass);
+
+
+--
+-- TOC entry 4996 (class 2604 OID 33025)
+-- Name: cosechas id_cosecha; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cosechas ALTER COLUMN id_cosecha SET DEFAULT nextval('public.cosechas_id_cosecha_seq'::regclass);
+
+
+--
+-- TOC entry 4997 (class 2604 OID 33026)
+-- Name: detalle_compras id_detalle; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.detalle_compras ALTER COLUMN id_detalle SET DEFAULT nextval('public.detalle_compras_id_detalle_seq'::regclass);
+
+
+--
+-- TOC entry 4998 (class 2604 OID 33027)
+-- Name: gestion_cultivos id_gestion; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos ALTER COLUMN id_gestion SET DEFAULT nextval('public.gestion_cultivos_id_gestion_seq'::regclass);
+
+
+--
+-- TOC entry 5001 (class 2604 OID 33028)
+-- Name: hectareas id_hect; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hectareas ALTER COLUMN id_hect SET DEFAULT nextval('public.hectareas_id_hect_seq'::regclass);
+
+
+--
+-- TOC entry 5003 (class 2604 OID 33029)
+-- Name: maquinaria id_maq; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maquinaria ALTER COLUMN id_maq SET DEFAULT nextval('public.maquinaria_id_maq_seq'::regclass);
+
+
+--
+-- TOC entry 5005 (class 2604 OID 33030)
+-- Name: materiales id_mat; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.materiales ALTER COLUMN id_mat SET DEFAULT nextval('public.materiales_id_mat_seq'::regclass);
+
+
+--
+-- TOC entry 5009 (class 2604 OID 33031)
+-- Name: monitoreo_plagas id_monitoreo; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitoreo_plagas ALTER COLUMN id_monitoreo SET DEFAULT nextval('public.monitoreo_plagas_id_monitoreo_seq'::regclass);
+
+
+--
+-- TOC entry 5011 (class 2604 OID 33032)
+-- Name: movimientos_caja id_mov; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.movimientos_caja ALTER COLUMN id_mov SET DEFAULT nextval('public.movimientos_caja_id_mov_seq'::regclass);
+
+
+--
+-- TOC entry 5014 (class 2604 OID 33033)
+-- Name: plagas id_plaga; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.plagas ALTER COLUMN id_plaga SET DEFAULT nextval('public.plagas_id_plaga_seq'::regclass);
+
+
+--
+-- TOC entry 5015 (class 2604 OID 33034)
+-- Name: proveedores id_proveedor; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proveedores ALTER COLUMN id_proveedor SET DEFAULT nextval('public.proveedores_id_proveedor_seq'::regclass);
+
+
+--
+-- TOC entry 5016 (class 2604 OID 33035)
+-- Name: regadio id_reg; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.regadio ALTER COLUMN id_reg SET DEFAULT nextval('public.regadio_id_reg_seq'::regclass);
+
+
+--
+-- TOC entry 5018 (class 2604 OID 33036)
+-- Name: roles_permisos id_rol; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.roles_permisos ALTER COLUMN id_rol SET DEFAULT nextval('public.roles_permisos_id_rol_seq'::regclass);
+
+
+--
+-- TOC entry 5020 (class 2604 OID 33037)
+-- Name: tipo_cosecha id_tipo_cosecha; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tipo_cosecha ALTER COLUMN id_tipo_cosecha SET DEFAULT nextval('public.tipo_cosecha_id_tipo_cosecha_seq'::regclass);
+
+
+--
+-- TOC entry 5021 (class 2604 OID 33038)
+-- Name: trabajadores id_trab; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trabajadores ALTER COLUMN id_trab SET DEFAULT nextval('public.trabajadores_id_trab_seq'::regclass);
+
+
+--
+-- TOC entry 5025 (class 2604 OID 33039)
+-- Name: uso_materiales id_uso; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uso_materiales ALTER COLUMN id_uso SET DEFAULT nextval('public.uso_materiales_id_uso_seq'::regclass);
+
+
+--
+-- TOC entry 5028 (class 2604 OID 33040)
+-- Name: usuario_roles id_usuario_rol; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuario_roles ALTER COLUMN id_usuario_rol SET DEFAULT nextval('public.usuario_roles_id_usuario_rol_seq'::regclass);
+
+
+--
+-- TOC entry 5030 (class 2604 OID 33041)
+-- Name: usuarios id_usuario; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuarios ALTER COLUMN id_usuario SET DEFAULT nextval('public.usuarios_id_usuario_seq'::regclass);
+
+
+--
+-- TOC entry 5296 (class 0 OID 32770)
+-- Dependencies: 219
+-- Data for Name: asistencia; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.asistencia VALUES (2, 5, '2026-05-07', '13:30:00', '20:00:00', true, 2);
+INSERT INTO public.asistencia VALUES (3, 6, '2026-05-25', '15:00:00', '16:00:00', true, 11);
+
+
+--
+-- TOC entry 5298 (class 0 OID 32779)
+-- Dependencies: 221
+-- Data for Name: cargos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.cargos VALUES (1, 'Administrador');
+INSERT INTO public.cargos VALUES (2, 'Supervisor');
+INSERT INTO public.cargos VALUES (3, 'Operario');
+INSERT INTO public.cargos VALUES (4, 'Jornalero');
+INSERT INTO public.cargos VALUES (5, 'Administrador');
+INSERT INTO public.cargos VALUES (6, 'Supervisor');
+INSERT INTO public.cargos VALUES (7, 'Operario');
+INSERT INTO public.cargos VALUES (8, 'Jornalero');
+
+
+--
+-- TOC entry 5300 (class 0 OID 32785)
+-- Dependencies: 223
+-- Data for Name: ciclos_cultivo; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5302 (class 0 OID 32795)
+-- Dependencies: 225
+-- Data for Name: compras; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5304 (class 0 OID 32805)
+-- Dependencies: 227
+-- Data for Name: control_calidad; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5306 (class 0 OID 32816)
+-- Dependencies: 229
+-- Data for Name: cosechas; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5308 (class 0 OID 32830)
+-- Dependencies: 231
+-- Data for Name: detalle_compras; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5310 (class 0 OID 32838)
+-- Dependencies: 233
+-- Data for Name: gestion_cultivos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5312 (class 0 OID 32849)
+-- Dependencies: 235
+-- Data for Name: hectareas; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.hectareas VALUES (1, 'Lote A - Zona Norte', 5.50, 'IR-43', true);
+INSERT INTO public.hectareas VALUES (2, 'Lote B - Zona Sur', 3.20, 'Jabalí', true);
+INSERT INTO public.hectareas VALUES (3, 'Lote C - Zona Este', 7.00, 'Amazonas', true);
+
+
+--
+-- TOC entry 5314 (class 0 OID 32857)
+-- Dependencies: 237
+-- Data for Name: maquinaria; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.maquinaria VALUES (1, 'Tractor John Deere', 'Tractor', 50.00, true);
+INSERT INTO public.maquinaria VALUES (2, 'Cosechadora New Holland', 'Cosechadora', 80.00, true);
+INSERT INTO public.maquinaria VALUES (3, 'Rastra de discos', 'Implemento', 30.00, true);
+
+
+--
+-- TOC entry 5316 (class 0 OID 32866)
+-- Dependencies: 239
+-- Data for Name: materiales; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.materiales VALUES (1, 'Urea', 'Fertilizante', 1000.00, 100.00, 'kg', true);
+INSERT INTO public.materiales VALUES (2, 'Fosfato diamónico', 'Fertilizante', 500.00, 50.00, 'kg', true);
+INSERT INTO public.materiales VALUES (3, 'Cloruro de potasio', 'Fertilizante', 800.00, 80.00, 'kg', true);
+INSERT INTO public.materiales VALUES (4, 'Glifosato', 'Herbicida', 200.00, 20.00, 'litros', true);
+
+
+--
+-- TOC entry 5318 (class 0 OID 32876)
+-- Dependencies: 241
+-- Data for Name: monitoreo_plagas; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5320 (class 0 OID 32888)
+-- Dependencies: 243
+-- Data for Name: movimientos_caja; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5322 (class 0 OID 32904)
+-- Dependencies: 245
+-- Data for Name: plagas; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.plagas VALUES (1, 'Tagosodes orizicolus', 'Sogata', 'Plaga');
+INSERT INTO public.plagas VALUES (2, 'Magnaporthe oryzae', 'Pyricularia', 'Enfermedad');
+INSERT INTO public.plagas VALUES (3, 'Spodoptera frugiperda', 'Gusano cogollero', 'Plaga');
+INSERT INTO public.plagas VALUES (4, 'Oryza sativa var. sylvatica', 'Maleza arroz rojo', 'Maleza');
+
+
+--
+-- TOC entry 5324 (class 0 OID 32911)
+-- Dependencies: 247
+-- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5326 (class 0 OID 32919)
+-- Dependencies: 249
+-- Data for Name: regadio; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5328 (class 0 OID 32929)
+-- Dependencies: 251
+-- Data for Name: roles_permisos; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.roles_permisos VALUES (1, 'Administrador', 'Acceso total', 4);
+INSERT INTO public.roles_permisos VALUES (2, 'Supervisor', 'Gestión completa', 3);
+INSERT INTO public.roles_permisos VALUES (3, 'Operador', 'Tareas diarias', 2);
+
+
+--
+-- TOC entry 5330 (class 0 OID 32938)
+-- Dependencies: 253
+-- Data for Name: tipo_cosecha; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.tipo_cosecha VALUES (1, 'Primera cosecha', 'Cosecha principal del ciclo', 8000.00, 1);
+INSERT INTO public.tipo_cosecha VALUES (2, 'Segunda cosecha', 'Rebrote controlado', 4500.00, 2);
+INSERT INTO public.tipo_cosecha VALUES (3, 'Soca', 'Cosecha de retoños naturales', 3000.00, 3);
+
+
+--
+-- TOC entry 5332 (class 0 OID 32946)
+-- Dependencies: 255
+-- Data for Name: trabajadores; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.trabajadores VALUES (5, 'Carlos', 'Gómez', '12345678', 1, 'tiempo', 120.00, NULL, '2026-05-07', true);
+INSERT INTO public.trabajadores VALUES (6, 'María', 'López', '87654321', 2, 'tiempo', 100.00, NULL, '2026-05-07', true);
+INSERT INTO public.trabajadores VALUES (7, 'Juan', 'Pérez', '11112222', 3, 'rendimiento', NULL, NULL, '2026-05-07', true);
+INSERT INTO public.trabajadores VALUES (8, 'Pedro', 'Ramírez', '33334444', 3, 'rendimiento', NULL, NULL, '2026-05-07', true);
+
+
+--
+-- TOC entry 5334 (class 0 OID 32961)
+-- Dependencies: 257
+-- Data for Name: uso_materiales; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5336 (class 0 OID 32972)
+-- Dependencies: 259
+-- Data for Name: usuario_roles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- TOC entry 5338 (class 0 OID 32980)
+-- Dependencies: 261
+-- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.usuarios VALUES (1, 5, 'cgómez', 'temp_hash_cambiar_pronto', NULL, NULL, 0, false, true, '2026-05-07 14:42:03.903053');
+INSERT INTO public.usuarios VALUES (2, 6, 'mlópez', 'temp_hash_cambiar_pronto', NULL, NULL, 0, false, true, '2026-05-07 14:42:03.903053');
+INSERT INTO public.usuarios VALUES (3, 7, 'jpérez', 'temp_hash_cambiar_pronto', NULL, NULL, 0, false, true, '2026-05-07 14:42:03.903053');
+INSERT INTO public.usuarios VALUES (4, 8, 'pramírez', 'temp_hash_cambiar_pronto', NULL, NULL, 0, false, true, '2026-05-07 14:42:03.903053');
+
+
+--
+-- TOC entry 5367 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: asistencia_id_asist_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.asistencia_id_asist_seq', 3, true);
+
+
+--
+-- TOC entry 5368 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: cargos_id_cargo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.cargos_id_cargo_seq', 8, true);
+
+
+--
+-- TOC entry 5369 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: ciclos_cultivo_id_ciclo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.ciclos_cultivo_id_ciclo_seq', 1, false);
+
+
+--
+-- TOC entry 5370 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: compras_id_compra_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.compras_id_compra_seq', 1, false);
+
+
+--
+-- TOC entry 5371 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: control_calidad_id_calidad_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.control_calidad_id_calidad_seq', 1, false);
+
+
+--
+-- TOC entry 5372 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: cosechas_id_cosecha_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.cosechas_id_cosecha_seq', 1, false);
+
+
+--
+-- TOC entry 5373 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: detalle_compras_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.detalle_compras_id_detalle_seq', 1, false);
+
+
+--
+-- TOC entry 5374 (class 0 OID 0)
+-- Dependencies: 234
+-- Name: gestion_cultivos_id_gestion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.gestion_cultivos_id_gestion_seq', 1, false);
+
+
+--
+-- TOC entry 5375 (class 0 OID 0)
+-- Dependencies: 236
+-- Name: hectareas_id_hect_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.hectareas_id_hect_seq', 3, true);
+
+
+--
+-- TOC entry 5376 (class 0 OID 0)
+-- Dependencies: 238
+-- Name: maquinaria_id_maq_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.maquinaria_id_maq_seq', 3, true);
+
+
+--
+-- TOC entry 5377 (class 0 OID 0)
+-- Dependencies: 240
+-- Name: materiales_id_mat_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.materiales_id_mat_seq', 4, true);
+
+
+--
+-- TOC entry 5378 (class 0 OID 0)
+-- Dependencies: 242
+-- Name: monitoreo_plagas_id_monitoreo_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.monitoreo_plagas_id_monitoreo_seq', 1, false);
+
+
+--
+-- TOC entry 5379 (class 0 OID 0)
+-- Dependencies: 244
+-- Name: movimientos_caja_id_mov_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.movimientos_caja_id_mov_seq', 1, false);
+
+
+--
+-- TOC entry 5380 (class 0 OID 0)
+-- Dependencies: 246
+-- Name: plagas_id_plaga_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.plagas_id_plaga_seq', 4, true);
+
+
+--
+-- TOC entry 5381 (class 0 OID 0)
+-- Dependencies: 248
+-- Name: proveedores_id_proveedor_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.proveedores_id_proveedor_seq', 1, false);
+
+
+--
+-- TOC entry 5382 (class 0 OID 0)
+-- Dependencies: 250
+-- Name: regadio_id_reg_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.regadio_id_reg_seq', 1, false);
+
+
+--
+-- TOC entry 5383 (class 0 OID 0)
+-- Dependencies: 252
+-- Name: roles_permisos_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.roles_permisos_id_rol_seq', 3, true);
+
+
+--
+-- TOC entry 5384 (class 0 OID 0)
+-- Dependencies: 254
+-- Name: tipo_cosecha_id_tipo_cosecha_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.tipo_cosecha_id_tipo_cosecha_seq', 3, true);
+
+
+--
+-- TOC entry 5385 (class 0 OID 0)
+-- Dependencies: 256
+-- Name: trabajadores_id_trab_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.trabajadores_id_trab_seq', 8, true);
+
+
+--
+-- TOC entry 5386 (class 0 OID 0)
+-- Dependencies: 258
+-- Name: uso_materiales_id_uso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.uso_materiales_id_uso_seq', 1, false);
+
+
+--
+-- TOC entry 5387 (class 0 OID 0)
+-- Dependencies: 260
+-- Name: usuario_roles_id_usuario_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.usuario_roles_id_usuario_rol_seq', 1, false);
+
+
+--
+-- TOC entry 5388 (class 0 OID 0)
+-- Dependencies: 262
+-- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 4, true);
+
+
+--
+-- TOC entry 5058 (class 2606 OID 33043)
+-- Name: asistencia asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asistencia
+    ADD CONSTRAINT asistencia_pkey PRIMARY KEY (id_asist);
+
+
+--
+-- TOC entry 5060 (class 2606 OID 33045)
+-- Name: cargos cargos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cargos
+    ADD CONSTRAINT cargos_pkey PRIMARY KEY (id_cargo);
+
+
+--
+-- TOC entry 5062 (class 2606 OID 33047)
+-- Name: ciclos_cultivo ciclos_cultivo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ciclos_cultivo
+    ADD CONSTRAINT ciclos_cultivo_pkey PRIMARY KEY (id_ciclo);
+
+
+--
+-- TOC entry 5065 (class 2606 OID 33049)
+-- Name: compras compras_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.compras
+    ADD CONSTRAINT compras_pkey PRIMARY KEY (id_compra);
+
+
+--
+-- TOC entry 5067 (class 2606 OID 33051)
+-- Name: control_calidad control_calidad_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.control_calidad
+    ADD CONSTRAINT control_calidad_pkey PRIMARY KEY (id_calidad);
+
+
+--
+-- TOC entry 5069 (class 2606 OID 33053)
+-- Name: cosechas cosechas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cosechas
+    ADD CONSTRAINT cosechas_pkey PRIMARY KEY (id_cosecha);
+
+
+--
+-- TOC entry 5072 (class 2606 OID 33055)
+-- Name: detalle_compras detalle_compras_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.detalle_compras
+    ADD CONSTRAINT detalle_compras_pkey PRIMARY KEY (id_detalle);
+
+
+--
+-- TOC entry 5074 (class 2606 OID 33057)
+-- Name: gestion_cultivos gestion_cultivos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos
+    ADD CONSTRAINT gestion_cultivos_pkey PRIMARY KEY (id_gestion);
+
+
+--
+-- TOC entry 5076 (class 2606 OID 33059)
+-- Name: hectareas hectareas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hectareas
+    ADD CONSTRAINT hectareas_pkey PRIMARY KEY (id_hect);
+
+
+--
+-- TOC entry 5078 (class 2606 OID 33061)
+-- Name: maquinaria maquinaria_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.maquinaria
+    ADD CONSTRAINT maquinaria_pkey PRIMARY KEY (id_maq);
+
+
+--
+-- TOC entry 5081 (class 2606 OID 33063)
+-- Name: materiales materiales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.materiales
+    ADD CONSTRAINT materiales_pkey PRIMARY KEY (id_mat);
+
+
+--
+-- TOC entry 5083 (class 2606 OID 33065)
+-- Name: monitoreo_plagas monitoreo_plagas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitoreo_plagas
+    ADD CONSTRAINT monitoreo_plagas_pkey PRIMARY KEY (id_monitoreo);
+
+
+--
+-- TOC entry 5086 (class 2606 OID 33067)
+-- Name: movimientos_caja movimientos_caja_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.movimientos_caja
+    ADD CONSTRAINT movimientos_caja_pkey PRIMARY KEY (id_mov);
+
+
+--
+-- TOC entry 5088 (class 2606 OID 33069)
+-- Name: plagas plagas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.plagas
+    ADD CONSTRAINT plagas_pkey PRIMARY KEY (id_plaga);
+
+
+--
+-- TOC entry 5090 (class 2606 OID 33071)
+-- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proveedores
+    ADD CONSTRAINT proveedores_pkey PRIMARY KEY (id_proveedor);
+
+
+--
+-- TOC entry 5092 (class 2606 OID 33073)
+-- Name: proveedores proveedores_ruc_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.proveedores
+    ADD CONSTRAINT proveedores_ruc_key UNIQUE (ruc);
+
+
+--
+-- TOC entry 5094 (class 2606 OID 33075)
+-- Name: regadio regadio_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.regadio
+    ADD CONSTRAINT regadio_pkey PRIMARY KEY (id_reg);
+
+
+--
+-- TOC entry 5096 (class 2606 OID 33077)
+-- Name: roles_permisos roles_permisos_nombre_rol_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.roles_permisos
+    ADD CONSTRAINT roles_permisos_nombre_rol_key UNIQUE (nombre_rol);
+
+
+--
+-- TOC entry 5098 (class 2606 OID 33079)
+-- Name: roles_permisos roles_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.roles_permisos
+    ADD CONSTRAINT roles_permisos_pkey PRIMARY KEY (id_rol);
+
+
+--
+-- TOC entry 5100 (class 2606 OID 33081)
+-- Name: tipo_cosecha tipo_cosecha_nombre_tipo_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tipo_cosecha
+    ADD CONSTRAINT tipo_cosecha_nombre_tipo_key UNIQUE (nombre_tipo);
+
+
+--
+-- TOC entry 5102 (class 2606 OID 33083)
+-- Name: tipo_cosecha tipo_cosecha_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tipo_cosecha
+    ADD CONSTRAINT tipo_cosecha_pkey PRIMARY KEY (id_tipo_cosecha);
+
+
+--
+-- TOC entry 5105 (class 2606 OID 33085)
+-- Name: trabajadores trabajadores_dni_trab_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trabajadores
+    ADD CONSTRAINT trabajadores_dni_trab_key UNIQUE (dni_trab);
+
+
+--
+-- TOC entry 5107 (class 2606 OID 33087)
+-- Name: trabajadores trabajadores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trabajadores
+    ADD CONSTRAINT trabajadores_pkey PRIMARY KEY (id_trab);
+
+
+--
+-- TOC entry 5109 (class 2606 OID 33089)
+-- Name: uso_materiales uso_materiales_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uso_materiales
+    ADD CONSTRAINT uso_materiales_pkey PRIMARY KEY (id_uso);
+
+
+--
+-- TOC entry 5111 (class 2606 OID 33091)
+-- Name: usuario_roles usuario_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuario_roles
+    ADD CONSTRAINT usuario_roles_pkey PRIMARY KEY (id_usuario_rol);
+
+
+--
+-- TOC entry 5113 (class 2606 OID 33093)
+-- Name: usuarios usuarios_id_trab_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_id_trab_key UNIQUE (id_trab);
+
+
+--
+-- TOC entry 5115 (class 2606 OID 33095)
+-- Name: usuarios usuarios_nombre_usuario_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_nombre_usuario_key UNIQUE (nombre_usuario);
+
+
+--
+-- TOC entry 5117 (class 2606 OID 33097)
+-- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario);
+
+
+--
+-- TOC entry 5063 (class 1259 OID 33098)
+-- Name: idx_ciclos_estado; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ciclos_estado ON public.ciclos_cultivo USING btree (estado, fecha_siembra);
+
+
+--
+-- TOC entry 5070 (class 1259 OID 33099)
+-- Name: idx_cosechas_fecha; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cosechas_fecha ON public.cosechas USING btree (fec_cosecha, id_hect);
+
+
+--
+-- TOC entry 5079 (class 1259 OID 33100)
+-- Name: idx_materiales_stock; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_materiales_stock ON public.materiales USING btree (stock_actual, stock_minimo);
+
+
+--
+-- TOC entry 5084 (class 1259 OID 33101)
+-- Name: idx_movimientos_fecha; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_movimientos_fecha ON public.movimientos_caja USING btree (fec_mov, tipo_mov);
+
+
+--
+-- TOC entry 5103 (class 1259 OID 33102)
+-- Name: idx_trabajadores_nombre; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_trabajadores_nombre ON public.trabajadores USING btree (nom_trab, ape_trab);
+
+
+--
+-- TOC entry 5118 (class 2606 OID 33103)
+-- Name: asistencia asistencia_id_trab_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.asistencia
+    ADD CONSTRAINT asistencia_id_trab_fkey FOREIGN KEY (id_trab) REFERENCES public.trabajadores(id_trab) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5119 (class 2606 OID 33108)
+-- Name: ciclos_cultivo ciclos_cultivo_id_hect_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ciclos_cultivo
+    ADD CONSTRAINT ciclos_cultivo_id_hect_fkey FOREIGN KEY (id_hect) REFERENCES public.hectareas(id_hect) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5120 (class 2606 OID 33113)
+-- Name: compras compras_id_proveedor_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.compras
+    ADD CONSTRAINT compras_id_proveedor_fkey FOREIGN KEY (id_proveedor) REFERENCES public.proveedores(id_proveedor) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5121 (class 2606 OID 33118)
+-- Name: control_calidad control_calidad_id_cosecha_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.control_calidad
+    ADD CONSTRAINT control_calidad_id_cosecha_fkey FOREIGN KEY (id_cosecha) REFERENCES public.cosechas(id_cosecha) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5122 (class 2606 OID 33123)
+-- Name: cosechas cosechas_id_hect_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cosechas
+    ADD CONSTRAINT cosechas_id_hect_fkey FOREIGN KEY (id_hect) REFERENCES public.hectareas(id_hect) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5123 (class 2606 OID 33128)
+-- Name: cosechas cosechas_id_maq_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cosechas
+    ADD CONSTRAINT cosechas_id_maq_fkey FOREIGN KEY (id_maq) REFERENCES public.maquinaria(id_maq) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5124 (class 2606 OID 33133)
+-- Name: cosechas cosechas_id_tipo_cosecha_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cosechas
+    ADD CONSTRAINT cosechas_id_tipo_cosecha_fkey FOREIGN KEY (id_tipo_cosecha) REFERENCES public.tipo_cosecha(id_tipo_cosecha);
+
+
+--
+-- TOC entry 5125 (class 2606 OID 33138)
+-- Name: detalle_compras detalle_compras_id_compra_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.detalle_compras
+    ADD CONSTRAINT detalle_compras_id_compra_fkey FOREIGN KEY (id_compra) REFERENCES public.compras(id_compra) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5126 (class 2606 OID 33143)
+-- Name: detalle_compras detalle_compras_id_mat_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.detalle_compras
+    ADD CONSTRAINT detalle_compras_id_mat_fkey FOREIGN KEY (id_mat) REFERENCES public.materiales(id_mat) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5127 (class 2606 OID 33148)
+-- Name: gestion_cultivos gestion_cultivos_id_calidad_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos
+    ADD CONSTRAINT gestion_cultivos_id_calidad_fkey FOREIGN KEY (id_calidad) REFERENCES public.control_calidad(id_calidad) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5128 (class 2606 OID 33153)
+-- Name: gestion_cultivos gestion_cultivos_id_ciclo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos
+    ADD CONSTRAINT gestion_cultivos_id_ciclo_fkey FOREIGN KEY (id_ciclo) REFERENCES public.ciclos_cultivo(id_ciclo) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5129 (class 2606 OID 33158)
+-- Name: gestion_cultivos gestion_cultivos_id_cosecha_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos
+    ADD CONSTRAINT gestion_cultivos_id_cosecha_fkey FOREIGN KEY (id_cosecha) REFERENCES public.cosechas(id_cosecha) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5130 (class 2606 OID 33163)
+-- Name: gestion_cultivos gestion_cultivos_id_hect_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gestion_cultivos
+    ADD CONSTRAINT gestion_cultivos_id_hect_fkey FOREIGN KEY (id_hect) REFERENCES public.hectareas(id_hect) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5131 (class 2606 OID 33168)
+-- Name: monitoreo_plagas monitoreo_plagas_id_ciclo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitoreo_plagas
+    ADD CONSTRAINT monitoreo_plagas_id_ciclo_fkey FOREIGN KEY (id_ciclo) REFERENCES public.ciclos_cultivo(id_ciclo);
+
+
+--
+-- TOC entry 5132 (class 2606 OID 33173)
+-- Name: monitoreo_plagas monitoreo_plagas_id_plaga_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitoreo_plagas
+    ADD CONSTRAINT monitoreo_plagas_id_plaga_fkey FOREIGN KEY (id_plaga) REFERENCES public.plagas(id_plaga);
+
+
+--
+-- TOC entry 5133 (class 2606 OID 33178)
+-- Name: movimientos_caja movimientos_caja_id_cosecha_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.movimientos_caja
+    ADD CONSTRAINT movimientos_caja_id_cosecha_fkey FOREIGN KEY (id_cosecha) REFERENCES public.cosechas(id_cosecha) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5134 (class 2606 OID 33183)
+-- Name: movimientos_caja movimientos_caja_id_trab_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.movimientos_caja
+    ADD CONSTRAINT movimientos_caja_id_trab_fkey FOREIGN KEY (id_trab) REFERENCES public.trabajadores(id_trab) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5135 (class 2606 OID 33188)
+-- Name: regadio regadio_id_hect_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.regadio
+    ADD CONSTRAINT regadio_id_hect_fkey FOREIGN KEY (id_hect) REFERENCES public.hectareas(id_hect) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5136 (class 2606 OID 33193)
+-- Name: regadio regadio_id_responsable_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.regadio
+    ADD CONSTRAINT regadio_id_responsable_fkey FOREIGN KEY (id_responsable) REFERENCES public.trabajadores(id_trab) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5137 (class 2606 OID 33198)
+-- Name: trabajadores trabajadores_id_cargo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.trabajadores
+    ADD CONSTRAINT trabajadores_id_cargo_fkey FOREIGN KEY (id_cargo) REFERENCES public.cargos(id_cargo) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 5138 (class 2606 OID 33203)
+-- Name: uso_materiales uso_materiales_id_hect_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uso_materiales
+    ADD CONSTRAINT uso_materiales_id_hect_fkey FOREIGN KEY (id_hect) REFERENCES public.hectareas(id_hect) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5139 (class 2606 OID 33208)
+-- Name: uso_materiales uso_materiales_id_mat_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.uso_materiales
+    ADD CONSTRAINT uso_materiales_id_mat_fkey FOREIGN KEY (id_mat) REFERENCES public.materiales(id_mat) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5140 (class 2606 OID 33213)
+-- Name: usuario_roles usuario_roles_id_rol_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuario_roles
+    ADD CONSTRAINT usuario_roles_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles_permisos(id_rol) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5141 (class 2606 OID 33218)
+-- Name: usuario_roles usuario_roles_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuario_roles
+    ADD CONSTRAINT usuario_roles_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5142 (class 2606 OID 33223)
+-- Name: usuarios usuarios_id_trab_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.usuarios
+    ADD CONSTRAINT usuarios_id_trab_fkey FOREIGN KEY (id_trab) REFERENCES public.trabajadores(id_trab) ON DELETE CASCADE;
+
+
+-- Completed on 2026-05-11 16:08:13
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 2RQzeeXXrQMFd73pD1nrZuYSgey9W6tbVudMriSAS7ug79xIvvPHsgIpuLhHZYH
+
