@@ -5,29 +5,50 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class WebController {
-    
+
     @GetMapping("/")
-    public String inicio() {
-        return "index";
+    public String raiz() {
+        return "redirect:/login";
     }
-    
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
+    // Todas estas rutas requieren autenticación (Spring Security las protege)
+    @GetMapping("/layout")
+    public String layout() {
+        return "layout";
+    }
+
     @GetMapping("/trabajadores")
     public String trabajadores() {
-        return "trabajadores";
+        return "layout";
     }
-    
+
     @GetMapping("/cosechas")
     public String cosechas() {
-        return "cosechas";
+        return "layout";
     }
-    
+
     @GetMapping("/materiales")
     public String materiales() {
-        return "materiales";
+        return "layout";
     }
-    
+
     @GetMapping("/asistencia")
     public String asistencia() {
-        return "asistencia";
+        return "layout";
+    }
+
+    @GetMapping("/riego")
+    public String riego() {
+        return "layout";
+    }
+
+    @GetMapping("/reportes")
+    public String reportes() {
+        return "layout";
     }
 }

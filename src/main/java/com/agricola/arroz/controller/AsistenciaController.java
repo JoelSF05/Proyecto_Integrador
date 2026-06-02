@@ -13,8 +13,16 @@ public class AsistenciaController {
     @Autowired
     private AsistenciaRepository asistenciaRepository;
     
+    /**
+     * GET /api/asistencias              → todas
+     * GET /api/asistencias?tipoTarea=TRANSPLANTE → solo ese tipo
+     */
     @GetMapping
-    public List<Asistencia> listarTodos() {
+    public List<Asistencia> listarTodos(
+            @RequestParam(required = false) String tipoTarea) {
+        if (tipoTarea != null && !tipoTarea.isBlank()) {
+            return asistenciaRepository.findByTipoTarea(tipoTarea.toUpperCase());
+        }
         return asistenciaRepository.findAll();
     }
     
