@@ -500,8 +500,8 @@
                         row.insertCell(4).textContent = t.cargoNombre || '-';
                         row.insertCell(5).textContent = t.dniTrab || t.dni || '-';
                         row.insertCell(6).textContent = t.tipoPago || '-';
-                        row.insertCell(7).textContent = t.sueldoBaseDia ? `S/. ${t.sueldoBaseDia}` : '-';
-                        row.insertCell(8).textContent = t.pagoPorSaco ? `S/. ${t.pagoPorSaco}` : '-';
+                        row.insertCell(7).textContent = t.sueldoBaseDia ? `S/${t.sueldoBaseDia}` : '-';
+                        row.insertCell(8).textContent = t.pagoPorSaco ? `S/${t.pagoPorSaco}` : '-';
                         row.addEventListener('click', () => { radio.checked = true; });
                     });
                 })

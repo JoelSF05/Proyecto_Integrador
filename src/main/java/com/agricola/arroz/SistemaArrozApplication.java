@@ -11,9 +11,9 @@ public class SistemaArrozApplication {
         ConfigurableApplicationContext context = SpringApplication.run(SistemaArrozApplication.class, args);
 
         String port = context.getEnvironment().getProperty("server.port");
-        if (port == null) port = "8080"; // Valor por defecto
+        if (port == null) port = "8080"; 
 
-        // Imprimimos con un formato llamativo
+        // Se imprime el link
         System.out.println("\n\n" + "=".repeat(50));
         System.out.println("SISTEMA AGRÍCOLA LISTO PARA USAR");
         System.out.println("URL: http://localhost:" + port);

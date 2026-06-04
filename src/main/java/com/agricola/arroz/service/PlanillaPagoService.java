@@ -49,6 +49,11 @@ public class PlanillaPagoService {
         return planillaRepository.findByFechaInicioBetweenOrderByFechaInicioDesc(desde, hasta);
     }
 
+    public PlanillaPago listarPorId(Integer idPlanilla) {
+        return planillaRepository.findById(idPlanilla)
+            .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
+    }
+
     /**
      * Genera una planilla de pago para un trabajador en un período dado.
      * Toma las asistencias del período y calcula el monto según el tipo de pago.
@@ -60,6 +65,12 @@ public class PlanillaPagoService {
 
         List<Asistencia> asistencias =
             asistenciaRepository.findByTrabajadorIdTrabAndFecAsistBetween(idTrab, fechaInicio, fechaFin);
+
+        PlanillaPago existente = planillaRepository
+            .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFin(idTrab, fechaInicio, fechaFin);
+        if (existente != null) {
+            return existente;
+        }
 
         PlanillaPago planilla = new PlanillaPago();
         planilla.setTrabajador(trabajador);

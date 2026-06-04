@@ -104,11 +104,11 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx)
 .kpi-var{font-size:10.5px;font-weight:600;margin-top:1px}
 .pos{color:#16a34a} .neg{color:#dc2626}
 
-.card{background:var(--card);border-radius:14px;box-shadow:var(--sh);border:1px solid var(--borde);margin-bottom:18px;overflow:hidden}
+.card{background:var(--card);border-radius:14px;box-shadow:var(--sh);border:1px solid var(--borde);margin-bottom:18px;overflow:visible}
 .card-hdr{padding:16px 20px;border-bottom:1px solid var(--borde);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .card-hdr h3{font-family:'Playfair Display',serif;font-size:16px;color:var(--tx)}
 .card-hdr .sub{font-size:12.5px;color:var(--ts)}
-.tabla-wrap{overflow-x:auto}
+.tabla-wrap{overflow-x:auto;overflow-y:visible}
 table{width:100%;border-collapse:collapse}
 thead th{background:var(--bg);padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--borde);white-space:nowrap}
 tbody td{padding:11px 14px;border-bottom:1px solid rgba(226,232,223,.5);font-size:13.5px;color:var(--tx)}
@@ -149,9 +149,9 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .htools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
 /* Modal */
-.modal-ov{display:none;position:fixed;inset:0;background:rgba(7,26,7,.55);backdrop-filter:blur(3px);z-index:200;align-items:center;justify-content:center}
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(7,26,7,.55);backdrop-filter:blur(3px);z-index:1300;align-items:center;justify-content:center}
 .modal-ov.vis{display:flex}
-.modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:mEnt .22s ease}
+.modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:mEnt .22s ease;position:relative;z-index:1301}
 .modal.lg{max-width:740px}
 @keyframes mEnt{from{opacity:0;transform:scale(.95) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-tit{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:18px;color:var(--tx)}
@@ -169,10 +169,10 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .toast.vis{display:flex}
 
 /* ── Menú de acciones 3 puntos ── */
-.acc-wrap{position:relative;display:inline-block}
+.acc-wrap{position:relative;display:inline-flex;overflow:visible;z-index:700}
 .acc-btn{background:none;border:1.5px solid var(--borde);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--ts);display:flex;align-items:center;justify-content:center;transition:.15s;line-height:1}
 .acc-btn:hover{background:var(--bg);border-color:var(--v3);color:var(--v2)}
-.acc-menu{display:none;position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--borde);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;min-width:150px;overflow:hidden}
+.acc-menu{display:none;position:fixed;background:#fff;border:1px solid var(--borde);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1200;min-width:150px;overflow:hidden}
 .acc-menu.open{display:block}
 .acc-menu a{display:flex;align-items:center;gap:9px;padding:10px 14px;font-size:13px;color:var(--tx);cursor:pointer;transition:.15s;border:none;background:none;width:100%;text-align:left;font-family:'IBM Plex Sans',sans-serif}
 .acc-menu a:hover{background:var(--bg)}
@@ -323,8 +323,8 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 <div class="main-wrap">
   <header class="topbar">
     <div class="topbar-titulo">
-      <h1 id="t-titulo">Dashboard</h1>
-      <div class="breadcrumb" id="t-bread">AgroMuchumi → Dashboard</div>
+      <h1 id="t-titulo">📊 Dashboard</h1>
+      <div class="breadcrumb" id="t-bread">AgroMuchumi → 📊 Dashboard</div>
     </div>
     <div class="topbar-acc">
       <div id="topbar-rol-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(45,139,45,.12);color:var(--v2)"></div>
@@ -345,12 +345,12 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 // DATOS & ESTADO
 // ═══════════════════════════════════════════════════════
 const TARIFAS = {
-  TRANSPLANTE:  {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:'🌱'},
-  SACA:         {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:'🌾'},
-  CARGA:        {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:'📦'},
-  DIA:          {tipo:'fijo',  monto:50,   unidad:'día',     ico:'📅'},
-  FUMIGACION:   {tipo:'cantidad',monto:50, unidad:'cilindro', ico:'🪣'},
-  ABONO:        {tipo:'cantidad',monto:6.5,unidad:'saco',     ico:'🌿'},
+  TRANSPLANTE:  {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:''},
+  SACA:         {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:''},
+  CARGA:        {tipo:'fijo',  monto:50,   unidad:'tarea',   ico:''},
+  DIA:          {tipo:'fijo',  monto:50,   unidad:'día',     ico:''},
+  FUMIGACION:   {tipo:'cantidad',monto:50, unidad:'cilindro', ico:''},
+  ABONO:        {tipo:'cantidad',monto:6.5,unidad:'saco',     ico:''},
 };
 
 let SESSION = { rol: 'ADMIN', nombre: 'Cargando...', avatar: 'U' };
@@ -365,7 +365,35 @@ function toggleMenu(btn) {
   const menu = btn.nextElementSibling;
   // Cierra todos los demás menús abiertos
   document.querySelectorAll('.acc-menu.open').forEach(m => { if(m !== menu) m.classList.remove('open'); });
-  menu.classList.toggle('open');
+  const opening = !menu.classList.contains('open');
+  if (!opening) {
+    menu.classList.remove('open');
+    menu.style.left = '';
+    menu.style.top = '';
+    return;
+  }
+  menu.classList.add('open');
+  positionAccMenu(menu, btn);
+}
+
+function positionAccMenu(menu, btn) {
+  menu.style.visibility = 'hidden';
+  menu.style.left = '0';
+  menu.style.top = '0';
+  const btnRect = btn.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const padding = 8;
+  let left = btnRect.right - menuRect.width;
+  if (left < padding) left = padding;
+  if (left + menuRect.width > window.innerWidth - padding) left = window.innerWidth - menuRect.width - padding;
+  let top = btnRect.bottom + 6;
+  if (top + menuRect.height > window.innerHeight - padding) {
+    top = btnRect.top - menuRect.height - 6;
+    if (top < padding) top = padding;
+  }
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+  menu.style.visibility = '';
 }
 // Clic fuera cierra todos los menús
 document.addEventListener('click', function(e) {
@@ -380,25 +408,175 @@ let asistencias  = [];
 
 // Datos que se mantienen locales (no tienen tabla en BD aún)
 let plagas = [
-  {id:1,nombre:'Pyricularia oryzae (Quemado)',nivel:'ALTO',detectado:'2026-05-20',parcela:'A',producto:'Tricyclazole 75%',dosis:'0.5 kg/ha',notas:'Aplicar en horas de menor temperatura.',ico:'🦠'},
-  {id:2,nombre:'Sogata (Tagosodes orizicolus)',nivel:'MEDIO',detectado:'2026-05-18',parcela:'B',producto:'Imidacloprid 35%',dosis:'0.35 L/ha',notas:'Control biológico disponible.',ico:'🪲'},
-  {id:3,nombre:'Gusano cogollero',nivel:'BAJO',detectado:'2026-05-15',parcela:'C',producto:'Clorpirifos 48%',dosis:'1 L/ha',notas:'Presencia menor al umbral económico.',ico:'🐛'},
+  {id:1,nombre:'Pyricularia oryzae (Quemado)',nivel:'ALTO',detectado:'2026-05-20',parcela:'A',producto:'Tricyclazole 75%',dosis:'0.5 kg/ha',notas:'Aplicar en horas de menor temperatura.',ico:''},
+  {id:2,nombre:'Sogata (Tagosodes orizicolus)',nivel:'MEDIO',detectado:'2026-05-18',parcela:'B',producto:'Imidacloprid 35%',dosis:'0.35 L/ha',notas:'Control biológico disponible.',ico:''},
+  {id:3,nombre:'Gusano cogollero',nivel:'BAJO',detectado:'2026-05-15',parcela:'C',producto:'Clorpirifos 48%',dosis:'1 L/ha',notas:'Presencia menor al umbral económico.',ico:''},
 ];
 
-let movCaja = [
-  {id:1,tipo:'EGRESO',desc:'Pago planilla semana 1',monto:1800,fecha:'2026-05-20',ico:'💸'},
-  {id:2,tipo:'INGRESO',desc:'Venta arroz cáscara (80 sacos)',monto:5200,fecha:'2026-05-15',ico:'💰'},
-];
+let movCaja = [];
+let materiales = [];
+
+async function cargarMateriales() {
+  const cont = document.getElementById('materiales-contenedor');
+  if (cont) cont.innerHTML = '<p style="color:var(--ts)">Cargando materiales...</p>';
+  const datos = await apiFetch('/api/materiales');
+  materiales = Array.isArray(datos) ? datos.map(m => ({
+    id: m.idMat,
+    nombre: m.nomMat,
+    tipo: m.tipoMat,
+    stockActual: parseFloat(m.stockActual || 0),
+    stockMinimo: parseFloat(m.stockMinimo || 0),
+    unidad: m.unidadMedida || 'unidad'
+  })) : [];
+  renderMateriales(document.getElementById('mat-search')?.value || '');
+}
+
+function renderMateriales(filtro = '') {
+  const cont = document.getElementById('materiales-contenedor');
+  if (!cont) return;
+  const query = (filtro || '').toString().trim().toLowerCase();
+  const lista = materiales.filter(m =>
+    m.nombre.toLowerCase().includes(query) ||
+    (m.tipo || '').toLowerCase().includes(query)
+  );
+  if (!lista.length) {
+    cont.innerHTML = '<p style="color:var(--ts)">No se encontraron materiales para la búsqueda.</p>';
+    return;
+  }
+  const bajos = lista.filter(m => m.stockActual <= m.stockMinimo);
+  const advertencia = bajos.length > 0 ? `
+    <div style="padding:16px 18px;margin-bottom:14px;background:${bajos.some(m=>m.stockActual<=0)?'rgba(254,226,226,.95)':'rgba(255,251,235,.95)'};border-left:5px solid ${bajos.some(m=>m.stockActual<=0)?'#dc2626':'#f59e0b'};color:${bajos.some(m=>m.stockActual<=0)?'#991b1b':'#713f12'};box-shadow:0 1px 6px rgba(0,0,0,.08);display:flex;align-items:flex-start;gap:12px">
+      <div style="font-size:20px;line-height:1.1">⚠️</div>
+      <div>
+        <div style="font-weight:700;margin-bottom:4px">${bajos.some(m=>m.stockActual<=0)?'Material(es agotado(s))':'Stock bajo detectado'}</div>
+        <div style="font-size:13px;line-height:1.6">${bajos.length} material${bajos.length===1?'':'es'} con stock bajo o crítico. ${bajos.some(m=>m.stockActual<=0)?'Incluye al menos un material agotado.':'Revise los niveles antes de usar.'}</div>
+      </div>
+    </div>
+  ` : '';
+  cont.innerHTML = `${advertencia}
+    <table>
+      <thead><tr><th>Material</th><th>Categoría</th><th>Stock</th><th>Unidad</th><th>Nivel</th><th>Acción</th></tr></thead>
+      <tbody>
+        ${lista.map(m => {
+          const nivel = m.stockActual <= m.stockMinimo
+            ? '<span class="badge br">Stock Bajo</span>'
+            : '<span class="badge bv">Suficiente</span>';
+          const color = m.stockActual <= m.stockMinimo ? '#ca8a04' : 'var(--v2)';
+          return `
+            <tr>
+              <td><div class="c-nombre"><strong>${m.nombre}</strong></div></td>
+              <td>${m.tipo || 'Sin categoría'}</td>
+              <td style="font-weight:700;color:${color}">${m.stockActual.toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+              <td>${m.unidad}</td>
+              <td>${nivel}</td>
+              <td style="white-space:nowrap">
+                <input id="mat-cant-${m.id}" type="number" min="1" value="1" style="width:70px;padding:6px;border:1px solid var(--borde);border-radius:8px;margin-right:6px" />
+                <button class="btn-s" onclick="usarMaterial(${m.id})">Usar</button>
+                <button class="btn-p" onclick="agregarMaterial(${m.id})">Agregar</button>
+              </td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function abrirModalNuevoMaterial(){
+  abrirModal(`
+    <h3 class="modal-tit">Nuevo Material</h3>
+    <form id="form-material" onsubmit="guardarNuevoMaterial(event)">
+      <div class="form-grid">
+        <div class="fc"><label>Nombre</label><input type="text" id="mat-nombre" required></div>
+        <div class="fc"><label>Categoría</label><input type="text" id="mat-categoria" placeholder="Ej: Fertilizante"></div>
+        <div class="fc"><label>Stock actual</label><input type="number" min="0" step="0.01" id="mat-stock" value="0" required></div>
+        <div class="fc"><label>Stock mínimo</label><input type="number" min="0" step="0.01" id="mat-stockmin" value="0" required></div>
+        <div class="fc"><label>Unidad</label><input type="text" id="mat-unidad" placeholder="Ej: kg, sacos, litros"></div>
+      </div>
+      <div class="modal-foot"><button type="button" class="btn-s" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn-p">Crear Material</button></div>
+    </form>
+  `);
+}
+
+async function guardarNuevoMaterial(event){
+  event.preventDefault();
+  const body = {
+    nomMat: document.getElementById('mat-nombre').value.trim(),
+    tipoMat: document.getElementById('mat-categoria').value.trim(),
+    stockActual: parseFloat(document.getElementById('mat-stock').value) || 0,
+    stockMinimo: parseFloat(document.getElementById('mat-stockmin').value) || 0,
+    unidadMedida: document.getElementById('mat-unidad').value.trim() || 'unidad'
+  };
+  try {
+    const r = await fetch('/api/materiales', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if(r.ok){
+      mostrarToast('Material creado con éxito');
+      cerrarModal();
+      await cargarMateriales();
+    } else {
+      const texto = await r.text();
+      mostrarToast('No se pudo crear material: ' + texto);
+    }
+  } catch(e){
+    mostrarToast('Error al crear material');
+  }
+}
+
+function buscarMateriales() {
+  const filtro = document.getElementById('mat-search')?.value || '';
+  renderMateriales(filtro);
+}
+
+async function usarMaterial(id) {
+  const input = document.getElementById(`mat-cant-${id}`);
+  let cantidad = Number(input?.value || 1);
+  if (!cantidad || cantidad < 1) cantidad = 1;
+  const mat = materiales.find(x => x.id === id);
+  if (!mat) return mostrarToast('Material no encontrado');
+  const nuevoStock = mat.stockActual - cantidad;
+  if (nuevoStock < 0) return mostrarToast('No hay suficiente stock disponible');
+  const res = await apiFetch(`/api/materiales/${id}/stock`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ nuevoStock, observacion: `Uso de material (-${cantidad})` })
+  });
+  if (res) {
+    mat.stockActual = parseFloat(res.stockActual || nuevoStock);
+    mostrarToast(`Se descontaron ${cantidad} ${mat.unidad} de ${mat.nombre}`);
+    renderMateriales(document.getElementById('mat-search')?.value || '');
+  }
+}
+
+async function agregarMaterial(id) {
+  const input = document.getElementById(`mat-cant-${id}`);
+  let cantidad = Number(input?.value || 1);
+  if (!cantidad || cantidad < 1) cantidad = 1;
+  const mat = materiales.find(x => x.id === id);
+  if (!mat) return mostrarToast('Material no encontrado');
+  const nuevoStock = mat.stockActual + cantidad;
+  const res = await apiFetch(`/api/materiales/${id}/stock`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ nuevoStock, observacion: `Ingreso de material (+${cantidad})` })
+  });
+  if (res) {
+    mat.stockActual = parseFloat(res.stockActual || nuevoStock);
+    mostrarToast(`Se agregaron ${cantidad} ${mat.unidad} a ${mat.nombre}`);
+    renderMateriales(document.getElementById('mat-search')?.value || '');
+  }
+}
 
 // ── Utilidad para llamar a la API ──
 async function apiFetch(url, options={}) {
   try {
     const r = await fetch(url, options);
     if (r.status === 401) { logout(); return null; }
-    if (!r.ok) { mostrarToast('⚠️ Error en servidor: ' + r.status); return null; }
+    if (!r.ok) {
+      const body = await r.text();
+      mostrarToast('Error en servidor: ' + r.status + ' ' + body);
+      return null;
+    }
     return await r.json();
   } catch(e) {
-    mostrarToast('⚠️ Sin conexión con el servidor');
+    mostrarToast('Sin conexión con el servidor');
     return null;
   }
 }
@@ -435,8 +613,44 @@ async function cargarDatosIniciales() {
     tareasCompletadas: a.tareasCompletadas || 0,
     observacion: a.observacionSupervisor || ''
   }));
+  // Aplicar overrides locales (persistencia offline: aprobaciones/observaciones/eliminaciones)
+  applyAsistOverrides();
 }
 
+
+// ----------------------- Persistencia local de cambios en asistencias -----------------------
+function _loadAsistOverrides(){
+  try{ return JSON.parse(localStorage.getItem('asi_over')||'{}'); }catch(e){ return {}; }
+}
+function _saveAsistOverrides(m){
+  try{ localStorage.setItem('asi_over', JSON.stringify(m)); }catch(e){ console.warn('No se pudo guardar overrides', e); }
+}
+function saveAsistOverride(id, obj){
+  const m = _loadAsistOverrides();
+  m[id] = Object.assign({}, m[id]||{}, obj);
+  _saveAsistOverrides(m);
+}
+function removeAsistOverride(id){
+  const m = _loadAsistOverrides();
+  if(m.hasOwnProperty(id)) { delete m[id]; _saveAsistOverrides(m); }
+}
+function applyAsistOverrides(){
+  const m = _loadAsistOverrides();
+  if(!asistencias || !Array.isArray(asistencias)) return;
+  // Aplicar a la lista actual
+  Object.keys(m).forEach(k => {
+    const id = Number(k);
+    const ov = m[k];
+    const ix = asistencias.findIndex(x => x.id === id);
+    if(ov.deleted){
+      if(ix !== -1) asistencias.splice(ix,1);
+    } else if(ix !== -1){
+      asistencias[ix] = Object.assign({}, asistencias[ix], ov);
+    } else {
+      // Si no existe localmente, ignorar
+    }
+  });
+}
 // ═══════════════════════════════════════════════════════
 // AUTH — conectado a Spring Security
 // ═══════════════════════════════════════════════════════
@@ -601,6 +815,7 @@ function construirSidebar(){
   if(id==='verificar-tareas') listarVerificarTareas();
   if(id==='control-plagas') listarPlagas();
   if(id==='caja') listarCaja();
+  if(id==='materiales') setTimeout(cargarMateriales, 50);
 
   if(id==='transplante') { setTimeout(()=>cargarLabores('TRANSPLANTE','transplante'), 100); setTimeout(()=>cargarPersonalSeccion('transplante','transplante'), 150); }
   if(id==='saca-arroz')  { setTimeout(()=>cargarLabores('SACA','saca-arroz'), 100); setTimeout(()=>cargarPersonalSeccion('saca','saca-arroz'), 150); }
@@ -615,29 +830,29 @@ function renderModulo(id){
   if(id==='dashboard'){
     return `
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-ico ki-verde">👥</div><div><span class="kpi-num" id="kpi-personal">0</span><span class="kpi-lbl">Personal Activo</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-verde">👷</div><div><span class="kpi-num" id="kpi-personal">0</span><span class="kpi-lbl">Personal Activo</span></div></div>
         <div class="kpi-card"><div class="kpi-ico ki-dorado">🌾</div><div><span class="kpi-num" id="kpi-sacos">0</span><span class="kpi-lbl">Sacos Cosechados</span></div></div>
         <div class="kpi-card"><div class="kpi-ico ki-azul">💧</div><div><span class="kpi-num" id="kpi-riegos">${asistencias.filter(a=>a.tipoTarea==='RIEGO').length}</span><span class="kpi-lbl">Registros de Riego</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-rojo">🦠</div><div><span class="kpi-num" id="kpi-alertas" style="color:#dc2626">${plagas.filter(p=>p.nivel==='ALTO').length}</span><span class="kpi-lbl">Alertas de Plaga</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-dorado">💰</div><div><span class="kpi-num" id="kpi-pago" style="font-size:20px">S/. 0</span><span class="kpi-lbl">Pago Estimado Total</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-purp">📋</div><div><span class="kpi-num" id="kpi-pendientes">0</span><span class="kpi-lbl">Tareas Pendientes</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-rojo">⚠️</div><div><span class="kpi-num" id="kpi-alertas" style="color:#dc2626">${plagas.filter(p=>p.nivel==='ALTO').length}</span><span class="kpi-lbl">Alertas de Plaga</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-dorado">💰</div><div><span class="kpi-num" id="kpi-pago" style="font-size:20px">S/0</span><span class="kpi-lbl">Pago Estimado Total</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-purp">⏳</div><div><span class="kpi-num" id="kpi-pendientes">0</span><span class="kpi-lbl">Tareas Pendientes</span></div></div>
       </div>
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px">
         <div class="card">
-          <div class="card-hdr"><h3>Rendimiento de Cosecha por Semana</h3><span class="badge bb" style="font-size:11px">${new Date().toLocaleString('es-PE',{month:'long',year:'numeric'})}</span></div>
+          <div class="card-hdr"><h3>🌾 Rendimiento de Cosecha por Semana</h3><span class="badge bb" style="font-size:11px">${new Date().toLocaleString('es-PE',{month:'long',year:'numeric'})}</span></div>
           <div class="chart-wrap" id="dash-chart-barras">
             <p style="color:var(--ts);font-size:13px;padding:10px">Cargando datos reales...</p>
           </div>
         </div>
         <div class="card">
-          <div class="card-hdr"><h3>Flujo de Caja Corto</h3></div>
+          <div class="card-hdr"><h3>💼 Flujo de Caja Corto</h3></div>
           <div id="dash-caja-resumen"></div>
         </div>
       </div>
       <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
         <div class="kpi-card"><div class="kpi-ico ki-purp">🌱</div><div><span class="kpi-num">${asistencias.filter(a=>a.tipoTarea==='TRANSPLANTE').length}</span><span class="kpi-lbl">Transplantes</span></div></div>
         <div class="kpi-card"><div class="kpi-ico ki-dorado">📦</div><div><span class="kpi-num">${asistencias.filter(a=>a.tipoTarea==='CARGA').length}</span><span class="kpi-lbl">Cargas</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-verde">🌿</div><div><span class="kpi-num">${asistencias.filter(a=>a.tipoTarea==='SACA').length}</span><span class="kpi-lbl">Sacas</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-verde">🌾</div><div><span class="kpi-num">${asistencias.filter(a=>a.tipoTarea==='SACA').length}</span><span class="kpi-lbl">Sacas</span></div></div>
       </div>
     `;
   }
@@ -646,7 +861,7 @@ function renderModulo(id){
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div class="busq"><span class="busq-ico">🔍</span><input type="text" placeholder="Buscar por nombre o DNI..." oninput="filtrarTrabajadores(this.value)" id="busq-trab"></div>
+          <div class="busq"><span class="busq-ico"></span><input type="text" placeholder="Buscar por nombre o DNI..." oninput="filtrarTrabajadores(this.value)" id="busq-trab"></div>
           <select class="filtro" id="filtro-trab-tipo" onchange="filtrarTrabajadores(document.getElementById('busq-trab').value)">
             <option value="">Todos los tipos</option>
             <option value="jornal">Jornal</option>
@@ -672,17 +887,17 @@ function renderModulo(id){
             <input type="date" id="filtro-fecha-vt" value="${new Date().toISOString().slice(0,10)}" class="filtro" onchange="listarVerificarTareas()">
             <select class="filtro" id="filtro-sector-vt" onchange="listarVerificarTareas()">
               <option value="">Todos los sectores</option>
-              <option value="TRANSPLANTE">🌱 Transplante</option>
-              <option value="SACA">🌾 Saca</option>
-              <option value="CARGA">📦 Carga</option>
-              <option value="RIEGO">💧 Riego</option>
-              <option value="ABONO">🌿 Abono</option>
+              <option value="TRANSPLANTE">Transplante</option>
+              <option value="SACA">Saca</option>
+              <option value="CARGA">Carga</option>
+              <option value="RIEGO">Riego</option>
+              <option value="ABONO">Abono</option>
             </select>
             <select class="filtro" id="filtro-estado-vt" onchange="listarVerificarTareas()">
               <option value="">Todos los estados</option>
-              <option value="PENDIENTE">⏳ Pendiente</option>
-              <option value="APROBADO">✅ Aprobado</option>
-              <option value="OBSERVADO">❌ Observado</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="APROBADO">Aprobado</option>
+              <option value="OBSERVADO">Observado</option>
             </select>
           </div>
         </div>
@@ -695,11 +910,11 @@ function renderModulo(id){
     return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
         <div class="card">
-          <div class="card-hdr"><h3>Monitoreo de Plagas y Enfermedades</h3><button class="btn-p" onclick="abrirModalPlaga()">Formular Alerta</button></div>
+          <div class="card-hdr"><h3>🦠 Monitoreo de Plagas y Enfermedades</h3><button class="btn-p" onclick="abrirModalPlaga()">Formular Alerta</button></div>
           <div style="padding:18px" id="lista-plagas"></div>
         </div>
         <div class="card">
-          <div class="card-hdr"><h3>Historial de Aplicaciones Fitosanitarias</h3></div>
+          <div class="card-hdr"><h3>🧪 Historial de Aplicaciones Fitosanitarias</h3></div>
           <div style="padding:18px">
             <div class="dato-fila"><span>Parcela A - Fungicida</span><span class="val">Completado</span></div>
             <div class="dato-fila"><span>Parcela B - Insecticida</span><span class="val">Mañana 06:00</span></div>
@@ -739,7 +954,7 @@ function renderModulo(id){
   if(id==='mi-asistencia'){
     return `
       <div class="card" style="max-width:500px;margin:0 auto;text-align:center;padding:40px 20px">
-        <div style="font-size:64px;margin-bottom:14px">📲</div>
+        <div style="font-size:64px;margin-bottom:14px"></div>
         <h3 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:6px">Auto-Registro de Asistencia</h3>
         <p style="color:var(--ts);font-size:14px;margin-bottom:24px">Escanee el código QR del capataz en el campo para registrar su entrada de hoy.</p>
         <button class="btn-p" style="font-size:15px;padding:12px 24px" onclick="mostrarToast('📷 Cámara activada. Buscando código QR...')">Simular Escaneo QR</button>
@@ -753,7 +968,7 @@ function renderModulo(id){
     return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
         <div class="card">
-          <div class="card-hdr"><h3>💧 Reporte de Riego</h3>
+          <div class="card-hdr"><h3>Reporte de Riego</h3>
             <button class="btn-p" onclick="generarReporteRiego()">Generar</button></div>
           <div style="padding:18px">
             <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
@@ -764,16 +979,16 @@ function renderModulo(id){
           </div>
         </div>
         <div class="card">
-          <div class="card-hdr"><h3>📋 Reporte por Tarea</h3>
+          <div class="card-hdr"><h3>Reporte por Tarea</h3>
             <button class="btn-p" onclick="generarReporteTareas()">Generar</button></div>
           <div style="padding:18px">
             <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div class="fc"><label>Tipo</label>
                 <select id="tarea-tipo">
-                  <option value="TRANSPLANTE">🌱 Transplante</option>
-                  <option value="SACA">🌾 Saca</option>
-                  <option value="CARGA">📦 Carga</option>
-                  <option value="RIEGO">💧 Riego</option>
+                  <option value="TRANSPLANTE">Transplante</option>
+                  <option value="SACA">Saca</option>
+                  <option value="CARGA">Carga</option>
+                  <option value="RIEGO">Riego</option>
                 </select>
               </div>
               <div class="fc"><label>Mes</label><input type="month" id="tarea-mes"></div>
@@ -782,7 +997,7 @@ function renderModulo(id){
           </div>
         </div>
         <div class="card" style="grid-column:1/-1">
-          <div class="card-hdr"><h3>💸 Generar Planilla de Pagos</h3>
+          <div class="card-hdr"><h3>Generar Planilla de Pagos</h3>
             <button class="btn-p" onclick="generarPlanilla()">Calcular</button></div>
           <div style="padding:18px">
             <div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
@@ -806,21 +1021,21 @@ function renderModulo(id){
     return `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
         <div class="card">
-          <div class="card-hdr"><h3>💧 Registro de Riego</h3>
+          <div class="card-hdr"><h3>Registro de Riego</h3>
             <button class="btn-p" onclick="abrirModalRiego()">+ Registrar</button></div>
           <div style="padding:18px" id="lista-riego-hoy">
             <p style="color:var(--ts);font-size:13px">No hay riegos registrados hoy.</p>
           </div>
         </div>
         <div class="card">
-          <div class="card-hdr"><h3>📊 Trabajadores de Riego</h3></div>
+          <div class="card-hdr"><h3>Trabajadores de Riego</h3></div>
           <div style="padding:18px">
             ${trabajadores.filter(t=>t.tipoPago==='riego').length === 0
               ? `<p style="color:var(--ts);font-size:13px">Ningún trabajador asignado a riego aún.</p>`
               : trabajadores.filter(t=>t.tipoPago==='riego').map(t=>`
                   <div class="dato-fila">
                     <span>${t.nombre} ${t.apellido}</span>
-                    <span class="val">S/. ${t.pagoPorTarea||'—'} / tarea</span>
+                    <span class="val">S/${t.pagoPorTarea||'—'} / tarea</span>
                   </div>`).join('')
             }
           </div>
@@ -860,23 +1075,23 @@ function renderModulo(id){
     return `
       <div class="info-section">
         <h2>${titulos[id]}</h2>
-        <div class="lugar">📍 Valle Chancay - Lambayeque · Muchumí</div>
+        <div class="lugar">Valle Chancay - Lambayeque · Muchumí</div>
         <div class="info-cols">
           <div class="info-bloque">
-            <h4>📋 Control Operativo Técnico</h4>
+            <h4>Control Operativo Técnico</h4>
             <div class="dato-fila"><span>Área Trabajada</span><span class="val">4.5 Hectáreas</span></div>
             <div class="dato-fila"><span>Variedad de Arroz</span><span class="val">Tinajones / NIR</span></div>
             <div class="dato-fila"><span>Densidad de siembra</span><span class="val">25 golpes/m²</span></div>
           </div>
           <div class="info-bloque">
-            <h4>⚙️ Gestión de Avance</h4>
+            <h4>Gestión de Avance</h4>
             <p>Se viene realizando el pago por tarea ejecutada limpia. Los supervisores validan la profundidad del trasplante y distanciamiento para evitar ataques tempranos de plagas.</p>
           </div>
         </div>
 
         <div class="card" style="margin-top:20px">
           <div class="card-hdr">
-            <h3 style="font-size:14px">👷 Personal Asignado — ${titulos[id]}</h3>
+            <h3 style="font-size:14px">Personal Asignado — ${titulos[id]}</h3>
             <span style="font-size:12px;color:var(--ts)">${personalSeccion.length} persona${personalSeccion.length !== 1 ? 's' : ''}</span>
           </div>
           <div class="tabla-wrap">
@@ -889,8 +1104,8 @@ function renderModulo(id){
 
         <div class="card" style="margin-top:18px">
           <div class="card-hdr">
-            <h3 style="font-size:14px">📋 Registros de Labor — ${titulos[id]}</h3>
-            <button class="btn-p" onclick="abrirModalLabor('${tipoTarea}','${tp}')">➕ Registrar Labor</button>
+            <h3 style="font-size:14px">Registros de Labor — ${titulos[id]}</h3>
+            <button class="btn-p" onclick="abrirModalLabor('${tipoTarea}','${tp}')">Registrar Labor</button>
           </div>
           <div class="tabla-wrap">
             <table>
@@ -899,7 +1114,7 @@ function renderModulo(id){
             </table>
           </div>
           <div style="padding:12px 18px;border-top:1px solid var(--borde);display:flex;justify-content:flex-end">
-            <span style="font-size:13px;color:var(--ts)">Total acumulado: <strong id="total-labor-${id}" style="color:var(--v2);font-size:15px">S/. 0.00</strong></span>
+            <span style="font-size:13px;color:var(--ts)">Total acumulado: <strong id="total-labor-${id}" style="color:var(--v2);font-size:15px">S/0.00</strong></span>
           </div>
         </div>
       </div>
@@ -911,7 +1126,7 @@ function renderModulo(id){
     return `
       <div class="card">
         <div class="card-hdr">
-          <h3>⚠️ Registro de Incidencias</h3>
+          <h3>Registro de Incidencias</h3>
           <button class="btn-p" onclick="abrirModalIncidencia()">+ Nueva Incidencia</button>
         </div>
         <div class="tabla-wrap">
@@ -936,20 +1151,20 @@ function renderModulo(id){
             <div class="fc"><label>Fecha</label><input type="date" id="inc-fecha"></div>
             <div class="fc"><label>Tipo</label>
               <select id="inc-tipo">
-                <option value="ACCIDENTE">🚨 Accidente</option>
-                <option value="FALTA">📋 Falta injustificada</option>
-                <option value="TARDANZA">⏰ Tardanza</option>
-                <option value="CONFLICTO">⚡ Conflicto</option>
-                <option value="OTRO">📌 Otro</option>
+                <option value="ACCIDENTE">Accidente</option>
+                <option value="FALTA">Falta injustificada</option>
+                <option value="TARDANZA">Tardanza</option>
+                <option value="CONFLICTO">Conflicto</option>
+                <option value="OTRO">Otro</option>
               </select>
             </div>
           </div>
           <div class="fc"><label>Descripción</label><textarea id="inc-descripcion" rows="3" style="width:100%;padding:8px;border:1px solid var(--borde);border-radius:6px;font-family:inherit;resize:vertical"></textarea></div>
           <div class="fc"><label>Estado</label>
             <select id="inc-estado">
-              <option value="PENDIENTE">🟡 Pendiente</option>
-              <option value="EN_PROCESO">🔵 En proceso</option>
-              <option value="RESUELTO">🟢 Resuelto</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN_PROCESO">En proceso</option>
+              <option value="RESUELTO">Resuelto</option>
             </select>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end">
@@ -998,7 +1213,7 @@ function renderModulo(id){
           </div>
         </div>
         <div class="card">
-          <div class="card-hdr"><h3>📊 Producción por Tarea</h3></div>
+          <div class="card-hdr"><h3>📈 Producción por Tarea</h3></div>
           <div style="padding:18px">
             ${['TRANSPLANTE','SACA','CARGA','RIEGO','ABONO','CHALEO'].map(tp=>{
                 const cnt = asistencias.filter(a=>a.tipoTarea===tp).length;
@@ -1015,9 +1230,9 @@ function renderModulo(id){
     return `
       <div class="card">
         <div class="card-hdr">
-          <h3>🌿 Registro de Abonamiento</h3>
+          <h3>Registro de Abonamiento</h3>
           <div class="htools">
-            <div class="busq"><span class="busq-ico">🔍</span><input type="text" id="filtro-ab-trab" placeholder="Filtrar trabajador..." oninput="filtrarAbonos()"></div>
+            <div class="busq"><span class="busq-ico"></span><input type="text" id="filtro-ab-trab" placeholder="Filtrar trabajador..." oninput="filtrarAbonos()"></div>
             <input type="month" id="filtro-ab-mes" class="filtro" onchange="filtrarAbonos()">
             <select class="filtro" id="filtro-ab-tipo" onchange="filtrarAbonos()">
               <option value="">Todos los tipos</option>
@@ -1050,12 +1265,12 @@ function renderModulo(id){
     return `
       <div class="card">
         <div class="card-hdr">
-          <h3>🚛 Control de Gasolina y Movilidad</h3>
+          <h3>Control de Gasolina y Movilidad</h3>
           <div class="htools">
             <select class="filtro" id="filtro-gas-tipo" onchange="filtrarGasolina()">
               <option value="">Todos los tipos</option>
-              <option value="TRANSPORTE_PERSONAL">🚗 Transporte</option>
-              <option value="FUMIGACION">🌿 Fumigación</option>
+              <option value="TRANSPORTE_PERSONAL">Transporte</option>
+              <option value="FUMIGACION">Fumigación</option>
             </select>
             <input type="date" id="filtro-gas-desde" class="filtro" onchange="filtrarGasolina()" placeholder="Desde">
             <input type="date" id="filtro-gas-hasta" class="filtro" onchange="filtrarGasolina()" placeholder="Hasta">
@@ -1064,12 +1279,12 @@ function renderModulo(id){
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:18px 18px 0">
           <div style="background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--borde)">
-            <div style="font-size:12px;color:var(--ts);text-transform:uppercase;font-weight:600;margin-bottom:8px">🚗 Transporte de Personal</div>
+            <div style="font-size:12px;color:var(--ts);text-transform:uppercase;font-weight:600;margin-bottom:8px">Transporte de Personal</div>
             <div id="resumen-transporte" style="font-size:28px;font-weight:700;color:var(--d2)">— L</div>
             <div style="font-size:12px;color:var(--ts)">litros totales cargados</div>
           </div>
           <div style="background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--borde)">
-            <div style="font-size:12px;color:var(--ts);text-transform:uppercase;font-weight:600;margin-bottom:8px">🌿 Fumigación</div>
+            <div style="font-size:12px;color:var(--ts);text-transform:uppercase;font-weight:600;margin-bottom:8px">Fumigación</div>
             <div id="resumen-fumigacion" style="font-size:28px;font-weight:700;color:var(--d2)">— L</div>
             <div style="font-size:12px;color:var(--ts)">litros totales cargados</div>
           </div>
@@ -1094,24 +1309,15 @@ function renderModulo(id){
     return `
       <div class="card">
         <div class="card-hdr">
-          <h3>📦 Inventario de Materiales e Insumos</h3>
-          ${isAdmin() ? '<button class="btn-p" onclick="mostrarToast(\'➕ Módulo de registro de materiales próximamente\')">➕ Nuevo Material</button>' : ''}
+          <h3>Inventario de Materiales e Insumos</h3>
+          ${isAdmin() ? '<button class="btn-p" onclick="abrirModalNuevoMaterial()">Nuevo Material</button>' : ''}
         </div>
-        <div class="tabla-wrap">
-          <table>
-            <thead><tr><th>Material</th><th>Categoría</th><th>Stock</th><th>Unidad</th><th>Nivel</th></tr></thead>
-            <tbody>
-              <tr><td><div class="c-nombre"><span style="font-size:18px">🌿</span><strong>Urea (46%)</strong></div></td><td>Fertilizante</td><td style="font-weight:700;color:var(--v2)">48</td><td>sacos 50kg</td><td><span class="badge bv">Suficiente</span></td></tr>
-              <tr><td><div class="c-nombre"><span style="font-size:18px">🧪</span><strong>Tricyclazole 75%</strong></div></td><td>Fungicida</td><td style="font-weight:700;color:#ca8a04">3</td><td>kg</td><td><span class="badge ba">Stock Bajo</span></td></tr>
-              <tr><td><div class="c-nombre"><span style="font-size:18px">🪣</span><strong>Imidacloprid 35%</strong></div></td><td>Insecticida</td><td style="font-weight:700;color:var(--v2)">12</td><td>litros</td><td><span class="badge bv">Suficiente</span></td></tr>
-              <tr><td><div class="c-nombre"><span style="font-size:18px">⛽</span><strong>Gasolina 90</strong></div></td><td>Combustible</td><td style="font-weight:700;color:#dc2626">5</td><td>galones</td><td><span class="badge br">Crítico</span></td></tr>
-              <tr><td><div class="c-nombre"><span style="font-size:18px">🌾</span><strong>Semilla Tinajones</strong></div></td><td>Semilla</td><td style="font-weight:700;color:var(--v2)">120</td><td>kg</td><td><span class="badge bv">Suficiente</span></td></tr>
-            </tbody>
-          </table>
+        <div style="padding:18px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div class="busq"><span class="busq-ico"></span><input id="mat-search" oninput="buscarMateriales()" placeholder="Buscar material o categoría..." /></div>
+          <button class="btn-s" onclick="cargarMateriales()">Actualizar materiales</button>
         </div>
-        <div style="padding:14px 18px;background:rgba(220,38,38,.05);border-top:1px solid rgba(220,38,38,.1);display:flex;align-items:center;gap:10px">
-          <span style="font-size:16px">⚠️</span>
-          <span style="font-size:13px;color:#dc2626;font-weight:500">2 insumos en nivel crítico o bajo — revisar reabastecimiento</span>
+        <div id="materiales-contenedor" class="tabla-wrap">
+          <p style="color:var(--ts)">Cargando materiales...</p>
         </div>
       </div>
     `;
@@ -1125,15 +1331,15 @@ function renderModulo(id){
           <div class="card-hdr"><h3>🧪 Recomendaciones Técnicas Activas</h3><span class="badge bv">Campaña 2026</span></div>
           <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
             <div class="info-bloque">
-              <h4>💧 Riego</h4>
+              <h4>Riego</h4>
               <p>Mantener lámina de agua de 3–5 cm durante macollamiento. Reducir en etapa de cosecha 15 días antes para facilitar mecanización.</p>
             </div>
             <div class="info-bloque">
-              <h4>🌿 Fertilización</h4>
+              <h4>Fertilización</h4>
               <p>Aplicar 2ª dosis de urea (80 kg/ha) al inicio del macollamiento activo. Complementar con fosfato diamónico en suelos con deficiencia de fósforo.</p>
             </div>
             <div class="info-bloque" style="border:1px solid #fca5a5;background:#fef2f2">
-              <h4 style="color:#dc2626">🦠 Alerta Sanitaria Vigente</h4>
+              <h4 style="color:#dc2626">🚨 Alerta Sanitaria Vigente</h4>
               <p>Alta incidencia de <strong>Pyricularia oryzae</strong> detectada en Parcela A. Aplicar Tricyclazole preventivo en parcelas colindantes inmediatamente.</p>
             </div>
           </div>
@@ -1141,11 +1347,11 @@ function renderModulo(id){
         <div class="card">
           <div class="card-hdr"><h3>📅 Cronograma de Próximas Aplicaciones</h3></div>
           <div style="padding:18px;display:flex;flex-direction:column;gap:10px">
-            <div class="dato-fila"><span>🌱 2ª Fertilización (Urea)</span><span class="val">05/Jun</span></div>
-            <div class="dato-fila"><span>🧴 Fungicida preventivo (Parcelas B,C)</span><span class="val">08/Jun</span></div>
-            <div class="dato-fila"><span>🪲 Control Sogata (Imidacloprid)</span><span class="val">12/Jun</span></div>
-            <div class="dato-fila"><span>💧 Reducción de riego (pre-cosecha)</span><span class="val">20/Jun</span></div>
-            <div class="dato-fila"><span>🌾 Estimado inicio cosecha</span><span class="val">15/Jul</span></div>
+            <div class="dato-fila"><span>2ª Fertilización (Urea)</span><span class="val">05/Jun</span></div>
+            <div class="dato-fila"><span>Fungicida preventivo (Parcelas B,C)</span><span class="val">08/Jun</span></div>
+            <div class="dato-fila"><span>Control Sogata (Imidacloprid)</span><span class="val">12/Jun</span></div>
+            <div class="dato-fila"><span>Reducción de riego (pre-cosecha)</span><span class="val">20/Jun</span></div>
+            <div class="dato-fila"><span>Estimado inicio cosecha</span><span class="val">15/Jul</span></div>
           </div>
         </div>
       </div>
@@ -1181,7 +1387,7 @@ function initDashboard(){
     else if(trab.pagoPorSaco) pagoTotal += trab.pagoPorSaco * (a.sacos||0);
   });
   const kpiPago = document.getElementById('kpi-pago');
-  if(kpiPago) kpiPago.textContent = 'S/. ' + pagoTotal.toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(kpiPago) kpiPago.textContent = 'S/' + pagoTotal.toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:0});
 
   // KPI: tareas pendientes de aprobar
   const pendientes = asistencias.filter(a => (a.estado||'PENDIENTE') === 'PENDIENTE').length;
@@ -1225,7 +1431,7 @@ function initDashboard(){
       <div class="caja-row">
         <span class="caja-icon">${m.ico}</span>
         <div class="caja-desc"><strong>${m.desc}</strong><span>${formatFecha(m.fecha)}</span></div>
-        <span class="caja-monto ${m.tipo==='INGRESO'?'ing':'eg'}">${m.tipo==='INGRESO'?'+':'-'}S/. ${m.monto}</span>
+        <span class="caja-monto ${m.tipo==='INGRESO'?'ing':'eg'}">${m.tipo==='INGRESO'?'+':'-'} S/${m.monto}</span>
       </div>
     `;
   });
@@ -1246,12 +1452,12 @@ function listarTrabajadores(filtro=''){
   });
 
   const segmentos = [
-    { key: 'transplante', label: '🌱 Transplante',   color: '#16a34a' },
-    { key: 'saca',        label: '🌾 Saca de Arroz',  color: '#ca8a04' },
-    { key: 'carga',       label: '📦 Carga',           color: '#2563eb' },
-    { key: 'riego',       label: '💧 Riego',            color: '#0891b2' },
-    { key: 'jornal',      label: '📅 Jornaleros',       color: '#7c3aed' },
-    { key: 'por_saco',    label: '🌾 Por Saco',         color: '#9333ea' },
+    { key: 'transplante', label: 'Transplante',   color: '#16a34a' },
+    { key: 'saca',        label: 'Saca de Arroz',  color: '#ca8a04' },
+    { key: 'carga',       label: 'Carga',           color: '#2563eb' },
+    { key: 'riego',       label: 'Riego',            color: '#0891b2' },
+    { key: 'jornal',      label: 'Jornaleros',       color: '#7c3aed' },
+    { key: 'por_saco',    label: 'Por Saco',         color: '#9333ea' },
   ];
 
   contenedor.innerHTML = segmentos.map(seg => {
@@ -1263,9 +1469,9 @@ function listarTrabajadores(filtro=''){
             <td><div class="c-nombre"><div class="mini-av">${t.nombre[0]}</div><strong>${t.nombre} ${t.apellido}</strong></div></td>
             <td><code>${t.dni}</code></td>
             <td><span class="badge bp">${t.cargo}</span></td>
-            <td style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/. ${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
+            <td style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
             <td>
-              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">&#128065; Ver detalle</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">&#9999; Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">&#128465; Dar de baja</a>' : ''}</div></div>
+              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
             </td>
           </tr>`).join('');
 
@@ -1296,11 +1502,11 @@ function verTrabajador(id) {
   const asists = asistencias.filter(a => a.trabId === id);
   const totalSacos = asists.reduce((s,a)=>s+(a.sacos||0),0);
   const tipoPagoLabel = etiquetaTipoPago(t.tipoPago);
-  const tarifa = t.sueldoDia ? `S/. ${t.sueldoDia}/día` :
-                 t.pagoPorTarea ? `S/. ${t.pagoPorTarea}/tarea` :
-                 t.pagoPorSaco ? `S/. ${t.pagoPorSaco}/saco` : '—';
+  const tarifa = t.sueldoDia ? `S/${t.sueldoDia}/día` :
+                 t.pagoPorTarea ? `S/${t.pagoPorTarea}/tarea` :
+                 t.pagoPorSaco ? `S/${t.pagoPorSaco}/saco` : '—';
   abrirModal(`
-    <h3 class="modal-tit">👷 ${t.nombre} ${t.apellido}</h3>
+    <h3 class="modal-tit">${t.nombre} ${t.apellido}</h3>
     <div class="form-grid">
       <div class="fc"><label>DNI</label><p style="padding:9px 0;font-size:14px;font-weight:600">${t.dni}</p></div>
       <div class="fc"><label>Cargo</label><p style="padding:9px 0;font-size:14px">${t.cargo}</p></div>
@@ -1311,7 +1517,7 @@ function verTrabajador(id) {
     </div>
     <div class="modal-foot">
       <button class="btn-s" onclick="cerrarModal()">Cerrar</button>
-      ${isAdmin() ? '<button class="btn-p" onclick="cerrarModal();setTimeout(()=>abrirModalEditarTrabajador('+id+'),150)">✏️ Editar</button>' : ''}
+      ${isAdmin() ? '<button class="btn-p" onclick="cerrarModal();setTimeout(()=>abrirModalEditarTrabajador('+id+'),150)">Editar</button>' : ''}
     </div>
   `);
 }
@@ -1327,7 +1533,7 @@ async function abrirModalEditarTrabajador(id) {
   const tipoOps = ['jornal','por_saco','transplante','saca','carga','riego'].map(tp =>
     `<option value="${tp}" ${t.tipoPago===tp?'selected':''}>${etiquetaTipoPago(tp)}</option>`).join('');
   abrirModal(`
-    <h3 class="modal-tit">✏️ Editar — ${t.nombre} ${t.apellido}</h3>
+    <h3 class="modal-tit">Editar — ${t.nombre} ${t.apellido}</h3>
     <form id="form-editar-trab" onsubmit="guardarEdicionTrabajador(event,${id})">
       <div class="form-grid">
         <div class="fc"><label>Nombres</label><input type="text" id="et-nom" value="${t.nombre}" required></div>
@@ -1337,15 +1543,15 @@ async function abrirModalEditarTrabajador(id) {
           <select id="et-pago" onchange="mostrarCampoPago(this.value)">${tipoOps}</select>
         </div>
         <div class="fc" id="campo-sueldo-dia-e" ${['jornal','tiempo'].includes(t.tipoPago)?'':'style="display:none"'}>
-          <label>Sueldo por Día (S/.)</label>
+          <label>Sueldo por Día (S/)</label>
           <input type="number" step="0.01" id="et-sueldo" value="${t.sueldoDia||''}">
         </div>
         <div class="fc" id="campo-pago-saco-e" ${['por_saco','rendimiento','destajo'].includes(t.tipoPago)?'':'style="display:none"'}>
-          <label>Pago por Saco (S/.)</label>
+          <label>Pago por Saco (S/)</label>
           <input type="number" step="0.01" id="et-psaco" value="${t.pagoPorSaco||''}">
         </div>
         <div class="fc" id="campo-pago-tarea-e" ${['transplante','saca','carga','riego'].includes(t.tipoPago)?'':'style="display:none"'}>
-          <label>Pago por Tarea (S/.)</label>
+          <label>Pago por Tarea (S/)</label>
           <input type="number" step="0.01" id="et-ptarea" value="${t.pagoPorTarea||''}">
         </div>
         <div class="fc full"><label>Cargo o Función</label>
@@ -1354,7 +1560,7 @@ async function abrirModalEditarTrabajador(id) {
       </div>
       <div class="modal-foot">
         <button type="button" class="btn-s" onclick="cerrarModal()">Cancelar</button>
-        <button type="submit" class="btn-p">💾 Guardar Cambios</button>
+        <button type="submit" class="btn-p">Guardar Cambios</button>
       </div>
     </form>
   `);
@@ -1378,15 +1584,15 @@ async function guardarEdicionTrabajador(e, id) {
       method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
     });
     if(r.ok){
-      mostrarToast('✅ Trabajador actualizado');
+      mostrarToast('Trabajador actualizado');
       cerrarModal();
       await cargarDatosIniciales();
       listarTrabajadores();
     } else {
       const err = await r.json();
-      mostrarToast('⚠️ ' + (err.error || 'Error al actualizar'));
+      mostrarToast(err.error || 'Error al actualizar');
     }
-  } catch(ex){ mostrarToast('❌ Sin conexión'); }
+  } catch(ex){ mostrarToast('Sin conexión'); }
 }
 
 async function eliminarTrabajador(id) {
@@ -1394,14 +1600,14 @@ async function eliminarTrabajador(id) {
   try {
     const r = await fetch(`/api/trabajadores/${id}`, { method: 'DELETE' });
     if(r.ok) {
-      mostrarToast('✅ Trabajador eliminado físicamente de la BD');
+      mostrarToast('Trabajador eliminado físicamente de la BD');
       trabajadores = trabajadores.filter(t => t.id !== id);
       listarTrabajadores();
     } else {
-      mostrarToast('⚠️ No se pudo eliminar de la BD');
+      mostrarToast('No se pudo eliminar de la BD');
     }
   } catch(e) {
-    mostrarToast('❌ Error de comunicación con el servidor');
+    mostrarToast('Error de comunicación con el servidor');
   }
 }
 
@@ -1440,10 +1646,12 @@ function listarVerificarTareas(){
         <div class="tv-tarea">${labelTarea(a.tipoTarea)} · Entrada: ${a.hora} · Tareas: ${tareas} · ${a.observacion||'—'}</div>
       </div>
       <span class="badge ${colorEstado}" id="vt-estado-${a.id}">${estado}</span>
-      <div class="tv-pago">S/. ${pago.toFixed(2)}</div>
+      <div class="tv-pago">S/${pago.toFixed(2)}</div>
       <div class="tv-acc">
-        <button class="tbtn success" onclick="aprobarAsistencia(${a.id})" ${estado==='APROBADO'?'disabled':''}>✅ Aprobar</button>
-        <button class="tbtn peligro" onclick="observarAsistencia(${a.id})" ${estado==='OBSERVADO'?'disabled':''}>❌ Observar</button>
+        <button class="tbtn success" onclick="aprobarAsistencia(${a.id})" ${estado==='APROBADO'?'disabled':''}>Aprobar</button>
+        <button class="tbtn peligro" onclick="observarAsistencia(${a.id})" ${estado==='OBSERVADO'?'disabled':''}>Observar</button>
+        <button class="tbtn info" onclick="verAsistencia(${a.id})">Ver</button>
+        <button class="tbtn" onclick="eliminarAsistencia(${a.id})">Eliminar</button>
       </div>
     `;
     container.appendChild(div);
@@ -1460,14 +1668,17 @@ async function aprobarAsistencia(id) {
       a.estado = 'APROBADO';
       const badge = document.getElementById(`vt-estado-${id}`);
       if(badge){ badge.className='badge bv'; badge.textContent='APROBADO'; }
-      mostrarToast('✅ Asistencia aprobada para planilla');
-    } else { mostrarToast('⚠️ No se pudo actualizar'); }
+      // Persistir override local para mantener estado tras recarga
+      saveAsistOverride(id, { estado: 'APROBADO', observacion: a.observacion || '' });
+      mostrarToast('Asistencia aprobada para planilla');
+    } else { mostrarToast('No se pudo actualizar'); }
   } catch(e) {
     // Actualizar localmente de todos modos
     a.estado = 'APROBADO';
     const badge = document.getElementById(`vt-estado-${id}`);
     if(badge){ badge.className='badge bv'; badge.textContent='APROBADO'; }
-    mostrarToast('✅ Marcado como aprobado (local)');
+    saveAsistOverride(id, { estado: 'APROBADO', observacion: a.observacion || '' });
+    mostrarToast('Marcado como aprobado (local)');
   }
 }
 
@@ -1484,13 +1695,58 @@ async function observarAsistencia(id) {
     a.observacion = motivo || a.observacion;
     const badge = document.getElementById(`vt-estado-${id}`);
     if(badge){ badge.className='badge br'; badge.textContent='OBSERVADO'; }
-    mostrarToast('📋 Observación enviada al capataz');
+    // Persistir override local
+    saveAsistOverride(id, { estado: 'OBSERVADO', observacion: a.observacion || '' });
+    mostrarToast('Observación enviada al capataz');
   } catch(e) {
     a.estado = 'OBSERVADO';
     const badge = document.getElementById(`vt-estado-${id}`);
     if(badge){ badge.className='badge br'; badge.textContent='OBSERVADO'; }
-    mostrarToast('📋 Observación registrada (local)');
+    saveAsistOverride(id, { estado: 'OBSERVADO', observacion: a.observacion || '' });
+    mostrarToast('Observación registrada (local)');
   }
+}
+
+function verAsistencia(id){
+  const a = asistencias.find(x => x.id === id);
+  if(!a) return mostrarToast('Registro no encontrado');
+  const trab = trabajadores.find(t => t.id === a.trabId) || {nombre:'Trabajador', apellido:''};
+  const html = `
+    <h3 class="modal-tit">Detalle de Asistencia</h3>
+    <div style="padding:8px 0">
+      <div><strong>Trabajador:</strong> ${trab.nombre} ${trab.apellido}</div>
+      <div><strong>Fecha:</strong> ${a.fecAsist}</div>
+      <div><strong>Hora:</strong> ${a.hora}</div>
+      <div><strong>Tarea:</strong> ${labelTarea(a.tipoTarea)}</div>
+      <div><strong>Tareas completadas:</strong> ${a.tareasCompletadas || 1}</div>
+      <div><strong>Estado:</strong> ${(a.estado||'PENDIENTE')}</div>
+      <div style="margin-top:8px"><strong>Observación:</strong><div style="margin-top:6px;padding:8px;background:#f7f7f7;border-radius:6px">${a.observacion||'—'}</div></div>
+    </div>
+  `;
+  abrirModal(html);
+}
+
+async function eliminarAsistencia(id){
+  if(!confirm('¿Eliminar este registro de asistencia? Esta acción actualizará la vista local y (si está disponible) intentará eliminar en el servidor.')) return;
+  // Persistir eliminación localmente primero para que sobreviva recargas
+  saveAsistOverride(id, { deleted: true });
+  try {
+    const r = await fetch(`/api/asistencias/${id}`, { method: 'DELETE' });
+    if(r.ok){
+      // Si el servidor eliminó correctamente, limpiar override
+      removeAsistOverride(id);
+      asistencias = asistencias.filter(x => x.id !== id);
+      const row = document.getElementById(`vt-row-${id}`);
+      if(row) row.remove();
+      mostrarToast('Registro eliminado');
+      return;
+    }
+  } catch(e){ /* ignore network errors */ }
+  // Fallback local delete (override ya guardado)
+  asistencias = asistencias.filter(x => x.id !== id);
+  const row = document.getElementById(`vt-row-${id}`);
+  if(row) row.remove();
+  mostrarToast('Registro eliminado (local)');
 }
 
 function listarPlagas(){
@@ -1501,28 +1757,36 @@ function listarPlagas(){
     const cls = p.nivel==='ALTO'?'alerta':p.nivel==='MEDIO'?'precaucion':'ok';
     container.innerHTML += `
       <div class="plaga-card ${cls}">
-        <div class="plaga-hdr"><span>${p.ico}</span><h4>${p.nombre}</h4><span class="badge ${p.nivel==='ALTO'?'br':'ba'}">${p.nivel}</span>${isAdmin() ? '<div class="acc-wrap" style="margin-left:auto"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarPlaga('+p.id+')">&#128465; Eliminar</a></div></div>' : ''}</div>
+        <div class="plaga-hdr"><h4>${p.nombre}</h4><span class="badge ${p.nivel==='ALTO'?'br':'ba'}">${p.nivel}</span>${isAdmin() ? '<div class="acc-wrap" style="margin-left:auto"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarPlaga('+p.id+')">Eliminar</a></div></div>' : ''}</div>
         <p class="plaga-desc">${p.notas}</p>
         <div class="plaga-meta">
-          <span class="plaga-chip">📍 Parcela ${p.parcela}</span>
-          <span class="plaga-chip">🧪 Receta: ${p.producto} (${p.dosis})</span>
+          <span class="plaga-chip">Parcela ${p.parcela}</span>
+          <span class="plaga-chip">Receta: ${p.producto} (${p.dosis})</span>
         </div>
       </div>
     `;
   });
 }
 
-function listarCaja(){
+async function listarCaja(){
   const container = document.getElementById('lista-caja');
   if(!container) return;
+  // Intentar cargar movimientos desde backend
+  try {
+    const r = await fetch('/api/caja');
+    if(r.ok){
+      movCaja = await r.json();
+    }
+  } catch(e){ console.warn('No se pudo cargar caja desde servidor', e); }
+
   container.innerHTML = '';
   movCaja.forEach(m => {
     container.innerHTML += `
       <div class="caja-row">
-        <span class="caja-icon">${m.ico}</span>
+        <span class="caja-icon"></span>
         <div class="caja-desc"><strong>${m.desc}</strong><span>Fecha: ${formatFecha(m.fecha)}</span></div>
-        <span class="caja-monto ${m.tipo==='INGRESO'?'ing':'eg'}">${m.tipo==='INGRESO'?'+':'-'} S/. ${m.monto}</span>
-        ${isAdmin() ? '<div class="acc-wrap" style="margin-left:8px"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarMovCaja('+m.id+')">&#128465; Eliminar</a></div></div>' : ''}
+        <span class="caja-monto ${m.tipo==='INGRESO'?'ing':'eg'}">${m.tipo==='INGRESO'?'+':'-'} S/${m.monto}</span>
+        ${isAdmin() ? '<div class="acc-wrap" style="margin-left:8px"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarMovCaja('+m.id+')">Eliminar</a></div></div>' : ''}
       </div>
     `;
   });
@@ -1535,15 +1799,24 @@ function eliminarPlaga(id) {
   if(!confirm('¿Eliminar esta alerta de plaga?')) return;
   plagas = plagas.filter(p => p.id !== id);
   listarPlagas();
-  mostrarToast('🗑️ Alerta eliminada');
+  mostrarToast('Alerta eliminada');
 }
 
 // ── Eliminar movimiento de caja (admin) ──
-function eliminarMovCaja(id) {
+async function eliminarMovCaja(id) {
   if(!confirm('¿Eliminar este movimiento de caja?')) return;
-  movCaja = movCaja.filter(m => m.id !== id);
-  listarCaja();
-  mostrarToast('🗑️ Movimiento eliminado');
+  try {
+    const r = await fetch(`/api/caja/${id}`, {method:'DELETE'});
+    if(r.ok){
+      movCaja = movCaja.filter(m => m.id !== id);
+      listarCaja();
+      mostrarToast('Movimiento eliminado');
+    } else {
+      mostrarToast('No se pudo eliminar en servidor');
+    }
+  } catch(e){
+    mostrarToast('Error al conectar con servidor');
+  }
 }
 
 // ── Helpers tipo de pago ──────────────────────────────────
@@ -1576,15 +1849,15 @@ function abrirModalTrabajador(){
 </select></div>
 
 <div class="fc" id="campo-sueldo-dia">
-  <label>Sueldo por Día (S/.)</label>
+  <label>Sueldo por Día (S/)</label>
   <input type="number" step="0.01" id="t-sueldo" placeholder="Ej: 50.00">
 </div>
 <div class="fc" id="campo-pago-saco" style="display:none">
-  <label>Pago por Saco (S/.)</label>
+  <label>Pago por Saco (S/)</label>
   <input type="number" step="0.01" id="t-psaco" placeholder="Ej: 3.50">
 </div>
 <div class="fc" id="campo-pago-tarea" style="display:none">
-  <label>Pago por Tarea (S/.)</label>
+  <label>Pago por Tarea (S/)</label>
   <input type="number" step="0.01" id="t-ptarea" placeholder="Ej: 50.00">
 </div>
         <div class="fc full"><label>Cargo o Función</label><select id="t-cargo"><option value="1">Obrero de Campo</option><option value="2">Capataz / Supervisor</option><option value="3">Operador de Maquinaria</option></select></div>
@@ -1618,15 +1891,15 @@ async function guardarTrabajador(e){
       body: JSON.stringify(body)
     });
     if(r.ok) {
-      mostrarToast('✅ Trabajador insertado con éxito en PostgreSQL');
+      mostrarToast('Trabajador insertado con éxito en PostgreSQL');
       cerrarModal();
       await cargarDatosIniciales();
       listarTrabajadores();
     } else {
-      mostrarToast('⚠️ Error en los datos enviados');
+      mostrarToast('Error en los datos enviados');
     }
   } catch(e) {
-    mostrarToast('❌ Fallo crítico al conectar con el servidor');
+    mostrarToast('Fallo crítico al conectar con el servidor');
   }
 }
 
@@ -1653,11 +1926,11 @@ function guardarPlagaLocal(){
     parcela: document.getElementById('p-par').value,
     producto: document.getElementById('p-prod').value,
     notas: document.getElementById('p-not').value,
-    ico: '⚠️'
+    ico: ''
   });
   cerrarModal();
   listarPlagas();
-  mostrarToast('📢 Alerta publicada en el panel agronómico');
+  mostrarToast('Alerta publicada en el panel agronómico');
 }
 
 function abrirModalCaja(){
@@ -1665,25 +1938,32 @@ function abrirModalCaja(){
     <h3 class="modal-tit">Registrar Flujo de Caja</h3>
     <div class="form-grid">
       <div class="fc"><label>Tipo</label><select id="c-tipo"><option>INGRESO</option><option>EGRESO</option></select></div>
-      <div class="fc"><label>Monto (S/.)</label><input type="number" step="0.01" id="c-monto"></div>
+      <div class="fc"><label>Monto (S/)</label><input type="number" step="0.01" id="c-monto"></div>
       <div class="fc full"><label>Descripción del Movimiento</label><input type="text" placeholder="Ej. Compra sacos de urea sulfatada" id="c-desc"></div>
     </div>
     <div class="modal-foot"><button class="btn-s" onclick="cerrarModal()">Cancelar</button><button class="btn-p" onclick="guardarCajaLocal()">Grabar Registro</button></div>
   `);
 }
 
-function guardarCajaLocal(){
-  movCaja.unshift({
-    id: movCaja.length+1,
-    tipo: document.getElementById('c-tipo').value,
-    monto: parseFloat(document.getElementById('c-monto').value),
-    desc: document.getElementById('c-desc').value,
-    fecha: '2026-05-25',
-    ico: document.getElementById('c-tipo').value==='INGRESO'?'💰':'💸'
-  });
-  cerrarModal();
-  listarCaja();
-  mostrarToast('💰 Flujo financiero actualizado localmente');
+async function guardarCajaLocal(){
+  const tipo = document.getElementById('c-tipo').value;
+  const monto = parseFloat(document.getElementById('c-monto').value) || 0;
+  const desc  = document.getElementById('c-desc').value || '';
+  const body = { tipo, monto, desc, fecha: new Date().toISOString().slice(0,10), ico: '' };
+  try {
+    const r = await fetch('/api/caja', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){
+      const saved = await r.json();
+      movCaja.unshift(saved);
+      cerrarModal();
+      listarCaja();
+      mostrarToast('Flujo financiero guardado');
+    } else {
+      mostrarToast('Error guardando movimiento en servidor');
+    }
+  } catch(e){
+    mostrarToast('No se pudo conectar con el servidor');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1706,7 +1986,16 @@ function mostrarToast(msg){
   setTimeout(()=>t.classList.remove('vis'),3000);
 }
 
+function closeAccMenus() {
+  document.querySelectorAll('.acc-menu.open').forEach(m => {
+    m.classList.remove('open');
+    m.style.left = '';
+    m.style.top = '';
+  });
+}
+
 function abrirModal(html){
+  closeAccMenus();
   document.getElementById('modal-inner').innerHTML=html;
   document.getElementById('modal-overlay').classList.add('vis');
 }
@@ -1732,7 +2021,7 @@ async function arrancarEcosistema() {
     await cargarDatosIniciales();
   } catch (e) {
     console.error("Fallo al conectar con las tablas de PostgreSQL:", e);
-    mostrarToast("⚠️ Cargando modo de contingencia local");
+    mostrarToast("Cargando modo de contingencia local");
   }
 
   // 3. Forzar el despliegue del cascarón de la APP y arrancar vistas
@@ -1769,8 +2058,8 @@ async function generarReporteRiego() {
             <td style="padding:6px 10px">${r.fecha}</td>
             <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
             <td style="padding:6px 10px;text-align:center">${r.tareas}</td>
-            <td style="padding:6px 10px;text-align:right">S/. ${(r.pagoTarea||0).toFixed(2)}</td>
-            <td style="padding:6px 10px;text-align:right;color:var(--v2);font-weight:600">S/. ${((r.tareas||0)*(r.pagoTarea||0)).toFixed(2)}</td>
+            <td style="padding:6px 10px;text-align:right">S/${(r.pagoTarea||0).toFixed(2)}</td>
+          <td style="padding:6px 10px;text-align:right;color:var(--v2);font-weight:600">S/${((r.tareas||0)*(r.pagoTarea||0)).toFixed(2)}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -1817,21 +2106,23 @@ async function generarPlanilla() {
   const cont = document.getElementById('tabla-planilla');
   cont.innerHTML='<p style="color:var(--ts)">Calculando...</p>';
   if(trabId){
+    const body = { idTrab: trabId, fechaInicio: desde, fechaFin: hasta };
+    console.log('generarPlanilla body', body);
     const data = await apiFetch('/api/planillas/generar',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({idTrab:trabId,fechaInicio:desde,fechaFin:hasta})
+      body:JSON.stringify(body)
     });
     if(!data)return;
     const t = trabajadores.find(x=>x.id==trabId)||{};
     const planillaId = data.idPlanilla || data.id;
-    const estadoPlanilla = data.estado || 'GENERADA';
-    const yaPagado = estadoPlanilla === 'PAGADO';
+    const estadoPlanilla = (data.estado || 'GENERADA').toString().toUpperCase();
+    const yaPagado = estadoPlanilla === 'PAGADO' || estadoPlanilla === 'PAGADA';
     cont.innerHTML=`
       <div class="pago-display" style="max-width:480px">
         <div style="font-size:13px;color:var(--ts);margin-bottom:4px">
           ${t.nombre||''} ${t.apellido||''} · ${etiquetaTipoPago(t.tipoPago)}
         </div>
-        <div class="pago-num">S/. ${parseFloat(data.montoTotal||0).toFixed(2)}</div>
+        <div class="pago-num">S/${parseFloat(data.montoTotal||0).toFixed(2)}</div>
         <span class="pago-lbl">
           ${data.totalDias>0?data.totalDias+' días':''}
           ${data.totalSacos>0?data.totalSacos+' sacos':''}
@@ -1841,12 +2132,12 @@ async function generarPlanilla() {
       </div>
       <div style="display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap">
         ${planillaId && !yaPagado ? `
-          <button class="btn-p" onclick="pagarPlanilla(${planillaId})">✅ Marcar como Pagado</button>
+          <button class="btn-p" onclick="pagarPlanilla(${planillaId})">Marcar como Pagado</button>
         ` : yaPagado ? `
-          <span class="badge bv" style="font-size:13px;padding:6px 14px">✅ Planilla ya pagada</span>
+          <span class="badge bv" style="font-size:13px;padding:6px 14px">Planilla ya pagada</span>
         ` : ''}
         ${planillaId ? `
-          <button class="btn-s" onclick="anularPlanilla(${planillaId})">🚫 Anular</button>
+          <button class="btn-s" onclick="anularPlanilla(${planillaId})">Anular</button>
         ` : ''}
         <span style="font-size:12px;color:var(--ts)">ID: ${planillaId||'—'} · Estado: <strong>${estadoPlanilla}</strong></span>
       </div>`;
@@ -1855,27 +2146,88 @@ async function generarPlanilla() {
     if(!data)return;
     cont.innerHTML=`
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div class="kpi-card"><div class="kpi-ico ki-verde">📋</div>
+        <div class="kpi-card"><div class="kpi-ico ki-verde"></div>
           <div><span class="kpi-num">${data.totalAsistencias}</span><span class="kpi-lbl">Asistencias</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-dorado">📅</div>
+        <div class="kpi-card"><div class="kpi-ico ki-dorado"></div>
           <div><span class="kpi-num">${data.jornal}</span><span class="kpi-lbl">Días Jornal</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-azul">🌾</div>
+        <div class="kpi-card"><div class="kpi-ico ki-azul"></div>
           <div><span class="kpi-num">${data.totalSacos}</span><span class="kpi-lbl">Sacos</span></div></div>
       </div>`;
   }
 }
 
 async function pagarPlanilla(id) {
+  // Verificar estado actual de la planilla para evitar pagos duplicados
+  try {
+    const check = await fetch(`/api/planillas/${id}`);
+    if(check.ok){
+      const chk = await check.json();
+      const estado = (chk.estado||'').toString().toUpperCase();
+      if(estado === 'PAGADO' || estado === 'PAGADA'){
+        mostrarToast('Esta planilla ya fue pagada previamente');
+        return;
+      }
+    }
+  } catch(e){ console.warn('No se pudo verificar estado de planilla antes de pagar',e); }
+
   if(!confirm('¿Confirmar pago de esta planilla?')) return;
   try {
     const r = await fetch(`/api/planillas/${id}/pagar`, {method:'PATCH'});
     if(r.ok){
-      mostrarToast('✅ Planilla marcada como PAGADA');
-      // Actualizar el botón en el DOM
+      mostrarToast('Planilla marcada como PAGADA');
+      // Actualizar estado y botón en el DOM
       const btn = document.querySelector(`[onclick="pagarPlanilla(${id})"]`);
-      if(btn){ btn.outerHTML = `<span class="badge bv" style="font-size:13px;padding:6px 14px">✅ Planilla pagada</span>`; }
-    } else { mostrarToast('⚠️ No se pudo marcar como pagada'); }
-  } catch(e){ mostrarToast('❌ Sin conexión'); }
+      const statusStrong = btn?.closest('div')?.querySelector('strong');
+      if(statusStrong) statusStrong.textContent = 'PAGADO';
+      // Intentar leer monto y trabajador desde el DOM; si falla, intentar fetch de la planilla
+      let monto = 0;
+      let desc = `Pago planilla ${id}`;
+      try {
+        if(btn){
+          const parent = btn.closest('div')?.parentElement;
+          const display = parent?.querySelector('.pago-display');
+          if(display){
+            const montoTxt = display.querySelector('.pago-num')?.textContent || '';
+            const mclean = montoTxt.replace(/[^0-9.,-]/g, '').replace(',', '.');
+            monto = parseFloat(mclean) || 0;
+            const info = display.querySelector('div')?.textContent || '';
+            const nombre = info.split('·')[0]?.trim();
+            if(nombre) desc = `Pago planilla ${id} · ${nombre}`;
+          } else {
+            const pd = await fetch(`/api/planillas/${id}`);
+            if(pd.ok){
+              const pdj = await pd.json();
+              monto = parseFloat(pdj.montoTotal || 0);
+              if(pdj.trabajador) desc = `Pago planilla ${id} · ${pdj.trabajador.nomTrab || pdj.trabajador.nombre || ''} ${pdj.trabajador.apeTrab || pdj.trabajador.apellido || ''}`.trim();
+            }
+          }
+        }
+      } catch(e) {
+        console.warn('No se pudo obtener monto/descripcion de planilla:', e);
+      }
+
+      if(btn){ btn.outerHTML = `<span class="badge bv" style="font-size:13px;padding:6px 14px">Planilla pagada</span>`; }
+
+      // Registrar movimiento en caja (EGRESO) en backend
+      try {
+        const cajaBody = { tipo: 'EGRESO', desc: desc, monto: monto, fecha: new Date().toISOString().slice(0,10), ico: '' };
+        const rc = await fetch('/api/caja', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cajaBody)});
+        if(rc && rc.ok){
+          const saved = await rc.json();
+          movCaja.unshift(saved);
+          listarCaja();
+        } else {
+          // si falla, mantener registro local como fallback
+          movCaja.unshift({ id: movCaja.length+1, tipo:'EGRESO', desc, monto, fecha: new Date().toISOString().slice(0,10), ico:'' });
+          listarCaja();
+        }
+      } catch(e){
+        console.warn('No se pudo guardar movimiento en servidor, guardando localmente', e);
+        movCaja.unshift({ id: movCaja.length+1, tipo:'EGRESO', desc, monto, fecha: new Date().toISOString().slice(0,10), ico:'' });
+        listarCaja();
+      }
+    } else { mostrarToast('No se pudo marcar como pagada'); }
+  } catch(e){ mostrarToast('Sin conexión'); }
 }
 
 async function anularPlanilla(id) {
@@ -1886,9 +2238,9 @@ async function anularPlanilla(id) {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({motivo: motivo || 'Sin motivo'})
     });
-    if(r.ok){ mostrarToast('🚫 Planilla anulada'); generarPlanilla(); }
-    else mostrarToast('⚠️ No se pudo anular');
-  } catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Planilla anulada'); generarPlanilla(); }
+    else mostrarToast('No se pudo anular');
+  } catch(e){ mostrarToast('Sin conexión'); }
 }
 
 function abrirModalRiego(){
@@ -1930,9 +2282,9 @@ async function guardarRiego(){
   };
   try{
     const r=await fetch('/api/asistencias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){mostrarToast('💧 Riego registrado correctamente');cerrarModal();await cargarDatosIniciales();}
-    else mostrarToast('⚠️ Error al registrar');
-  }catch(e){mostrarToast('❌ Sin conexión con el servidor');}
+    if(r.ok){mostrarToast('Riego registrado correctamente');cerrarModal();await cargarDatosIniciales();}
+    else mostrarToast('Error al registrar');
+  }catch(e){mostrarToast('Sin conexión con el servidor');}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1963,11 +2315,11 @@ async function guardarIncidencia(){
   const tipo   = document.getElementById('inc-tipo')?.value;
   const desc   = document.getElementById('inc-descripcion')?.value;
   const estado = document.getElementById('inc-estado')?.value;
-  if(!idTrab||!fecha||!tipo){ mostrarToast('⚠️ Complete los campos obligatorios'); return; }
+  if(!idTrab||!fecha||!tipo){ mostrarToast('Complete los campos obligatorios'); return; }
   const body = { idTrab: parseInt(idTrab), fecha, tipo, descripcion: desc, estado };
   incidenciasData.push({...body, trabajador: trabajadores.find(t=>t.id===parseInt(idTrab))||{}});
   cerrarModal();
-  mostrarToast('⚠️ Incidencia registrada correctamente');
+  mostrarToast('Incidencia registrada correctamente');
   const tbody = document.getElementById('lista-incidencias');
   if(tbody) renderTablaIncidencias(tbody);
 }
@@ -1987,7 +2339,7 @@ function renderTablaIncidencias(tbody){
       <td>${inc.tipo}</td>
       <td>${inc.descripcion||'—'}</td>
       <td><span style="background:${estilo};padding:2px 8px;border-radius:10px;font-size:11px">${inc.estado}</span></td>
-      <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="incidenciasData.splice('+i+',1);document.querySelectorAll(\".acc-menu\").forEach(m=>m.classList.remove(\"open\"));renderTablaIncidencias(document.getElementById(\"lista-incidencias\"))">&#128465; Eliminar</a></div></div>' : ''}</td>
+      <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="incidenciasData.splice('+i+',1);document.querySelectorAll(\".acc-menu\").forEach(m=>m.classList.remove(\"open\"));renderTablaIncidencias(document.getElementById(\"lista-incidencias\"))">Eliminar</a></div></div>' : ''}</td>
     </tr>`;
   }).join('');
 }
@@ -2039,7 +2391,7 @@ function renderTablaAbonos(data) {
     <td style="font-weight:700;text-align:center">${a.cantidadSacos||0} sacos</td>
     <td>${a.parcela||'—'}</td>
     <td style="color:var(--ts);font-size:12px">${a.observacion||'—'}</td>
-    <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarAbono('+(a.idAbono||a.id)+')">&#128465; Eliminar</a></div></div>' : ''}</td>
+    <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarAbono('+(a.idAbono||a.id)+')">Eliminar</a></div></div>' : ''}</td>
   </tr>`).join('');
 }
 
@@ -2047,14 +2399,14 @@ async function eliminarAbono(id) {
   if(!confirm('¿Eliminar este registro de abono?')) return;
   try {
     const r = await fetch(`/api/abonos/${id}`, {method:'DELETE'});
-    if(r.ok){ mostrarToast('🗑️ Abono eliminado'); cargarAbonos(); }
-    else mostrarToast('⚠️ No se pudo eliminar');
-  } catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Abono eliminado'); cargarAbonos(); }
+    else mostrarToast('No se pudo eliminar');
+  } catch(e){ mostrarToast('Sin conexión'); }
 }
 
 function abrirModalAbono(){
   abrirModal(`
-    <h3 style="margin-bottom:16px">🌿 Nuevo Registro de Abono</h3>
+    <h3 style="margin-bottom:16px">Nuevo Registro de Abono</h3>
     <div style="display:grid;gap:14px">
       <div class="fc"><label>Trabajador</label>
         <select id="ab-trab">
@@ -2090,7 +2442,7 @@ function abrirModalAbono(){
 async function guardarAbono(){
   const idTrab = document.getElementById('ab-trab')?.value;
   const fecha  = document.getElementById('ab-fecha')?.value;
-  if(!idTrab||!fecha){ mostrarToast('⚠️ Trabajador y fecha son obligatorios'); return; }
+  if(!idTrab||!fecha){ mostrarToast('Trabajador y fecha son obligatorios'); return; }
   const body = {
     idTrab: parseInt(idTrab),
     fecha,
@@ -2101,9 +2453,9 @@ async function guardarAbono(){
   };
   try{
     const r = await fetch('/api/abonos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){ mostrarToast('🌿 Abono registrado'); cerrarModal(); cargarAbonos(); }
-    else mostrarToast('⚠️ Error al guardar abono');
-  }catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Abono registrado'); cerrarModal(); cargarAbonos(); }
+    else mostrarToast('Error al guardar abono');
+  }catch(e){ mostrarToast('Sin conexión'); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2154,12 +2506,12 @@ function renderTablaGasolina(data) {
   }
   tbody.innerHTML = data.map(g=>`<tr>
     <td>${g.fecha||'—'}</td>
-    <td>${g.tipoUso==='FUMIGACION'?'🌿 Fumigación':'🚗 Transporte'}</td>
+    <td>${g.tipoUso==='FUMIGACION'?'Fumigación':'Transporte'}</td>
     <td>${g.vehiculo||g.maquinaFumigacion||'—'}</td>
     <td style="font-weight:700;text-align:center">${g.litros||0} L</td>
     <td>${g.parcela||'—'}</td>
     <td>${g.responsable||'—'}</td>
-    <td><div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu">${isAdmin() ? '<a onclick="abrirModalEditarGasolina('+(g.idGasolina||g.id)+')">&#9999; Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarGasolina('+(g.idGasolina||g.id)+')">&#128465; Eliminar</a>' : ''}</div></div></td>
+    <td><div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu">${isAdmin() ? '<a onclick="abrirModalEditarGasolina('+(g.idGasolina||g.id)+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarGasolina('+(g.idGasolina||g.id)+')">Eliminar</a>' : ''}</div></div></td>
   </tr>`).join('');
 }
 
@@ -2167,23 +2519,23 @@ async function eliminarGasolina(id) {
   if(!confirm('¿Eliminar este registro de gasolina?')) return;
   try {
     const r = await fetch(`/api/gasolina/${id}`, {method:'DELETE'});
-    if(r.ok){ mostrarToast('🗑️ Registro eliminado'); cargarGasolina(); }
-    else mostrarToast('⚠️ No se pudo eliminar');
-  } catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Registro eliminado'); cargarGasolina(); }
+    else mostrarToast('No se pudo eliminar');
+  } catch(e){ mostrarToast('Sin conexión'); }
 }
 
 function abrirModalEditarGasolina(id) {
   const g = gasolinaCargada.find(x => (x.idGasolina||x.id) === id);
   if(!g) return;
   abrirModal(`
-    <h3 class="modal-tit">✏️ Editar Registro de Gasolina</h3>
+    <h3 class="modal-tit">Editar Registro de Gasolina</h3>
     <div style="display:grid;gap:14px">
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
         <div class="fc"><label>Fecha</label><input type="date" id="egas-fecha" value="${g.fecha||''}"></div>
         <div class="fc"><label>Tipo de Uso</label>
           <select id="egas-tipo" onchange="toggleCamposGasolinaEdit(this.value)">
             <option value="TRANSPORTE_PERSONAL" ${g.tipoUso==='TRANSPORTE_PERSONAL'?'selected':''}>🚗 Transporte</option>
-            <option value="FUMIGACION" ${g.tipoUso==='FUMIGACION'?'selected':''}>🌿 Fumigación</option>
+            <option value="FUMIGACION" ${g.tipoUso==='FUMIGACION'?'selected':''}>Fumigación</option>
           </select>
         </div>
       </div>
@@ -2200,7 +2552,7 @@ function abrirModalEditarGasolina(id) {
       <div class="fc"><label>Observación</label><input type="text" id="egas-obs" value="${g.observacion||''}"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
-        <button class="btn-p" onclick="guardarEdicionGasolina(${id})">💾 Guardar</button>
+        <button class="btn-p" onclick="guardarEdicionGasolina(${id})">Guardar</button>
       </div>
     </div>
   `);
@@ -2224,21 +2576,21 @@ async function guardarEdicionGasolina(id) {
   };
   try {
     const r = await fetch(`/api/gasolina/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){ mostrarToast('✅ Registro actualizado'); cerrarModal(); cargarGasolina(); }
-    else mostrarToast('⚠️ Error al actualizar');
-  } catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Registro actualizado'); cerrarModal(); cargarGasolina(); }
+    else mostrarToast('Error al actualizar');
+  } catch(e){ mostrarToast('Sin conexión'); }
 }
 
 function abrirModalGasolina(){
   abrirModal(`
-    <h3 style="margin-bottom:16px">🚛 Nuevo Registro de Gasolina</h3>
+    <h3 style="margin-bottom:16px">Nuevo Registro de Gasolina</h3>
     <div style="display:grid;gap:14px">
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
         <div class="fc"><label>Fecha</label><input type="date" id="gas-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
         <div class="fc"><label>Tipo de Uso</label>
           <select id="gas-tipo" onchange="toggleCamposGasolina(this.value)">
-            <option value="TRANSPORTE_PERSONAL">🚗 Transporte Personal</option>
-            <option value="FUMIGACION">🌿 Fumigación</option>
+            <option value="TRANSPORTE_PERSONAL">Transporte Personal</option>
+            <option value="FUMIGACION">Fumigación</option>
           </select>
         </div>
       </div>
@@ -2275,7 +2627,7 @@ function toggleCamposGasolina(tipo){
 async function guardarGasolina(){
   const fecha = document.getElementById('gas-fecha')?.value;
   const tipo  = document.getElementById('gas-tipo')?.value;
-  if(!fecha){ mostrarToast('⚠️ La fecha es obligatoria'); return; }
+  if(!fecha){ mostrarToast('La fecha es obligatoria'); return; }
   const body = {
     fecha,
     tipoUso:         tipo,
@@ -2288,9 +2640,9 @@ async function guardarGasolina(){
   };
   try{
     const r = await fetch('/api/gasolina',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){ mostrarToast('🚛 Registro guardado'); cerrarModal(); cargarGasolina(); }
-    else mostrarToast('⚠️ Error al guardar');
-  }catch(e){ mostrarToast('❌ Sin conexión'); }
+    if(r.ok){ mostrarToast('Registro guardado'); cerrarModal(); cargarGasolina(); }
+    else mostrarToast('Error al guardar');
+  }catch(e){ mostrarToast('Sin conexión'); }
 }
 
 // Hook: cargar datos al entrar a secciones dinámicas
@@ -2317,7 +2669,7 @@ async function cargarLabores(tipoTarea, seccionId) {
     const data = await apiFetch(`/api/asistencias?tipoTarea=${tipoTarea}`);
     if(!data || !data.length) {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ts);padding:18px;font-size:13px">Sin registros aún.</td></tr>`;
-      if(totalEl) totalEl.textContent = 'S/. 0.00';
+      if(totalEl) totalEl.textContent = 'S/0.00';
       return;
     }
     let totalAcum = 0;
@@ -2336,11 +2688,11 @@ async function cargarLabores(tipoTarea, seccionId) {
         <td><div class="c-nombre"><div class="mini-av">${inicial}</div><strong>${nomTrab} ${apeTrab}</strong></div></td>
         <td>${a.observacionSupervisor || '—'}</td>
         <td style="text-align:center;font-weight:700">${tareas}</td>
-        <td style="text-align:right">S/. ${pago.toFixed(2)}</td>
-        <td style="text-align:right;color:var(--v2);font-weight:700">S/. ${subtotal.toFixed(2)}</td>
+        <td style="text-align:right">S/${pago.toFixed(2)}</td>
+      <td style="text-align:right;color:var(--v2);font-weight:700">S/${subtotal.toFixed(2)}</td>
       </tr>`;
     }).join('');
-    if(totalEl) totalEl.textContent = 'S/. ' + totalAcum.toFixed(2);
+    if(totalEl) totalEl.textContent = 'S/' + totalAcum.toFixed(2);
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:red;padding:18px">Error al cargar.</td></tr>`;
   }
@@ -2366,7 +2718,7 @@ async function cargarPersonalSeccion(tipoPago, seccionId) {
           : data.map(t => `
               <div class="dato-fila">
                 <span>${t.nomTrab} ${t.apeTrab}</span>
-                <span class="val">S/. ${t.pagoPorTarea||'—'} / tarea</span>
+                <span class="val">S/${t.pagoPorTarea||'—'} / tarea</span>
               </div>`).join('');
       }
     }
@@ -2404,7 +2756,7 @@ async function abrirModalLabor(tipoTarea, tipoPago) {
     const nom   = t.nomTrab  ?? t.nombre;
     const ape   = t.apeTrab  ?? t.apellido;
     const pago  = t.pagoPorTarea ?? 0;
-    return `<option value="${id}" data-pago="${pago}">${nom} ${ape} (S/. ${pago}/tarea)</option>`;
+    return `<option value="${id}" data-pago="${pago}">${nom} ${ape} (S/ ${pago}/tarea)</option>`;
   }).join('');
   abrirModal(`
     <h3 class="modal-tit">Registrar Labor — ${tipoTarea}</h3>
@@ -2423,7 +2775,7 @@ async function abrirModalLabor(tipoTarea, tipoPago) {
       <div class="fc"><label>Nº de Tareas Realizadas</label><input type="number" id="lab-tareas" value="1" min="0" oninput="calcularPagoLabor()"></div>
       <div class="fc"><label>Pago Calculado</label>
         <div class="pago-display" style="margin:0;padding:10px 14px">
-          <div class="pago-num" id="lab-pago-display" style="font-size:22px">S/. 0.00</div>
+          <div class="pago-num" id="lab-pago-display" style="font-size:22px">S/0.00</div>
           <span class="pago-lbl">a pagar</span>
         </div>
       </div>
@@ -2446,7 +2798,7 @@ function calcularPagoLabor() {
   const selectedOption = sel.options[sel.selectedIndex];
   const pagoPorTarea = parseFloat(selectedOption?.dataset?.pago || 0);
   const pago = pagoPorTarea * tareas;
-  display.textContent = 'S/. ' + pago.toFixed(2);
+  display.textContent = 'S/' + pago.toFixed(2);
 }
 
 async function guardarLabor(tipoTarea, tipoPago) {
@@ -2455,7 +2807,7 @@ async function guardarLabor(tipoTarea, tipoPago) {
   const tareas  = parseInt(document.getElementById('lab-tareas')?.value) || 0;
   const parcela = document.getElementById('lab-parcela')?.value;
   const obs     = document.getElementById('lab-obs')?.value;
-  if(!idTrab || !fecha) { mostrarToast('⚠️ Complete los campos obligatorios'); return; }
+  if(!idTrab || !fecha) { mostrarToast('Complete los campos obligatorios'); return; }
   const body = {
     trabajador: { idTrab: parseInt(idTrab) },
     fecAsist: fecha,
@@ -2467,13 +2819,13 @@ async function guardarLabor(tipoTarea, tipoPago) {
   try {
     const r = await fetch('/api/asistencias', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     if(r.ok) {
-      mostrarToast('✅ Labor registrada correctamente');
+      mostrarToast('Labor registrada correctamente');
       cerrarModal();
       await cargarDatosIniciales();
       const seccionId = {TRANSPLANTE:'transplante', SACA:'saca-arroz', CARGA:'carga-arroz'}[tipoTarea];
       cargarLabores(tipoTarea, seccionId);
-    } else mostrarToast('⚠️ Error al registrar');
-  } catch(e) { mostrarToast('❌ Sin conexión'); }
+    } else mostrarToast('Error al registrar');
+  } catch(e) { mostrarToast('Sin conexión'); }
 }
 async function cargarLaboresRiego() {
   try {

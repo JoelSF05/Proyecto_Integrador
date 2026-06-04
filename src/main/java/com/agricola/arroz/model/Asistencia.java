@@ -43,6 +43,9 @@ public class Asistencia {
     @Column(name = "observacion_supervisor", length = 300)
     private String observacionSupervisor;
 
+    @Column(name = "estado_aprobacion", length = 20)
+    private String estadoAprobacion = "PENDIENTE";
+
     public Asistencia() {}
 
     // ── Getters y Setters ─────────────────────────────────────
@@ -76,4 +79,7 @@ public class Asistencia {
 
     public String getObservacionSupervisor() { return observacionSupervisor; }
     public void setObservacionSupervisor(String obs) { this.observacionSupervisor = obs; }
+
+    public String getEstadoAprobacion() { return estadoAprobacion; }
+    public void setEstadoAprobacion(String estadoAprobacion) { this.estadoAprobacion = estadoAprobacion; }
 }

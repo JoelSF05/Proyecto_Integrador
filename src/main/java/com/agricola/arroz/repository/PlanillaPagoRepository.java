@@ -1,11 +1,12 @@
 package com.agricola.arroz.repository;
 
-import com.agricola.arroz.model.PlanillaPago;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.agricola.arroz.model.PlanillaPago;
 
 @Repository
 public interface PlanillaPagoRepository extends JpaRepository<PlanillaPago, Integer> {
@@ -16,4 +17,7 @@ public interface PlanillaPagoRepository extends JpaRepository<PlanillaPago, Inte
         LocalDate desde, LocalDate hasta);
 
     List<PlanillaPago> findByEstado(String estado);
+
+    PlanillaPago findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFin(
+        Integer idTrab, LocalDate fechaInicio, LocalDate fechaFin);
 }

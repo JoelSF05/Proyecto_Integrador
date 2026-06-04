@@ -1,16 +1,24 @@
 package com.agricola.arroz.controller;
 
-import com.agricola.arroz.model.PlanillaPago;
-import com.agricola.arroz.service.PlanillaPagoService;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+import com.agricola.arroz.model.PlanillaPago;
+import com.agricola.arroz.service.PlanillaPagoService;
 
 @RestController
 @RequestMapping("/api/planillas")
@@ -45,15 +53,37 @@ public class PlanillaPagoController {
      * Body: { "idTrab": 5, "fechaInicio": "2026-05-01", "fechaFin": "2026-05-15" }
      */
     @PostMapping("/generar")
-    public ResponseEntity<?> generar(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> generar(@RequestBody Map<String, Object> body) {
         try {
-            Integer idTrab = Integer.parseInt(body.get("idTrab"));
-            LocalDate inicio = LocalDate.parse(body.get("fechaInicio"));
-            LocalDate fin    = LocalDate.parse(body.get("fechaFin"));
+            if (body == null) {
+                throw new RuntimeException("Solicitud inválida");
+            }
+            Integer idTrab = body.containsKey("idTrab") && body.get("idTrab") != null
+                ? Integer.valueOf(body.get("idTrab").toString()) : null;
+            if (idTrab == null) {
+                throw new RuntimeException("El campo idTrab es requerido");
+            }
+            String inicioRaw = body.get("fechaInicio") != null ? body.get("fechaInicio").toString() : null;
+            String finRaw = body.get("fechaFin") != null ? body.get("fechaFin").toString() : null;
+            if (inicioRaw == null || finRaw == null) {
+                throw new RuntimeException("Los campos fechaInicio y fechaFin son requeridos");
+            }
+            LocalDate inicio = LocalDate.parse(inicioRaw);
+            LocalDate fin    = LocalDate.parse(finRaw);
             PlanillaPago planilla = planillaService.generarPlanilla(idTrab, inicio, fin);
             return ResponseEntity.status(HttpStatus.CREATED).body(planilla);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Obtiene una planilla por su id */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtener(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(planillaService.listarPorId(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
 
