@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AgroMuchumi — Sistema Agrícola Integral</title>
+<title>AgroMoyobamba — Sistema Agrícola Integral</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -14,6 +14,7 @@
   --sw:272px; --th:62px;
   --sh:0 1px 3px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.05);
   --r1: #dc2626; --b1:#2563eb; --p1:#7c3aed;
+  --z-sidebar: 1000; --z-modal: 1300;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;overflow-x:hidden}
@@ -50,7 +51,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx)
 
 /* ── SIDEBAR ── */
 #pantalla-app{display:none}
-.sidebar{width:var(--sw);background:var(--v0);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:.3s}
+.sidebar{width:var(--sw);background:var(--v0);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:var(--z-sidebar);transition:.3s}
 .sidebar-logo{padding:22px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:12px}
 .logo-ico{width:42px;height:42px;background:linear-gradient(135deg,var(--v3),var(--d1));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .logo-tx h2{font-family:'Playfair Display',serif;font-size:14px;color:#fff;line-height:1.3}
@@ -91,6 +92,13 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx)
 .area{flex:1;padding:26px;overflow-y:auto}
 .modulo{display:none}
 .modulo.activo{display:block;animation:entrar .22s ease}
+
+/* Botón Menú Móvil */
+.menu-btn-movil{display:none;font-size:24px;background:none;border:none;color:var(--tx);cursor:pointer;padding:5px}
+
+/* Overlay para cerrar menú en móvil */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:900;backdrop-filter:blur(2px)}
+
 @keyframes entrar{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── COMPONENTES ── */
@@ -102,6 +110,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx)
 .kpi-num{font-family:'Playfair Display',serif;font-size:28px;color:var(--tx);line-height:1;display:block}
 .kpi-lbl{font-size:11.5px;color:var(--ts);margin-top:3px;display:block}
 .kpi-var{font-size:10.5px;font-weight:600;margin-top:1px}
+
 .pos{color:#16a34a} .neg{color:#dc2626}
 
 .card{background:var(--card);border-radius:14px;box-shadow:var(--sh);border:1px solid var(--borde);margin-bottom:18px;overflow:visible}
@@ -169,7 +178,8 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .toast.vis{display:flex}
 
 /* ── Menú de acciones 3 puntos ── */
-.acc-wrap{position:relative;display:inline-flex;overflow:visible;z-index:700}
+.acc-wrap{position:relative;display:inline-flex;overflow:visible}
+.acc-wrap.open-wrap{z-index:1100}
 .acc-btn{background:none;border:1.5px solid var(--borde);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--ts);display:flex;align-items:center;justify-content:center;transition:.15s;line-height:1}
 .acc-btn:hover{background:var(--bg);border-color:var(--v3);color:var(--v2)}
 .acc-menu{display:none;position:fixed;background:#fff;border:1px solid var(--borde);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1200;min-width:150px;overflow:hidden}
@@ -181,8 +191,15 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .acc-sep{height:1px;background:var(--borde);margin:3px 0}
 
 /* Barra herramientas de filtro*/
-input[type="date"],input[type="time"]{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;outline:none;background:var(--bg);color:var(--tx)}
-input[type="date"]:focus{border-color:var(--v3)}
+input[type="date"],input[type="time"]{padding:10px 12px;border:1.5px solid var(--borde);border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;outline:none;background:var(--bg);color:var(--tx);min-height:42px;width:auto;transition:.2s;cursor:text}
+input[type="date"]:focus,input[type="time"]:focus{border-color:var(--v3);background:#fff;box-shadow:0 0 0 3px rgba(45,139,45,.1)}
+
+/* Estilo para que el selector de hora se sienta como un campo de texto */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(30%) sepia(50%) saturate(500%) hue-rotate(80deg);
+}
+
 select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;outline:none;background:var(--bg);color:var(--tx)}
 
 /* Pago calculado */
@@ -289,11 +306,31 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 .solo-admin:hover::after{opacity:1}
 
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
+  .sidebar{transform:translateX(-100%); width: 280px;}
   .sidebar.abierta{transform:translateX(0)}
+  .sidebar-overlay.vis{display:block}
   .main-wrap{margin-left:0}
   .login-izq{display:none}
   .login-der{width:100%}
+  
+  .menu-btn-movil{display:block}
+  .topbar{padding:0 15px}
+  .topbar-titulo h1{font-size:18px}
+  
+  .kpi-grid{grid-template-columns: 1fr 1fr}
+  .form-grid{grid-template-columns: 1fr}
+  .area{padding:15px}
+  
+  /* Tablas responsivas en móvil */
+  .tabla-wrap{border:0}
+  thead{display:none}
+  tbody td{display:block;text-align:right;padding-left:50%;position:relative;border-bottom:1px solid var(--borde)}
+  tbody td::before{content:attr(data-label);position:absolute;left:15px;width:45%;text-align:left;font-weight:700;font-size:11px;color:var(--ts);text-transform:uppercase}
+}
+
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns: 1fr}
+  .busq input{width:100% !important}
 }
 </style>
 </head>
@@ -301,12 +338,13 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 
 <div id="pantalla-app" style="display:none;width:100%">
 
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-ico">🌾</div>
     <div class="logo-tx">
-      <h2>AgroMuchumi</h2>
-      <span>Gestión Arrocera · Lambayeque</span>
+      <h2>AgroMoyobamba</h2>
+      <span>Gestión Arrocera · Moyobamba</span>
     </div>
   </div>
   <nav class="sidebar-nav" id="sidebar-nav"></nav>
@@ -322,9 +360,10 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 
 <div class="main-wrap">
   <header class="topbar">
+    <button class="menu-btn-movil" onclick="toggleSidebar()">☰</button>
     <div class="topbar-titulo">
       <h1 id="t-titulo">📊 Dashboard</h1>
-      <div class="breadcrumb" id="t-bread">AgroMuchumi → 📊 Dashboard</div>
+      <div class="breadcrumb" id="t-bread">AgroMoyobamba → 📊 Dashboard</div>
     </div>
     <div class="topbar-acc">
       <div id="topbar-rol-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(45,139,45,.12);color:var(--v2)"></div>
@@ -341,6 +380,14 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 <div class="modal-ov" id="modal-overlay"><div class="modal" id="modal-inner"></div></div>
 
 <script>
+// Lógica de interfaz responsive
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('abierta');
+  ov.classList.toggle('vis');
+}
+
 // ═══════════════════════════════════════════════════════
 // DATOS & ESTADO
 // ═══════════════════════════════════════════════════════
@@ -363,15 +410,20 @@ const btnAdmin = (html) => isAdmin() ? html : '';
 // ── Menú 3 puntos ──
 function toggleMenu(btn) {
   const menu = btn.nextElementSibling;
+  const wrap = btn.parentElement;
   // Cierra todos los demás menús abiertos
-  document.querySelectorAll('.acc-menu.open').forEach(m => { if(m !== menu) m.classList.remove('open'); });
+  document.querySelectorAll('.acc-menu.open').forEach(m => { 
+    if(m !== menu) {
+      m.classList.remove('open');
+      m.parentElement.classList.remove('open-wrap');
+    }
+  });
+  
   const opening = !menu.classList.contains('open');
-  if (!opening) {
-    menu.classList.remove('open');
-    menu.style.left = '';
-    menu.style.top = '';
-    return;
-  }
+  menu.classList.toggle('open', opening);
+  wrap.classList.toggle('open-wrap', opening);
+
+  if (!opening) { menu.style.left = ''; menu.style.top = ''; return; }
   menu.classList.add('open');
   positionAccMenu(menu, btn);
 }
@@ -398,7 +450,10 @@ function positionAccMenu(menu, btn) {
 // Clic fuera cierra todos los menús
 document.addEventListener('click', function(e) {
   if(!e.target.closest('.acc-wrap')) {
-    document.querySelectorAll('.acc-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.acc-menu.open').forEach(m => {
+      m.classList.remove('open');
+      m.parentElement.classList.remove('open-wrap');
+    });
   }
 });
 
@@ -733,7 +788,7 @@ function getModulosRol(){
       {id:'transplante',ico:'🌱',label:'Transplante'},
       {id:'saca-arroz',ico:'🌾',label:'Saca de Arroz'},
       {id:'carga-arroz',ico:'📦',label:'Carga de Arroz'},
-      {id:'movilidad',ico:'🚛',label:'Movilidad'},
+      {id:'movilidad',ico:'⛽',label:'Gasolina'},
     ]},
     {sec:'Campo', items:[
       {id:'riego',ico:'💧',label:'Riego'},
@@ -785,6 +840,7 @@ function construirSidebar(){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('activo'));
   const nav = document.getElementById('nav-'+id);
   if(nav) nav.classList.add('activo');
+  if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('abierta'); document.getElementById('sidebar-overlay').classList.remove('vis'); }
 
   const area = document.getElementById('area-contenido');
   area.innerHTML = renderModulo(id);
@@ -804,13 +860,13 @@ function construirSidebar(){
     transplante:'Transplante de Arroz',
     'saca-arroz':'Saca de Arroz',
     'carga-arroz':'Carga de Arroz',
-    movilidad:'Control de Movilidad',
+    movilidad:'Control de Gasolina',
     riego:'Control de Riego',
     materiales:'Gestión de Materiales e Insumos'
   };
 
   document.getElementById('t-titulo').textContent = tits[id] || 'Módulo';
-  document.getElementById('t-bread').textContent = `AgroMuchumi → ${tits[id]||'Módulo'}`;
+  document.getElementById('t-bread').textContent = `AgroMoyobamba → ${tits[id]||'Módulo'}`;
 
   if(id==='dashboard') initDashboard();
   if(id==='trabajadores') listarTrabajadores();
@@ -1077,7 +1133,7 @@ function renderModulo(id){
     return `
       <div class="info-section">
         <h2>${titulos[id]}</h2>
-        <div class="lugar">Valle Chancay - Lambayeque · Muchumí</div>
+        <div class="lugar">Valle del Mayo - Moyobamba · San Martín</div>
         <div class="info-cols">
           <div class="info-bloque">
             <h4>Control Operativo Técnico</h4>
@@ -1140,41 +1196,6 @@ function renderModulo(id){
           </table>
         </div>
       </div>
-
-      <div id="modal-incidencia" style="display:none">
-        <div style="display:grid;gap:14px">
-          <div class="fc"><label>Trabajador</label>
-            <select id="inc-trab">
-              <option value="">— Seleccione —</option>
-              ${trabajadores.map(t=>`<option value="${t.id}">${t.nombre} ${t.apellido}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-            <div class="fc"><label>Fecha</label><input type="date" id="inc-fecha"></div>
-            <div class="fc"><label>Tipo</label>
-              <select id="inc-tipo">
-                <option value="ACCIDENTE">Accidente</option>
-                <option value="FALTA">Falta injustificada</option>
-                <option value="TARDANZA">Tardanza</option>
-                <option value="CONFLICTO">Conflicto</option>
-                <option value="OTRO">Otro</option>
-              </select>
-            </div>
-          </div>
-          <div class="fc"><label>Descripción</label><textarea id="inc-descripcion" rows="3" style="width:100%;padding:8px;border:1px solid var(--borde);border-radius:6px;font-family:inherit;resize:vertical"></textarea></div>
-          <div class="fc"><label>Estado</label>
-            <select id="inc-estado">
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="EN_PROCESO">En proceso</option>
-              <option value="RESUELTO">Resuelto</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end">
-            <button class="btn-s" onclick="cerrarModalIncidencia()">Cancelar</button>
-            <button class="btn-p" onclick="guardarIncidencia()">Guardar</button>
-          </div>
-        </div>
-      </div>
     `;
   }
 
@@ -1204,7 +1225,7 @@ function renderModulo(id){
                       return `<tr>
                         <td>${t.nombre||'—'} ${t.apellido||''}</td>
                         <td>${a.tipoTarea||'—'}</td>
-                        <td>${a.horaEntrada||'—'}</td>
+                        <td>${formatHora(a.horaEntrada)}</td>
                         <td>${a.sacos||0}</td>
                         <td><span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px">Registrado</span></td>
                       </tr>`;
@@ -1262,12 +1283,12 @@ function renderModulo(id){
     `;
   }
 
-  // ── GASOLINA / MOVILIDAD ────────────────────────────────
+  // ── GASOLINA Y MOVILIDAD ────────────────────────────────
   if(id==='movilidad'){
     return `
       <div class="card">
         <div class="card-hdr">
-          <h3>Control de Gasolina y Movilidad</h3>
+          <h3>Control de Gasolina</h3>
           <div class="htools">
             <select class="filtro" id="filtro-gas-tipo" onchange="filtrarGasolina()">
               <option value="">Todos los tipos</option>
@@ -1364,7 +1385,7 @@ function renderModulo(id){
   return `
     <div class="info-section">
       <h2>Módulo de Control Técnico</h2>
-      <p style="color:var(--ts);margin-top:10px">Sección configurada para el registro de parámetros en tiempo real en las parcelas de Muchumí.</p>
+      <p style="color:var(--ts);margin-top:10px">Sección configurada para el registro de parámetros en tiempo real en las parcelas de Moyobamba.</p>
     </div>
   `;
 }
@@ -1645,7 +1666,7 @@ function listarVerificarTareas(){
     div.innerHTML = `
       <div class="tv-info">
         <div class="tv-name">${trab.nombre} ${trab.apellido}</div>
-        <div class="tv-tarea">${labelTarea(a.tipoTarea)} · Entrada: ${a.hora} · Tareas: ${tareas} · ${a.observacion||'—'}</div>
+        <div class="tv-tarea">${labelTarea(a.tipoTarea)} · Entrada: ${formatHora(a.hora)} · Tareas: ${tareas} · ${a.observacion||'—'}</div>
       </div>
       <span class="badge ${colorEstado}" id="vt-estado-${a.id}">${estado}</span>
       <div class="tv-pago">S/${pago.toFixed(2)}</div>
@@ -1981,6 +2002,15 @@ function formatFecha(f){
   return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
 }
 
+function formatHora(h) {
+  if (!h) return '—';
+  const [hh, mm] = h.split(':');
+  let hour = parseInt(hh);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  return `${hour}:${mm} ${ampm}`;
+}
+
 function mostrarToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -2050,6 +2080,7 @@ async function generarReporteRiego() {
       <thead><tr style="background:rgba(45,139,45,.08)">
         <th style="padding:6px 10px;text-align:left">Fecha</th>
         <th style="padding:6px 10px;text-align:left">Trabajador</th>
+        <th style="padding:6px 10px;text-align:center">Horario</th>
         <th style="padding:6px 10px;text-align:center">Tareas</th>
         <th style="padding:6px 10px;text-align:right">Tarifa</th>
         <th style="padding:6px 10px;text-align:right">Subtotal</th>
@@ -2057,9 +2088,10 @@ async function generarReporteRiego() {
       <tbody>
         ${data.detalle.map(r=>`
           <tr style="border-bottom:1px solid var(--borde)">
-            <td style="padding:6px 10px">${r.fecha}</td>
+            <td style="padding:6px 10px">${formatFecha(r.fecha)}</td>
             <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
-            <td style="padding:6px 10px;text-align:center">${r.tareas}</td>
+            <td style="padding:6px 10px;text-align:center;font-size:11px;color:var(--ts)">${formatHora(r.horaEntrada)} - ${formatHora(r.horaSalida)}</td>
+            <td style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
             <td style="padding:6px 10px;text-align:right">S/${(r.pagoTarea||0).toFixed(2)}</td>
           <td style="padding:6px 10px;text-align:right;color:var(--v2);font-weight:600">S/${((r.tareas||0)*(r.pagoTarea||0)).toFixed(2)}</td>
           </tr>`).join('')}
@@ -2295,20 +2327,45 @@ async function guardarRiego(){
 let incidenciasData = [];
 
 function abrirModalIncidencia(){
-  const overlay = document.getElementById('modal-overlay');
-  const contenido = document.getElementById('modal-contenido');
-  const modalDiv = document.getElementById('modal-incidencia');
-  if(modalDiv){
-    contenido.innerHTML = modalDiv.innerHTML;
-    // Poner fecha de hoy por defecto
-    const fi = contenido.querySelector('#inc-fecha');
-    if(fi) fi.value = new Date().toISOString().split('T')[0];
-    overlay.classList.add('visible');
-  }
-}
-
-function cerrarModalIncidencia(){
-  document.getElementById('modal-overlay').classList.remove('visible');
+  // Generar opciones de trabajadores dinámicamente
+  const opsTrab = trabajadores.map(t => `<option value="${t.id}">${t.nombre} ${t.apellido}</option>`).join('');
+  
+  abrirModal(`
+    <h3 class="modal-tit">Registrar Nueva Incidencia</h3>
+    <div style="display:grid;gap:14px">
+      <div class="fc">
+        <label>Trabajador</label>
+        <select id="inc-trab">
+          <option value="">— Seleccione Trabajador —</option>
+          ${opsTrab}
+        </select>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+        <div class="fc"><label>Fecha</label><input type="date" id="inc-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="fc"><label>Tipo de Incidencia</label>
+          <select id="inc-tipo">
+            <option value="ACCIDENTE">Accidente</option>
+            <option value="FALTA">Falta injustificada</option>
+            <option value="TARDANZA">Tardanza</option>
+            <option value="CONFLICTO">Conflicto</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="fc"><label>Descripción / Detalles</label><textarea id="inc-descripcion" rows="3" placeholder="Describa lo ocurrido..."></textarea></div>
+      <div class="fc"><label>Estado Inicial</label>
+        <select id="inc-estado">
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="EN_PROCESO">En proceso</option>
+          <option value="RESUELTO">Resuelto</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-p" onclick="guardarIncidencia()">Guardar Incidencia</button>
+    </div>
+  `);
 }
 
 async function guardarIncidencia(){
@@ -2349,15 +2406,57 @@ function renderTablaIncidencias(tbody){
     const t = inc.trabajador || {};
     const colores = {PENDIENTE:'#fef3c7;color:#92400e', EN_PROCESO:'#dbeafe;color:#1e40af', RESUELTO:'#d1fae5;color:#065f46'};
     const estilo  = colores[inc.estado] || '#f3f4f6;color:#374151';
+    const idInc = inc.id;
+
     return `<tr>
-      <td>${inc.fecha}</td>
-      <td>${t.nombre||'—'} ${t.apellido||''}</td>
-      <td>${inc.tipo}</td>
-      <td>${inc.descripcion||'—'}</td>
-      <td><span style="background:${estilo};padding:2px 8px;border-radius:10px;font-size:11px">${inc.estado}</span></td>
-      <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="incidenciasData.splice('+i+',1);document.querySelectorAll(\".acc-menu\").forEach(m=>m.classList.remove(\"open\"));renderTablaIncidencias(document.getElementById(\"lista-incidencias\"))">Eliminar</a></div></div>' : ''}</td>
+      <td data-label="Fecha">${formatFecha(inc.fecha)}</td>
+      <td data-label="Trabajador"><strong>${t.nombre||'—'} ${t.apellido||''}</strong></td>
+      <td data-label="Tipo">${inc.tipo}</td>
+      <td data-label="Descripción">${inc.descripcion||'—'}</td>
+      <td data-label="Estado"><span style="background:${estilo};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${inc.estado}</span></td>
+      <td data-label="Acciones">
+        <div class="acc-wrap">
+          <button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button>
+          <div class="acc-menu">
+            <a onclick="actualizarEstadoIncidencia(${idInc}, 'PENDIENTE')">🟠 Marcar Pendiente</a>
+            <a onclick="actualizarEstadoIncidencia(${idInc}, 'EN_PROCESO')">🔵 En Proceso</a>
+            <a onclick="actualizarEstadoIncidencia(${idInc}, 'RESUELTO')">🟢 Resolver</a>
+            <div class="acc-sep"></div>
+            ${isAdmin() ? `<a class="rojo" onclick="eliminarIncidencia(${idInc})">🗑️ Eliminar</a>` : ''}
+          </div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+
+async function actualizarEstadoIncidencia(id, nuevoEstado) {
+  try {
+    const r = await fetch(`/api/incidencias/${id}/estado`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+    if (r.ok) {
+      mostrarToast('Estado actualizado: ' + nuevoEstado);
+      cargarIncidencias(); // Recargar tabla
+    }
+  } catch (e) {
+    mostrarToast('Error al actualizar estado');
+  }
+}
+
+async function eliminarIncidencia(id) {
+  if (!confirm('¿Seguro que desea eliminar esta incidencia permanentemente?')) return;
+  try {
+    const r = await fetch(`/api/incidencias/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      mostrarToast('Incidencia eliminada de la base de datos');
+      cargarIncidencias();
+    }
+  } catch (e) {
+    mostrarToast('Error al eliminar');
+  }
 }
 
 async function cargarIncidencias(){
@@ -2368,11 +2467,12 @@ async function cargarIncidencias(){
     if(!r.ok) throw new Error();
     const data = await r.json();
     incidenciasData = Array.isArray(data) ? data.map(i => ({
-      fecha: i.fecha || (i.fecAsist ? i.fecAsist : ''),
+      id: i.id, // MUY IMPORTANTE: Guardar el ID real de la BD
+      fecha: i.fecha || i.fecha_reporte || '',
       tipo: i.tipo,
       descripcion: i.descripcion,
       estado: i.estado,
-      trabajador: i.trabajador ? (i.trabajador.nomTrab ? { nombre: i.trabajador.nomTrab, apellido: i.trabajador.apeTrab, id: i.trabajador.idTrab } : { nombre: i.trabajador.nombre || i.trabajador.nomTrab, apellido: i.trabajador.apellido || i.trabajador.apeTrab, id: i.trabajador.idTrab }) : {}
+      trabajador: i.trabajador ? { nombre: i.trabajador.nomTrab, apellido: i.trabajador.apeTrab, id: i.trabajador.idTrab } : { nombre: 'N/A' }
     })) : [];
     renderTablaIncidencias(tbody);
   }catch(e){
@@ -2688,12 +2788,7 @@ irA = function(id){
   if(id==='abono')     setTimeout(cargarAbonos,    100);
   if(id==='movilidad') setTimeout(cargarGasolina,  100);
   if(id==='riego')     setTimeout(cargarLaboresRiego, 100);
-  if(id==='incidencias'){
-    setTimeout(()=>{
-      const tbody = document.getElementById('lista-incidencias');
-      if(tbody) renderTablaIncidencias(tbody);
-    },100);
-  }
+  if(id==='incidencias') setTimeout(cargarIncidencias, 100);
 };
 
 async function cargarLabores(tipoTarea, seccionId) {
