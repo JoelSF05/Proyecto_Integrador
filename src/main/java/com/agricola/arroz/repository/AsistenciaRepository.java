@@ -12,6 +12,9 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Integer>
 
     List<Asistencia> findByFecAsist(LocalDate fecha);
 
+    /** NUEVO — Filtrar todas las asistencias por rango de fechas */
+    List<Asistencia> findByFecAsistBetween(LocalDate desde, LocalDate hasta);
+
     List<Asistencia> findByTrabajadorIdTrab(Integer idTrab);
 
     /** NUEVO — Rango de fechas para cálculo de planilla */

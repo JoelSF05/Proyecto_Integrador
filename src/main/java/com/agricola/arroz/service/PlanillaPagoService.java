@@ -3,6 +3,7 @@ package com.agricola.arroz.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -68,14 +69,12 @@ public class PlanillaPagoService {
 
         PlanillaPago existente = planillaRepository
             .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFin(idTrab, fechaInicio, fechaFin);
-        if (existente != null) {
-            return existente;
-        }
 
-        PlanillaPago planilla = new PlanillaPago();
+        PlanillaPago planilla = (existente != null) ? existente : new PlanillaPago();
         planilla.setTrabajador(trabajador);
         planilla.setFechaInicio(fechaInicio);
         planilla.setFechaFin(fechaFin);
+        planilla.setFechaGeneracion(java.time.LocalDateTime.now());
 
         TipoPago tipo = trabajador.getTipoPago();
         BigDecimal montoTotal = BigDecimal.ZERO;
@@ -87,40 +86,48 @@ public class PlanillaPagoService {
         }
 
         if (tipo.esPorJornal()) {
-          
-long diasPresentes = asistencias.stream()
-    .filter(a -> Boolean.TRUE.equals(a.getPresente()))
-    .count();
-planilla.setTotalDias((int) diasPresentes);
-BigDecimal tasaDia = trabajador.getSueldoBaseDia() != null
-    ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
-montoTotal = tasaDia.multiply(BigDecimal.valueOf(diasPresentes));
-
+            BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
+            int totalCant = asistencias.stream()
+                .filter(a -> Boolean.TRUE.equals(a.getPresente()))
+                .mapToInt(a -> {
+                    if (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) return a.getTareasCompletadas();
+                    if (a.getSacosCosechados() != null && a.getSacosCosechados() > 0) return a.getSacosCosechados();
+                    return 1;
+                }).sum();
+            planilla.setTotalDias(totalCant);
+            montoTotal = tarifa.multiply(BigDecimal.valueOf(totalCant));
         } else if (tipo.esPorSaco()) {
-            // Sumar sacos cosechados
-            // Línea 97 — reemplaza el bloque del saco con esto:
-int totalSacos = asistencias.stream()
-    .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
-    .sum();
-planilla.setTotalSacos(totalSacos);
-BigDecimal tasaSaco = trabajador.getPagoPorSaco() != null
-    ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
-montoTotal = tasaSaco.multiply(BigDecimal.valueOf(totalSacos));
-
+            BigDecimal tarifa = trabajador.getPagoPorSaco() != null ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
+            int totalSacos = asistencias.stream()
+                .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
+                .sum();
+            planilla.setTotalSacos(totalSacos);
+            montoTotal = tarifa.multiply(BigDecimal.valueOf(totalSacos));
         } else if (tipo.esPorTarea()) {
-            // Sumar tareas completadas
+            BigDecimal tarifa = trabajador.getPagoPorTarea() != null ? trabajador.getPagoPorTarea() : BigDecimal.ZERO;
             int totalTareas = asistencias.stream()
                 .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
                 .sum();
             planilla.setTotalTareas(totalTareas);
             planilla.setTipoTareaPlanilla(tipo.name().toUpperCase());
-            BigDecimal tasaTarea = trabajador.getPagoPorTarea() != null
-                ? trabajador.getPagoPorTarea() : BigDecimal.ZERO;
-            montoTotal = tasaTarea.multiply(BigDecimal.valueOf(totalTareas));
+            montoTotal = tarifa.multiply(BigDecimal.valueOf(totalTareas));
         }
 
         planilla.setMontoTotal(montoTotal);
         return planillaRepository.save(planilla);
+    }
+
+    /**
+     * Genera planillas para todos los trabajadores que tengan asistencias en el período.
+     */
+    @Transactional
+    public void generarPlanillasPeriodo(LocalDate desde, LocalDate hasta) {
+        List<Asistencia> todas = asistenciaRepository.findByFecAsistBetween(desde, hasta);
+
+        todas.stream()
+            .map(a -> a.getTrabajador().getIdTrab())
+            .distinct()
+            .forEach(id -> generarPlanilla(id, desde, hasta));
     }
 
     @Transactional

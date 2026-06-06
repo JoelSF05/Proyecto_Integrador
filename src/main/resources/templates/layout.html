@@ -161,7 +161,7 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(7,26,7,.55);backdrop-filter:blur(3px);z-index:1300;align-items:center;justify-content:center}
 .modal-ov.vis{display:flex}
 .modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:mEnt .22s ease;position:relative;z-index:1301}
-.modal.lg{max-width:740px}
+.modal.lg{max-width:850px}
 @keyframes mEnt{from{opacity:0;transform:scale(.95) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modal-tit{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:18px;color:var(--tx)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
@@ -651,6 +651,7 @@ async function cargarDatosIniciales() {
     cargoId:     t.cargoId,
     tipoPago:    t.tipoPago,
     sueldoDia:   t.sueldoDia,
+    sueldoDia:   t.sueldoBaseDia,
     pagoPorSaco: t.pagoPorSaco,
     pagoPorTarea:t.pagoPorTarea,
     activo:      true
@@ -941,6 +942,10 @@ function renderModulo(id){
       <div class="card">
         <div class="card-hdr">
           <h3>Validación de Labores Diarias</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn-s" onclick="abrirModalEspecial('jornal')">+ Jornal</button>
+              <button class="btn-s" onclick="abrirModalEspecial('por_saco')">+ Por Saco</button>
+            </div>
           <div class="htools">
             <input type="date" id="filtro-fecha-vt" value="${new Date().toISOString().slice(0,10)}" class="filtro" onchange="listarVerificarTareas()">
             <select class="filtro" id="filtro-sector-vt" onchange="listarVerificarTareas()">
@@ -1027,7 +1032,11 @@ function renderModulo(id){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
         <div class="card">
           <div class="card-hdr"><h3>Reporte de Riego</h3>
-            <button class="btn-p" onclick="generarReporteRiego()">Generar</button></div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-pdf-riego" class="btn-d" style="display:none" onclick="descargarReporteRiegoPdf()">PDF</button>
+              <button class="btn-p" onclick="generarReporteRiego()">Generar</button>
+            </div>
+          </div>
           <div style="padding:18px">
             <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div class="fc"><label>Desde</label><input type="date" id="riego-desde"></div>
@@ -1038,7 +1047,11 @@ function renderModulo(id){
         </div>
         <div class="card">
           <div class="card-hdr"><h3>Reporte por Tarea</h3>
-            <button class="btn-p" onclick="generarReporteTareas()">Generar</button></div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-pdf-tareas" class="btn-d" style="display:none" onclick="descargarReporteTareasPdf()">PDF</button>
+              <button class="btn-p" onclick="generarReporteTareas()">Generar</button>
+            </div>
+          </div>
           <div style="padding:18px">
             <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div class="fc"><label>Tipo</label>
@@ -1056,13 +1069,30 @@ function renderModulo(id){
         </div>
         <div class="card" style="grid-column:1/-1">
           <div class="card-hdr"><h3>Generar Planilla de Pagos</h3>
-            <button class="btn-p" onclick="generarPlanilla()">Calcular</button></div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-pdf-resumen" class="btn-d" style="display:none" onclick="descargarResumenPdf()">PDF Resumen</button>
+              <button class="btn-p" onclick="generarPlanilla()">Calcular</button>
+            </div>
+          </div>
           <div style="padding:18px">
-            <div class="form-grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+            <div class="form-grid" style="grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
               <div class="fc"><label>Trabajador</label>
-                <select id="planilla-trab">
+                <select id="planilla-trab" onchange="if(this.value) document.getElementById('planilla-tipo').value=''">
                   <option value="">— Todos —</option>
-                  ${trabajadores.map(t=>`<option value="${t.id}">${t.nombre} ${t.apellido} (${etiquetaTipoPago(t.tipoPago)})</option>`).join('')}
+                  ${trabajadores
+                    .filter(t => !['tiempo', 'destajo', 'rendimiento'].includes(t.tipoPago))
+                    .map(t=>`<option value="${t.id}">${t.nombre} ${t.apellido} (${etiquetaTipoPago(t.tipoPago)})</option>`).join('')}
+                </select>
+              </div>
+              <div class="fc"><label>Tipo de Tarea</label>
+                <select id="planilla-tipo" onchange="if(this.value) document.getElementById('planilla-trab').value=''">
+                  <option value="">— Todos —</option>
+                  <option value="jornal">Jornal</option>
+                  <option value="por_saco">Por Saco</option>
+                  <option value="transplante">Transplante</option>
+                  <option value="saca">Saca</option>
+                  <option value="carga">Carga</option>
+                  <option value="riego">Riego</option>
                 </select>
               </div>
               <div class="fc"><label>Desde</label><input type="date" id="planilla-desde"></div>
@@ -1088,12 +1118,12 @@ function renderModulo(id){
         <div class="card">
           <div class="card-hdr"><h3>Trabajadores de Riego</h3></div>
           <div style="padding:18px">
-            ${trabajadores.filter(t=>t.tipoPago==='riego').length === 0
+            ${trabajadores.filter(t=>t.tipoPago==='riego'||t.tipoPago==='jornal'||t.tipoPago==='tiempo').length === 0
               ? `<p style="color:var(--ts);font-size:13px">Ningún trabajador asignado a riego aún.</p>`
-              : trabajadores.filter(t=>t.tipoPago==='riego').map(t=>`
+              : trabajadores.filter(t=>t.tipoPago==='riego'||t.tipoPago==='jornal'||t.tipoPago==='tiempo').map(t=>`
                   <div class="dato-fila">
                     <span>${t.nombre} ${t.apellido}</span>
-                    <span class="val">S/${t.pagoPorTarea||'—'} / tarea</span>
+                    <span class="val">S/${t.pagoPorTarea||t.sueldoDia||'—'}</span>
                   </div>`).join('')
             }
           </div>
@@ -1119,7 +1149,12 @@ function renderModulo(id){
     };
     const tp = tipoPagoMap[id];
     const tipoTarea = tipoTareaMap[id];
-    const personalSeccion = trabajadores.filter(t => t.tipoPago === tp);
+    const personalSeccion = trabajadores.filter(t => {
+      if (t.tipoPago === tp) return true;
+      if (['transplante', 'saca', 'riego'].includes(tp) && (t.tipoPago === 'jornal' || t.tipoPago === 'tiempo')) return true;
+      if (tp === 'carga' && ['por_saco', 'rendimiento', 'destajo'].includes(t.tipoPago)) return true;
+      return false;
+    });
 
     const filasPersonal = personalSeccion.length === 0
       ? `<tr><td colspan="3" style="text-align:center;color:var(--ts);padding:14px;font-size:13px">Sin personal asignado a esta sección.</td></tr>`
@@ -1154,7 +1189,7 @@ function renderModulo(id){
           </div>
           <div class="tabla-wrap">
             <table>
-              <thead><tr><th>Trabajador</th><th>DNI</th><th>Cargo</th></tr></thead>
+              <thead><tr><th>Trabajador</th><th>DNI</th></tr></thead>
               <tbody>${filasPersonal}</tbody>
             </table>
           </div>
@@ -1506,7 +1541,7 @@ function listarTrabajadores(filtro=''){
         </div>
         <div class="tabla-wrap">
           <table>
-            <thead><tr><th>Trabajador</th><th>DNI</th><th>Cargo</th><th>Tarifa</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Trabajador</th><th>DNI</th><th>Tarifa</th><th>Acciones</th></tr></thead>
             <tbody>${filas}</tbody>
           </table>
         </div>
@@ -1532,7 +1567,6 @@ function verTrabajador(id) {
     <h3 class="modal-tit">${t.nombre} ${t.apellido}</h3>
     <div class="form-grid">
       <div class="fc"><label>DNI</label><p style="padding:9px 0;font-size:14px;font-weight:600">${t.dni}</p></div>
-      <div class="fc"><label>Cargo</label><p style="padding:9px 0;font-size:14px">${t.cargo}</p></div>
       <div class="fc"><label>Tipo de Pago</label><span class="badge bb">${tipoPagoLabel}</span></div>
       <div class="fc"><label>Tarifa</label><p style="padding:9px 0;font-size:16px;font-weight:700;color:var(--v2)">${tarifa}</p></div>
       <div class="fc"><label>Asistencias totales</label><p style="padding:9px 0;font-size:14px">${asists.length} registros</p></div>
@@ -1598,6 +1632,7 @@ async function guardarEdicionTrabajador(e, id) {
     dniTrab: document.getElementById('et-dni').value,
     tipoPago: tp,
     sueldoDia:    ['jornal','tiempo'].includes(tp) ? parseFloat(document.getElementById('et-sueldo')?.value)||null : null,
+    sueldoBaseDia: ['jornal','tiempo'].includes(tp) ? parseFloat(document.getElementById('et-sueldo')?.value)||null : null,
     pagoPorSaco:  ['por_saco','rendimiento','destajo'].includes(tp) ? parseFloat(document.getElementById('et-psaco')?.value)||null : null,
     pagoPorTarea: ['transplante','saca','carga','riego'].includes(tp) ? parseFloat(document.getElementById('et-ptarea')?.value)||null : null,
     cargo: { idCargo: parseInt(document.getElementById('et-cargo').value) }
@@ -1789,6 +1824,81 @@ function listarPlagas(){
       </div>
     `;
   });
+}
+
+async function toggleAccordion(idTrab, desde, hasta, rowId) {
+  const accRow = document.getElementById(`acc-${rowId}`);
+  const content = document.getElementById(`content-${rowId}`);
+  const isIndiv = rowId === 'indiv';
+  
+  if (accRow.style.display !== 'none') {
+    accRow.style.display = 'none';
+    return;
+  }
+
+  content.innerHTML = '<p style="font-size:12px; color:var(--ts)">Cargando detalles...</p>';
+  accRow.style.display = isIndiv ? 'block' : 'table-row';
+
+  const data = await apiFetch(`/api/reportes/detalles-trabajador?idTrab=${idTrab}&desde=${desde}&hasta=${hasta}`);
+  if(!data || !data.length) {
+    content.innerHTML = '<p style="font-size:12px; color:var(--ts)">No hay tareas registradas.</p>';
+    return;
+  }
+
+  const planillas = await apiFetch(`/api/planillas/periodo?desde=${desde}&hasta=${hasta}`);
+  const planilla = planillas ? planillas.find(p => p.trabajador.idTrab == idTrab) : null;
+  const yaPagado = planilla && (planilla.estado||'').toUpperCase() === 'PAGADO';
+
+  content.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--borde); border-radius:8px; padding:12px">
+      <div style="font-size:11px; color:var(--v2); font-weight:700; margin-bottom:10px; text-transform:uppercase">
+        Desglose de actividades
+        ${yaPagado ? ' — <span style="color:var(--v2)">Pago verificado</span>' : ''}
+      </div>
+      <table style="width:100%; font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--borde)">
+            <th style="padding:8px">Fecha</th>
+            <th style="padding:8px">Labor</th>
+            <th style="padding:8px; text-align:center">Cantidad</th>
+            <th style="padding:8px; text-align:right">Precio Unit.</th>
+            <th style="padding:8px; text-align:right">Subtotal</th>
+            ${yaPagado ? '<th style="padding:8px; text-align:center">PDF</th>' : ''}
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(d => `
+            <tr>
+              <td style="padding:6px">${formatFecha(d.fecha)}</td>
+              <td style="padding:6px">${d.actividad}</td>
+              <td style="padding:6px; text-align:center">${d.cantidad}</td>
+              <td style="padding:6px; text-align:right">S/${parseFloat(d.tarifa||0).toFixed(2)}</td>
+              <td style="padding:6px; text-align:right; font-weight:600">S/${parseFloat(d.subtotal||0).toFixed(2)}</td>
+              ${yaPagado ? `
+                <td style="padding:6px; text-align:center">
+                  <button class="tbtn" onclick="descargarBoletaActividadPdf(${d.id})" style="padding:2px 6px; font-size:10px">PDF</button>
+                </td>` : ''}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function descargarBoletaPdf(id) {
+  window.location.href = `/api/reportes/planilla/${id}/pdf`;
+}
+
+function descargarBoletaActividadPdf(id) {
+  window.location.href = `/api/reportes/asistencia/${id}/pdf`;
+}
+
+function descargarResumenPdf() {
+  const desde = document.getElementById('planilla-desde').value;
+  const hasta = document.getElementById('planilla-hasta').value;
+  const tipo = document.getElementById('planilla-tipo').value;
+  window.location.href = `/api/reportes/resumen-labores/pdf?desde=${desde}&hasta=${hasta}${tipo ? '&tipo='+tipo : ''}`;
 }
 
 async function listarCaja(){
@@ -2026,9 +2136,11 @@ function closeAccMenus() {
   });
 }
 
-function abrirModal(html){
+function abrirModal(html, esLargo = false){
   closeAccMenus();
-  document.getElementById('modal-inner').innerHTML=html;
+  const inner = document.getElementById('modal-inner');
+  inner.className = esLargo ? 'modal lg' : 'modal';
+  inner.innerHTML=html;
   document.getElementById('modal-overlay').classList.add('vis');
 }
 function cerrarModal(){
@@ -2067,6 +2179,7 @@ async function generarReporteRiego() {
   const desde = document.getElementById('riego-desde').value;
   const hasta = document.getElementById('riego-hasta').value;
   if(!desde||!hasta){mostrarToast('Seleccione las fechas');return;}
+  document.getElementById('btn-pdf-riego').style.display = 'none';
   const cont = document.getElementById('tabla-reporte-riego');
   cont.innerHTML = '<p style="color:var(--ts)">Cargando...</p>';
   const data = await apiFetch(`/api/reportes/riego?desde=${desde}&hasta=${hasta}`);
@@ -2074,35 +2187,41 @@ async function generarReporteRiego() {
   if(!data.detalle||!data.detalle.length){
     cont.innerHTML='<p style="color:var(--ts)">Sin registros en ese período.</p>';return;
   }
+  document.getElementById('btn-pdf-riego').style.display = 'inline-flex';
   cont.innerHTML=`
     <p style="font-size:13px;color:var(--ts);margin-bottom:8px">${data.totalRegistros} registro(s) · ${data.totalTareasRiego} tareas</p>
     <table style="width:100%;font-size:12px;border-collapse:collapse">
       <thead><tr style="background:rgba(45,139,45,.08)">
         <th style="padding:6px 10px;text-align:left">Fecha</th>
         <th style="padding:6px 10px;text-align:left">Trabajador</th>
+        <th style="padding:6px 10px;text-align:left">DNI</th>
         <th style="padding:6px 10px;text-align:center">Horario</th>
         <th style="padding:6px 10px;text-align:center">Tareas</th>
-        <th style="padding:6px 10px;text-align:right">Tarifa</th>
-        <th style="padding:6px 10px;text-align:right">Subtotal</th>
       </tr></thead>
       <tbody>
         ${data.detalle.map(r=>`
           <tr style="border-bottom:1px solid var(--borde)">
             <td style="padding:6px 10px">${formatFecha(r.fecha)}</td>
             <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
+            <td style="padding:6px 10px"><code>${r.dni}</code></td>
             <td style="padding:6px 10px;text-align:center;font-size:11px;color:var(--ts)">${formatHora(r.horaEntrada)} - ${formatHora(r.horaSalida)}</td>
             <td style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
-            <td style="padding:6px 10px;text-align:right">S/${(r.pagoTarea||0).toFixed(2)}</td>
-          <td style="padding:6px 10px;text-align:right;color:var(--v2);font-weight:600">S/${((r.tareas||0)*(r.pagoTarea||0)).toFixed(2)}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+function descargarReporteRiegoPdf() {
+  const desde = document.getElementById('riego-desde').value;
+  const hasta = document.getElementById('riego-hasta').value;
+  window.location.href = `/api/reportes/riego/pdf?desde=${desde}&hasta=${hasta}`;
 }
 
 async function generarReporteTareas() {
   const tipo = document.getElementById('tarea-tipo').value;
   const mes  = document.getElementById('tarea-mes').value;
   if(!mes){mostrarToast('Seleccione el mes');return;}
+  document.getElementById('btn-pdf-tareas').style.display = 'none';
   const desde = mes+'-01';
   const d = new Date(mes+'-01'); d.setMonth(d.getMonth()+1); d.setDate(0);
   const hasta = d.toISOString().slice(0,10);
@@ -2113,12 +2232,14 @@ async function generarReporteTareas() {
   if(!data.detalle||!data.detalle.length){
     cont.innerHTML=`<p style="color:var(--ts)">Sin registros de ${tipo} ese mes.</p>`;return;
   }
+  document.getElementById('btn-pdf-tareas').style.display = 'inline-flex';
   cont.innerHTML=`
     <p style="font-size:13px;color:var(--ts);margin-bottom:8px">${data.totalTareas} tareas de ${data.tipoTarea}</p>
     <table style="width:100%;font-size:12px;border-collapse:collapse">
       <thead><tr style="background:rgba(45,139,45,.08)">
         <th style="padding:6px 10px;text-align:left">Fecha</th>
         <th style="padding:6px 10px;text-align:left">Trabajador</th>
+        <th style="padding:6px 10px;text-align:left">DNI</th>
         <th style="padding:6px 10px;text-align:center">Tareas</th>
       </tr></thead>
       <tbody>
@@ -2126,66 +2247,167 @@ async function generarReporteTareas() {
           <tr style="border-bottom:1px solid var(--borde)">
             <td style="padding:6px 10px">${r.fecha}</td>
             <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
+            <td style="padding:6px 10px"><code>${r.dni}</code></td>
             <td style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
+function descargarReporteTareasPdf() {
+  const tipo = document.getElementById('tarea-tipo').value;
+  const mes  = document.getElementById('tarea-mes').value;
+  const d = new Date(mes+'-01');
+  const desde = mes+'-01';
+  d.setMonth(d.getMonth()+1); d.setDate(0);
+  const hasta = d.toISOString().slice(0,10);
+  window.location.href = `/api/reportes/tareas/pdf?tipo=${tipo}&desde=${desde}&hasta=${hasta}`;
+}
+
 async function generarPlanilla() {
   const trabId = document.getElementById('planilla-trab').value;
+  const planillaTipo = document.getElementById('planilla-tipo').value;
   const desde  = document.getElementById('planilla-desde').value;
   const hasta  = document.getElementById('planilla-hasta').value;
   if(!desde||!hasta){mostrarToast('Seleccione el período');return;}
+  document.getElementById('btn-pdf-resumen').style.display = 'none';
   const cont = document.getElementById('tabla-planilla');
-  cont.innerHTML='<p style="color:var(--ts)">Calculando...</p>';
+  cont.innerHTML='<p style="color:var(--ts)">Procesando labores del periodo...</p>';
+
+  // Forzamos la generación/actualización de planillas antes de listar
+  const bodyGen = { idTrab: trabId || null, fechaInicio: desde, fechaFin: hasta };
+  await apiFetch('/api/planillas/generar', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(bodyGen)
+  });
+
   if(trabId){
-    const body = { idTrab: trabId, fechaInicio: desde, fechaFin: hasta };
-    console.log('generarPlanilla body', body);
-    const data = await apiFetch('/api/planillas/generar',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
-    });
-    if(!data)return;
+    const planillas = await apiFetch(`/api/planillas/periodo?desde=${desde}&hasta=${hasta}`);
+    const p = planillas ? planillas.find(x => x.trabajador.idTrab == trabId) : null;
+    if(!p) { cont.innerHTML='<p style="color:var(--ts)">No se encontraron labores para este trabajador.</p>'; return; }
+
     const t = trabajadores.find(x=>x.id==trabId)||{};
-    const planillaId = data.idPlanilla || data.id;
-    const estadoPlanilla = (data.estado || 'GENERADA').toString().toUpperCase();
+    const planillaId = p.idPlanilla || p.id;
+    const estadoPlanilla = (p.estado || 'GENERADA').toString().toUpperCase();
     const yaPagado = estadoPlanilla === 'PAGADO' || estadoPlanilla === 'PAGADA';
     cont.innerHTML=`
       <div class="pago-display" style="max-width:480px">
         <div style="font-size:13px;color:var(--ts);margin-bottom:4px">
           ${t.nombre||''} ${t.apellido||''} · ${etiquetaTipoPago(t.tipoPago)}
         </div>
-        <div class="pago-num">S/${parseFloat(data.montoTotal||0).toFixed(2)}</div>
+        <div class="pago-num">S/${parseFloat(p.montoTotal||0).toFixed(2)}</div>
         <span class="pago-lbl">
-          ${data.totalDias>0?data.totalDias+' días':''}
-          ${data.totalSacos>0?data.totalSacos+' sacos':''}
-          ${data.totalTareas>0?data.totalTareas+' tareas de '+data.tipoTareaPlanilla:''}
+          ${p.totalDias>0?p.totalDias+' días':''}
+          ${p.totalSacos>0?p.totalSacos+' sacos':''}
+          ${p.totalTareas>0?p.totalTareas+' tareas de '+p.tipoTareaPlanilla:''}
           · ${desde} al ${hasta}
         </span>
       </div>
       <div style="display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap">
-        ${planillaId && !yaPagado ? `
-          <button class="btn-p" onclick="pagarPlanilla(${planillaId})">Marcar como Pagado</button>
-        ` : yaPagado ? `
+        ${planillaId ? (yaPagado ? `
           <span class="badge bv" style="font-size:13px;padding:6px 14px">Planilla ya pagada</span>
-        ` : ''}
-        ${planillaId ? `
+          <button class="btn-d" onclick="descargarBoletaPdf(${planillaId})">Descargar Boleta</button>
+          <button class="btn-s" onclick="toggleAccordion(${trabId}, '${desde}', '${hasta}', 'indiv')">Ver Desglose</button>
+        ` : `
+          <button class="btn-p" onclick="pagarPlanilla(${planillaId})">Marcar como Pagado</button>
+          <button class="btn-s" onclick="toggleAccordion(${trabId}, '${desde}', '${hasta}', 'indiv')">Ver Desglose</button>
           <button class="btn-s" onclick="anularPlanilla(${planillaId})">Anular</button>
-        ` : ''}
+        `) : ''}
         <span style="font-size:12px;color:var(--ts)">ID: ${planillaId||'—'} · Estado: <strong>${estadoPlanilla}</strong></span>
+      </div>
+      <div id="acc-indiv" style="display:none; background:rgba(45,139,45,0.02); border-radius:12px; margin-top:15px">
+        <div id="content-indiv" style="padding:15px; border-left:3px solid var(--v3); margin:10px"></div>
       </div>`;
   } else {
-    const data = await apiFetch(`/api/reportes/resumen-labores?desde=${desde}&hasta=${hasta}`);
-    if(!data)return;
+    const resumen = await apiFetch(`/api/reportes/resumen-labores?desde=${desde}&hasta=${hasta}${planillaTipo ? '&tipo='+planillaTipo : ''}`);
+    let planillas = await apiFetch(`/api/planillas/periodo?desde=${desde}&hasta=${hasta}`);
+    if(!resumen || !planillas) return;
+    
+    // Filtrar solo trabajadores activos
+    planillas = planillas.filter(p => p.trabajador && p.trabajador.activo);
+
+    if(resumen.totalAsistencias > 0) document.getElementById('btn-pdf-resumen').style.display = 'inline-flex';
+
+    // Filtrar trabajadores que han realizado actividades (monto > 0)
+    planillas = planillas.filter(p => parseFloat(p.montoTotal || 0) > 0);
+
+    // Filtrar por tipo si se especificó
+    if(planillaTipo) {
+      planillas = planillas.filter(p => {
+        if (!p.trabajador || !p.trabajador.tipoPago) return false;
+        const tp = p.trabajador.tipoPago.toLowerCase();
+        if (planillaTipo === 'jornal') return tp === 'jornal';
+        if (planillaTipo === 'por_saco') return tp === 'por_saco';
+        return tp === planillaTipo.toLowerCase();
+      });
+    }
+
+    // Filtrar para mostrar solo la planilla más reciente por trabajador y evitar duplicados
+    const planillasUnicas = new Map();
+    planillas.forEach(p => {
+      const tid = p.trabajador?.idTrab;
+      if(!planillasUnicas.has(tid) || (p.idPlanilla || p.id) > (planillasUnicas.get(tid).idPlanilla || planillasUnicas.get(tid).id)) {
+        planillasUnicas.set(tid, p);
+      }
+    });
+    planillas = Array.from(planillasUnicas.values());
+
+    const totalPagar = planillas.reduce((acc, p) => acc + (parseFloat(p.montoTotal || 0)), 0);
+    const kpiCount = 1;
+    const kpiCards = `
+        <div class="kpi-card"><div class="kpi-ico ki-verde"></div><div><span class="kpi-num" style="font-size:22px">S/${totalPagar.toFixed(2)}</span><span class="kpi-lbl">Total a Pagar${planillaTipo ? ' (' + etiquetaTipoPago(planillaTipo) + ')' : ''}</span></div></div>
+    `;
+
+    let htmlPlanillas = (planillas && planillas.length > 0) ? planillas.map(p => {
+      const t = p.trabajador || {};
+      const yaPagado = (p.estado||'').toUpperCase() === 'PAGADO';
+      
+      let detalleTxt = '';
+      if (p.totalDias > 0) detalleTxt += p.totalDias + ' días ';
+      if (p.totalSacos > 0) detalleTxt += p.totalSacos + ' sacos ';
+      if (p.totalTareas > 0) detalleTxt += p.totalTareas + ' tareas ';
+      if (!detalleTxt) detalleTxt = '—';
+
+      return `
+        <tr id="row-${p.idPlanilla || p.id}">
+          <td><div class="c-nombre"><strong>${t.nomTrab} ${t.apeTrab}</strong></div></td>
+          <td><span class="badge bb">${etiquetaTipoPago(t.tipoPago)}</span></td>
+          <td style="font-size:12px; color:var(--ts)">${detalleTxt}</td>
+          <td style="text-align:right; font-weight:700">S/${parseFloat(p.montoTotal||0).toFixed(2)}</td>
+          <td><span class="badge ${yaPagado?'bv':'ba'}">${p.estado.toUpperCase()}</span></td>
+          <td style="white-space:nowrap">
+            <button class="tbtn" onclick="toggleAccordion(${t.idTrab}, '${desde}', '${hasta}', ${p.idPlanilla || p.id})" title="Ver Desglose">Ver Desglose</button>
+            ${yaPagado ? `<button class="tbtn" onclick="descargarBoletaPdf(${p.idPlanilla})" title="Boleta PDF">PDF</button>` : ''}
+          </td>
+        </tr>
+        <tr id="acc-${p.idPlanilla || p.id}" style="display:none; background:rgba(45,139,45,0.02)">
+          <td colspan="5" style="padding:0">
+            <div id="content-${p.idPlanilla || p.id}" style="padding:15px; border-left:3px solid var(--v3); margin:10px"></div>
+          </td>
+        </tr>`;
+    }).join('') : `<tr><td colspan="5" style="text-align:center; padding:20px">No hay planillas ${planillaTipo ? 'de tipo '+etiquetaTipoPago(planillaTipo) : ''} generadas en este rango.</td></tr>`;
+
     cont.innerHTML=`
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        <div class="kpi-card"><div class="kpi-ico ki-verde"></div>
-          <div><span class="kpi-num">${data.totalAsistencias}</span><span class="kpi-lbl">Asistencias</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-dorado"></div>
-          <div><span class="kpi-num">${data.jornal}</span><span class="kpi-lbl">Días Jornal</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-azul"></div>
-          <div><span class="kpi-num">${data.totalSacos}</span><span class="kpi-lbl">Sacos</span></div></div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(${kpiCount},1fr); margin-bottom: 20px;">
+        ${kpiCards}
+      </div>
+      <div class="card">
+        <div class="card-hdr"><h3>Desglose de Pagos del Periodo</h3></div>
+        <div class="tabla-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Trabajador</th>
+                <th>Tipo de Trabajo</th>
+                <th>Tareas / Detalle</th>
+                <th style="text-align:right">Monto</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>${htmlPlanillas}</tbody>
+          </table>
+        </div>
       </div>`;
   }
 }
@@ -2850,6 +3072,7 @@ async function cargarPersonalSeccion(tipoPago, seccionId) {
               <div class="dato-fila">
                 <span>${t.nomTrab} ${t.apeTrab}</span>
                 <span class="val">S/${t.pagoPorTarea||'—'} / tarea</span>
+                <span class="val">S/${t.pagoPorTarea||t.sueldoBaseDia||'—'}</span>
               </div>`).join('');
       }
     }
@@ -2872,7 +3095,6 @@ async function cargarPersonalSeccion(tipoPago, seccionId) {
       <tr>
         <td><div class="c-nombre"><div class="mini-av">${t.nomTrab[0]}</div><strong>${t.nomTrab} ${t.apeTrab}</strong></div></td>
         <td><code>${t.dniTrab}</code></td>
-        <td><span class="badge bp">${t.cargoNombre || 'Sin cargo'}</span></td>
       </tr>`).join('');
   }
   if (countEl) countEl.textContent = `${data.length} persona${data.length !== 1 ? 's' : ''}`;
@@ -2881,7 +3103,12 @@ async function cargarPersonalSeccion(tipoPago, seccionId) {
 async function abrirModalLabor(tipoTarea, tipoPago) {
   // Carga solo el personal del tipo correspondiente desde el backend
   const personalBD = await apiFetch(`/api/trabajadores/tipo/${tipoPago}`);
-  const personal = personalBD || trabajadores.filter(t => t.tipoPago === tipoPago);
+  const personal = personalBD || trabajadores.filter(t => {
+    if (t.tipoPago === tipoPago) return true;
+    if (['transplante', 'saca', 'riego'].includes(tipoPago) && (t.tipoPago === 'jornal' || t.tipoPago === 'tiempo')) return true;
+    if (tipoPago === 'carga' && ['por_saco', 'rendimiento', 'destajo'].includes(t.tipoPago)) return true;
+    return false;
+  });
   const opsTrab = personal.map(t => {
     const id    = t.idTrab   ?? t.id;
     const nom   = t.nomTrab  ?? t.nombre;
@@ -2996,6 +3223,54 @@ async function cargarLaboresRiego() {
     const lista = document.getElementById('lista-riego-hoy');
     if(lista) lista.innerHTML = `<p style="color:red;padding:12px;font-size:13px">Error al cargar riegos.</p>`;
   }
+}
+
+function abrirModalEspecial(tipo) {
+  const esJornal = tipo === 'jornal';
+  const tps = esJornal ? ['jornal'] : ['por_saco'];
+  const personal = trabajadores.filter(t => tps.includes((t.tipoPago || '').toLowerCase()));
+  const opsTrab = personal.map(t => `<option value="${t.id}">${t.nombre} ${t.apellido}</option>`).join('');
+  
+  if(!personal.length) return mostrarToast('No hay personal de este tipo disponible.');
+
+  abrirModal(`
+    <h3 class="modal-tit">Registrar Labor: ${esJornal ? 'Jornal' : 'Por Saco'}</h3>
+    <div class="form-grid">
+      <div class="fc"><label>Fecha</label><input type="date" id="esp-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fc"><label>Trabajador</label><select id="esp-trab">${opsTrab}</select></div>
+      ${esJornal ? 
+        `<div class="fc"><label>Días / Jornales</label><input type="number" id="esp-cant" value="1" min="1"></div>` :
+        `<div class="fc"><label>Cantidad de Sacos</label><input type="number" id="esp-cant" value="1" min="1"></div>`
+      }
+      <div class="fc full"><label>Observaciones / Detalles</label><textarea id="esp-obs" placeholder="Ej: Parcela A..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-p" onclick="guardarLaborEspecial('${tipo}')">Registrar</button>
+    </div>
+  `);
+}
+
+async function guardarLaborEspecial(tipo) {
+  const esJornal = tipo === 'jornal';
+  const idTrab = document.getElementById('esp-trab').value;
+  if(!idTrab) { mostrarToast('Seleccione un trabajador'); return; }
+  
+  const body = {
+    trabajador: { idTrab: parseInt(idTrab) },
+    fecAsist: document.getElementById('esp-fecha').value,
+    presente: true,
+    tipoTarea: null,
+    observacionSupervisor: document.getElementById('esp-obs').value
+  };
+  if (esJornal) body.tareasCompletadas = parseInt(document.getElementById('esp-cant').value) || 1;
+  else body.sacosCosechados = parseInt(document.getElementById('esp-cant').value) || 0;
+
+  try {
+    const r = await apiFetch('/api/asistencias', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if(r) { mostrarToast('Registro guardado correctamente'); cerrarModal(); await cargarDatosIniciales(); if(modActivo==='verificar-tareas') listarVerificarTareas(); }
+    else mostrarToast('Error al registrar');
+  } catch(e) { mostrarToast('Sin conexión'); }
 }
 
 </script>

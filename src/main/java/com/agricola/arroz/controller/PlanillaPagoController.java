@@ -58,11 +58,6 @@ public class PlanillaPagoController {
             if (body == null) {
                 throw new RuntimeException("Solicitud inválida");
             }
-            Integer idTrab = body.containsKey("idTrab") && body.get("idTrab") != null
-                ? Integer.valueOf(body.get("idTrab").toString()) : null;
-            if (idTrab == null) {
-                throw new RuntimeException("El campo idTrab es requerido");
-            }
             String inicioRaw = body.get("fechaInicio") != null ? body.get("fechaInicio").toString() : null;
             String finRaw = body.get("fechaFin") != null ? body.get("fechaFin").toString() : null;
             if (inicioRaw == null || finRaw == null) {
@@ -70,6 +65,15 @@ public class PlanillaPagoController {
             }
             LocalDate inicio = LocalDate.parse(inicioRaw);
             LocalDate fin    = LocalDate.parse(finRaw);
+
+            Integer idTrab = body.containsKey("idTrab") && body.get("idTrab") != null
+                ? Integer.valueOf(body.get("idTrab").toString()) : null;
+
+            if (idTrab == null) {
+                planillaService.generarPlanillasPeriodo(inicio, fin);
+                return ResponseEntity.ok(Map.of("mensaje", "Planillas procesadas para el periodo"));
+            }
+
             PlanillaPago planilla = planillaService.generarPlanilla(idTrab, inicio, fin);
             return ResponseEntity.status(HttpStatus.CREATED).body(planilla);
         } catch (RuntimeException e) {

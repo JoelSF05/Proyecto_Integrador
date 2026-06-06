@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -47,6 +48,12 @@ public class GlobalExceptionHandler {
         respuesta.put("error", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(respuesta);
+    }
+
+    // Manejar recursos no encontrados (como el favicon.ico) para evitar el error 500
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> manejarRecursoNoEncontrado() {
+        return ResponseEntity.notFound().build();
     }
 
     // Cualquier otro error inesperado
