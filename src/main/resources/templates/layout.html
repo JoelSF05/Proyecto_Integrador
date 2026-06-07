@@ -17,6 +17,25 @@
   --z-sidebar: 1000; --z-modal: 1300;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+
+/* Mejoras de Accesibilidad y Foco */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--v2);
+  color: white;
+  padding: 8px;
+  z-index: 10000;
+  transition: top 0.3s;
+}
+.skip-link:focus { top: 0; }
+
+*:focus-visible {
+  outline: 3px solid var(--d2);
+  outline-offset: 2px;
+}
+
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;display:flex;overflow-x:hidden}
 
 /* ── LOGIN ── */
@@ -76,8 +95,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx)
 .u-info{flex:1}
 .u-name{font-size:12.5px;font-weight:600;color:#fff;display:block}
 .u-rol{font-size:10px;color:rgba(255,255,255,.38)}
-.btn-salir{background:none;border:none;cursor:pointer;font-size:15px;opacity:.45;transition:.2s;padding:4px}
-.btn-salir:hover{opacity:1}
+.btn-salir{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;cursor:pointer;font-size:16px;opacity:.5;transition:all .2s;padding:6px;display:flex;align-items:center;justify-content:center;color:#fff}
+.btn-salir:hover{opacity:1;background:rgba(220,38,38,0.15);border-color:rgba(220,38,38,0.4);transform:translateY(-1px)}
+.btn-salir:active{transform:scale(0.92)}
 
 /* ── APP SHELL ── */
 #pantalla-app{display:none;flex:1}
@@ -135,15 +155,20 @@ tbody tr:hover{background:rgba(45,139,45,.025)}
 .bg{background:rgba(107,114,128,.09);color:#6b7280}.bg::before{background:#9ca3af}
 .bp{background:rgba(124,58,237,.09);color:#7c3aed}.bp::before{background:#7c3aed}
 
-.tbtn{padding:5px 9px;border-radius:6px;border:1px solid var(--borde);background:var(--card);font-size:11.5px;cursor:pointer;transition:.15s;font-family:'IBM Plex Sans',sans-serif;color:var(--tx)}
-.tbtn:hover{background:var(--bg);border-color:var(--v3);color:var(--v2)}
+.tbtn{padding:6px 12px;border-radius:8px;border:1px solid var(--borde);background:var(--card);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;color:var(--tx);box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05)}
+.tbtn:hover{background:var(--bg);border-color:var(--v3);color:var(--v2);transform: translateY(-1px);box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1)}
+.tbtn:active{transform: scale(0.96)}
 .tbtn.peligro:hover{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
 .tbtn.success:hover{background:#f0fdf4;border-color:#86efac;color:#16a34a}
 
-.btn-p{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--v2);color:#fff;border:none;border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
-.btn-p:hover{background:var(--v3);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,92,26,.3)}
-.btn-s{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--card);color:var(--tx);border:1px solid var(--borde);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;cursor:pointer;transition:.2s}
-.btn-s:hover{background:var(--bg);border-color:var(--v3)}
+.btn-p{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(135deg, var(--v2), var(--v3));color:#fff;border:none;border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 15px -3px rgba(26,92,26,0.3);filter:brightness(1.1)}
+.btn-p:active{transform:translateY(0) scale(0.97)}
+
+.btn-s{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:var(--card);color:var(--tx);border:1.5px solid var(--borde);border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s;box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05)}
+.btn-s:hover{background:#f8faf8;border-color:var(--v3);color:var(--v2);box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05)}
+.btn-s:active{transform: scale(0.98)}
+
 .btn-d{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(200,146,10,.12);color:var(--d1);border:1.5px solid var(--d1);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
 .btn-d:hover{background:rgba(200,146,10,.22)}
 .btn-b{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(37,99,235,.1);color:#2563eb;border:1.5px solid #2563eb;border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
@@ -335,44 +360,45 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 </style>
 </head>
 <body>
+<a href="#area-contenido" class="skip-link">Saltar al contenido principal</a>
 
 <div id="pantalla-app" style="display:none;width:100%">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menú principal">
+    <div class="sidebar-logo">
+      <div class="logo-ico" role="img" aria-label="Logotipo AgroMoyobamba">🌾</div>
+      <div class="logo-tx">
+        <h2>AgroMoyobamba</h2>
+        <span>Gestión Arrocera · Moyobamba</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav" role="menubar"></nav>
+    <div class="sidebar-user" role="complementary" aria-label="Usuario actual">
+      <div class="u-avatar" id="u-av">A</div>
+      <div class="u-info">
+        <span class="u-name" id="u-name">Cargando...</span>
+        <span class="u-rol" id="u-rol">–</span>
+      </div>
+      <button class="btn-salir" onclick="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">🚪</button>
+    </div>
+  </aside>
 
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-ico">🌾</div>
-    <div class="logo-tx">
-      <h2>AgroMoyobamba</h2>
-      <span>Gestión Arrocera · Moyobamba</span>
-    </div>
+  <div class="main-wrap">
+    <header class="topbar" role="banner">
+      <button class="menu-btn-movil" id="btn-movil" onclick="toggleSidebar()" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <div class="topbar-titulo">
+        <h1 id="t-titulo">📊 Dashboard</h1>
+        <div class="breadcrumb" id="t-bread">AgroMoyobamba → 📊 Dashboard</div>
+      </div>
+      <div class="topbar-acc">
+        <div id="topbar-rol-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(45,139,45,.12);color:var(--v2)"></div>
+        <div class="ico-btn" title="Notificaciones" onclick="mostrarToast('3 notificaciones pendientes 🔔')">🔔</div>
+        <button class="ico-btn" onclick="window.print()" title="Imprimir" aria-label="Imprimir pantalla">🖨️</button>
+      </div>
+    </header>
+    <main class="area" id="area-contenido" role="main" tabindex="-1"></main>
   </div>
-  <nav class="sidebar-nav" id="sidebar-nav"></nav>
-  <div class="sidebar-user">
-    <div class="u-avatar" id="u-av">A</div>
-    <div class="u-info">
-      <span class="u-name" id="u-name">Cargando...</span>
-      <span class="u-rol" id="u-rol">–</span>
-    </div>
-    <button class="btn-salir" onclick="logout()" title="Cerrar sesión">🚪</button>
-  </div>
-</aside>
-
-<div class="main-wrap">
-  <header class="topbar">
-    <button class="menu-btn-movil" onclick="toggleSidebar()">☰</button>
-    <div class="topbar-titulo">
-      <h1 id="t-titulo">📊 Dashboard</h1>
-      <div class="breadcrumb" id="t-bread">AgroMoyobamba → 📊 Dashboard</div>
-    </div>
-    <div class="topbar-acc">
-      <div id="topbar-rol-badge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(45,139,45,.12);color:var(--v2)"></div>
-      <div class="ico-btn" title="Notificaciones" onclick="mostrarToast('3 notificaciones pendientes 🔔')">🔔</div>
-      <div class="ico-btn" onclick="window.print()" title="Imprimir">🖨️</div>
-    </div>
-  </header>
-  <main class="area" id="area-contenido"></main>
-</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -384,8 +410,10 @@ select.filtro{padding:7px 10px;border:1px solid var(--borde);border-radius:8px;f
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('sidebar-overlay');
+  const btn = document.getElementById('btn-movil');
   sb.classList.toggle('abierta');
   ov.classList.toggle('vis');
+  if(btn) btn.setAttribute('aria-expanded', sb.classList.contains('abierta'));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -519,12 +547,12 @@ function renderMateriales(filtro = '') {
           const color = m.stockActual <= m.stockMinimo ? '#ca8a04' : 'var(--v2)';
           return `
             <tr>
-              <td><div class="c-nombre"><strong>${m.nombre}</strong></div></td>
-              <td>${m.tipo || 'Sin categoría'}</td>
-              <td style="font-weight:700;color:${color}">${m.stockActual.toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
-              <td>${m.unidad}</td>
-              <td>${nivel}</td>
-              <td style="white-space:nowrap">
+              <td data-label="Material"><div class="c-nombre"><strong>${m.nombre}</strong></div></td>
+              <td data-label="Categoría">${m.tipo || 'Sin categoría'}</td>
+              <td data-label="Stock" style="font-weight:700;color:${color}">${m.stockActual.toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:2})}</td>
+              <td data-label="Unidad">${m.unidad}</td>
+              <td data-label="Nivel">${nivel}</td>
+              <td data-label="Acción" style="white-space:nowrap">
                 <input id="mat-cant-${m.id}" type="number" min="1" value="1" style="width:70px;padding:6px;border:1px solid var(--borde);border-radius:8px;margin-right:6px" />
                 <button class="btn-s" onclick="usarMaterial(${m.id})">Usar</button>
                 <button class="btn-p" onclick="agregarMaterial(${m.id})">Agregar</button>
@@ -825,8 +853,9 @@ function construirSidebar(){
       const a = document.createElement('a');
       a.className='nav-item';
       a.id='nav-'+it.id;
+      a.setAttribute('role', 'menuitem');
       a.onclick = ()=>irA(it.id);
-      a.innerHTML=`<span class="nav-ico">${it.ico}</span>${it.label}`;
+      a.innerHTML=`<span class="nav-ico" aria-hidden="true">${it.ico}</span><span>${it.label}</span>`;
       nav.appendChild(a);
     });
   });
@@ -1524,11 +1553,11 @@ function listarTrabajadores(filtro=''){
       ? `<tr><td colspan="5" style="text-align:center;color:var(--ts);padding:14px;font-size:13px">Sin personal asignado</td></tr>`
       : grupo.map(t => `
           <tr>
-            <td><div class="c-nombre"><div class="mini-av">${t.nombre[0]}</div><strong>${t.nombre} ${t.apellido}</strong></div></td>
-            <td><code>${t.dni}</code></td>
-            <td><span class="badge bp">${t.cargo}</span></td>
-            <td style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
-            <td>
+            <td data-label="Trabajador"><div class="c-nombre"><div class="mini-av">${t.nombre[0]}</div><strong>${t.nombre} ${t.apellido}</strong></div></td>
+            <td data-label="DNI"><code>${t.dni}</code></td>
+            <td data-label="Cargo"><span class="badge bp">${t.cargo}</span></td>
+            <td data-label="Tarifa" style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
+            <td data-label="Acciones">
               <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
             </td>
           </tr>`).join('');
@@ -1656,17 +1685,13 @@ async function guardarEdicionTrabajador(e, id) {
 async function eliminarTrabajador(id) {
   if(!confirm('¿Está seguro de dar de baja a este trabajador en la base de datos de PostgreSQL?')) return;
   try {
-    const r = await fetch(`/api/trabajadores/${id}`, { method: 'DELETE' });
-    if(r.ok) {
+    const r = await apiFetch(`/api/trabajadores/${id}`, { method: 'DELETE' });
+    if(r !== null) {
       mostrarToast('Trabajador eliminado físicamente de la BD');
       trabajadores = trabajadores.filter(t => t.id !== id);
       listarTrabajadores();
-    } else {
-      mostrarToast('No se pudo eliminar de la BD');
     }
-  } catch(e) {
-    mostrarToast('Error de comunicación con el servidor');
-  }
+  } catch(e) {}
 }
 
 function listarVerificarTareas(){
@@ -2018,22 +2043,18 @@ async function guardarTrabajador(e){
   };
 
   try {
-    const r = await fetch('/api/trabajadores', {
+    const r = await apiFetch('/api/trabajadores', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
-    if(r.ok) {
+    if(r) {
       mostrarToast('Trabajador insertado con éxito en PostgreSQL');
       cerrarModal();
       await cargarDatosIniciales();
       listarTrabajadores();
-    } else {
-      mostrarToast('Error en los datos enviados');
     }
-  } catch(e) {
-    mostrarToast('Fallo crítico al conectar con el servidor');
-  }
+  } catch(e) {}
 }
 
 function abrirModalPlaga(){
@@ -2201,11 +2222,11 @@ async function generarReporteRiego() {
       <tbody>
         ${data.detalle.map(r=>`
           <tr style="border-bottom:1px solid var(--borde)">
-            <td style="padding:6px 10px">${formatFecha(r.fecha)}</td>
-            <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
-            <td style="padding:6px 10px"><code>${r.dni}</code></td>
-            <td style="padding:6px 10px;text-align:center;font-size:11px;color:var(--ts)">${formatHora(r.horaEntrada)} - ${formatHora(r.horaSalida)}</td>
-            <td style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
+            <td data-label="Fecha" style="padding:6px 10px">${formatFecha(r.fecha)}</td>
+            <td data-label="Trabajador" style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
+            <td data-label="DNI" style="padding:6px 10px"><code>${r.dni}</code></td>
+            <td data-label="Horario" style="padding:6px 10px;text-align:center;font-size:11px;color:var(--ts)">${formatHora(r.horaEntrada)} - ${formatHora(r.horaSalida)}</td>
+            <td data-label="Tareas" style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -2245,10 +2266,10 @@ async function generarReporteTareas() {
       <tbody>
         ${data.detalle.map(r=>`
           <tr style="border-bottom:1px solid var(--borde)">
-            <td style="padding:6px 10px">${r.fecha}</td>
-            <td style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
-            <td style="padding:6px 10px"><code>${r.dni}</code></td>
-            <td style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
+            <td data-label="Fecha" style="padding:6px 10px">${r.fecha}</td>
+            <td data-label="Trabajador" style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
+            <td data-label="DNI" style="padding:6px 10px"><code>${r.dni}</code></td>
+            <td data-label="Tareas" style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -2370,12 +2391,12 @@ async function generarPlanilla() {
 
       return `
         <tr id="row-${p.idPlanilla || p.id}">
-          <td><div class="c-nombre"><strong>${t.nomTrab} ${t.apeTrab}</strong></div></td>
-          <td><span class="badge bb">${etiquetaTipoPago(t.tipoPago)}</span></td>
-          <td style="font-size:12px; color:var(--ts)">${detalleTxt}</td>
-          <td style="text-align:right; font-weight:700">S/${parseFloat(p.montoTotal||0).toFixed(2)}</td>
-          <td><span class="badge ${yaPagado?'bv':'ba'}">${p.estado.toUpperCase()}</span></td>
-          <td style="white-space:nowrap">
+          <td data-label="Trabajador"><div class="c-nombre"><strong>${t.nomTrab} ${t.apeTrab}</strong></div></td>
+          <td data-label="Tipo"><span class="badge bb">${etiquetaTipoPago(t.tipoPago)}</span></td>
+          <td data-label="Detalle" style="font-size:12px; color:var(--ts)">${detalleTxt}</td>
+          <td data-label="Monto" style="text-align:right; font-weight:700">S/${parseFloat(p.montoTotal||0).toFixed(2)}</td>
+          <td data-label="Estado"><span class="badge ${yaPagado?'bv':'ba'}">${p.estado.toUpperCase()}</span></td>
+          <td data-label="Acciones" style="white-space:nowrap">
             <button class="tbtn" onclick="toggleAccordion(${t.idTrab}, '${desde}', '${hasta}', ${p.idPlanilla || p.id})" title="Ver Desglose">Ver Desglose</button>
             ${yaPagado ? `<button class="tbtn" onclick="descargarBoletaPdf(${p.idPlanilla})" title="Boleta PDF">PDF</button>` : ''}
           </td>
