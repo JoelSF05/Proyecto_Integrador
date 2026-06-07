@@ -1,4 +1,5 @@
 
-target/
-target/classes/application.properties
-target/classes/application.properties
+/target/
+/.idea/
+.DS_Store
+/*.iml
