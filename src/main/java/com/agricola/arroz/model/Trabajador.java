@@ -75,6 +75,10 @@ public class Trabajador {
     @Column(name = "pago_por_tarea")
     private BigDecimal pagoPorTarea;
 
+    /** Token único para el marcado de asistencia por QR */
+    @Column(name = "qr_token", unique = true)
+    private String qrToken;
+
     private Boolean activo = true;
 
     @Column(name = "created_at", updatable = false)
@@ -132,6 +136,9 @@ public class Trabajador {
 
     public BigDecimal getPagoPorTarea() { return pagoPorTarea; }
     public void setPagoPorTarea(BigDecimal p) { this.pagoPorTarea = p; }
+
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }

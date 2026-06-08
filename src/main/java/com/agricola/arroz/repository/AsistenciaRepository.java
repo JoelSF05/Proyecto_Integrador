@@ -1,30 +1,25 @@
 package com.agricola.arroz.repository;
 
-import com.agricola.arroz.model.Asistencia;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.agricola.arroz.model.Asistencia;
+
 public interface AsistenciaRepository extends JpaRepository<Asistencia, Integer> {
-
-    List<Asistencia> findByFecAsist(LocalDate fecha);
-
-    /** NUEVO — Filtrar todas las asistencias por rango de fechas */
-    List<Asistencia> findByFecAsistBetween(LocalDate desde, LocalDate hasta);
-
-    List<Asistencia> findByTrabajadorIdTrab(Integer idTrab);
-
-    /** NUEVO — Rango de fechas para cálculo de planilla */
-    List<Asistencia> findByTrabajadorIdTrabAndFecAsistBetween(
-        Integer idTrab, LocalDate fechaInicio, LocalDate fechaFin);
-
-    /** NUEVO — Asistencias por tipo de tarea (para reportes) */
-    List<Asistencia> findByTipoTareaAndFecAsistBetween(
-        String tipoTarea, LocalDate fechaInicio, LocalDate fechaFin);
-
-    /** Filtra solo por tipo de tarea — para las vistas de transplante, saca, carga, riego */
+    List<Asistencia> findByFecAsistBetween(LocalDate inicio, LocalDate fin);
+    List<Asistencia> findByTrabajadorIdTrabAndFecAsistBetween(Integer idTrab, LocalDate inicio, LocalDate fin);
+    
+    // Métodos requeridos por el servicio QR y controladores
+    Optional<Asistencia> findByTrabajadorIdTrabAndFecAsist(Integer idTrab, LocalDate fecha);
+    
     List<Asistencia> findByTipoTarea(String tipoTarea);
+    
+    List<Asistencia> findByTipoTareaAndFecAsistBetween(String tipo, LocalDate desde, LocalDate hasta);
+
+    List<Asistencia> findByTrabajadorIdTrabAndFecAsistOrderByIdAsistAsc(Integer idTrab, LocalDate fecha);
+
+    
 }

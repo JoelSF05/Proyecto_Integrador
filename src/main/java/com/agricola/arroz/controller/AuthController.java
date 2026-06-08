@@ -1,11 +1,8 @@
 package com.agricola.arroz.controller;
 
-import com.agricola.arroz.model.Trabajador;
-import com.agricola.arroz.model.Usuario;
-import com.agricola.arroz.repository.TrabajadorRepository;
-import com.agricola.arroz.repository.UsuarioRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,9 +13,19 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.agricola.arroz.model.Trabajador;
+import com.agricola.arroz.model.Usuario;
+import com.agricola.arroz.repository.TrabajadorRepository;
+import com.agricola.arroz.repository.UsuarioRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -110,6 +117,12 @@ public class AuthController {
         Trabajador trabajador = trabajadorRepository.findByDniTrab(dni);
         if (trabajador == null) {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "No existe trabajador con ese DNI"));
+        }
+
+        // Generar token QR automáticamente si no tiene uno
+        if (trabajador.getQrToken() == null || trabajador.getQrToken().isEmpty()) {
+            trabajador.setQrToken(UUID.randomUUID().toString());
+            trabajadorRepository.save(trabajador);
         }
 
         Usuario nuevo = new Usuario();

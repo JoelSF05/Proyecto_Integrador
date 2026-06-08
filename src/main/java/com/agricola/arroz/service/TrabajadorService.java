@@ -1,15 +1,17 @@
 package com.agricola.arroz.service;
 
-import com.agricola.arroz.model.Cargo;
-import com.agricola.arroz.model.Trabajador;
-import com.agricola.arroz.model.TipoPago;
-import com.agricola.arroz.repository.CargoRepository;
-import com.agricola.arroz.repository.TrabajadorRepository;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.agricola.arroz.model.Cargo;
+import com.agricola.arroz.model.TipoPago;
+import com.agricola.arroz.model.Trabajador;
+import com.agricola.arroz.repository.CargoRepository;
+import com.agricola.arroz.repository.TrabajadorRepository;
 
 /**
  * TrabajadorService — versión extendida con validación de pago_por_tarea.
@@ -61,6 +63,12 @@ public class TrabajadorService {
             .orElseThrow(() -> new RuntimeException("Cargo no existe: " + trabajador.getCargoId()));
 
         trabajador.setCargo(cargo);
+        
+        // Asegurar que siempre tenga un token QR al crearse
+        if (trabajador.getQrToken() == null || trabajador.getQrToken().isEmpty()) {
+            trabajador.setQrToken(UUID.randomUUID().toString());
+        }
+        
         validarCamposPago(trabajador);
         return trabajadorRepository.save(trabajador);
     }
@@ -86,6 +94,11 @@ public class TrabajadorService {
             Cargo cargo = cargoRepository.findById(datosNuevos.getCargoId())
                 .orElseThrow(() -> new RuntimeException("Cargo no existe"));
             existente.setCargo(cargo);
+        }
+
+        // Si no tiene token (registros antiguos) o los datos nuevos no lo traen, mantenemos o generamos
+        if (existente.getQrToken() == null || existente.getQrToken().isEmpty()) {
+            existente.setQrToken(UUID.randomUUID().toString());
         }
 
         validarCamposPago(existente);

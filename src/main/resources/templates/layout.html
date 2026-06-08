@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AgroMoyobamba — Sistema Agrícola Integral</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode"></script>
 <style>
 :root {
   --v0:#071a07; --v1:#0f2d0f; --v2:#1a5c1a; --v3:#2d8b2d; --v4:rgba(45,139,45,.15);
@@ -1015,7 +1016,8 @@ async function cargarDatosIniciales() {
     sueldoDia:   t.sueldoBaseDia,
     pagoPorSaco: t.pagoPorSaco,
     pagoPorTarea:t.pagoPorTarea,
-    activo:      true
+    activo:      true,
+    qrToken:     t.qrToken
   }));
   if (asists) asistencias = asists
     .filter(a => a.trabajador && a.trabajador.activo)
@@ -1203,6 +1205,7 @@ function construirSidebar(){
 // ═══════════════════════════════════════════════════════
 
   function irA(id){
+  if(modActivo === 'mi-asistencia' && id !== 'mi-asistencia') detenerEscaneo();
   modActivo = id;
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('activo'));
   const nav = document.getElementById('nav-'+id);
@@ -1243,6 +1246,7 @@ function construirSidebar(){
   if(id==='control-plagas') listarPlagas();
   if(id==='caja') listarCaja();
   if(id==='materiales') setTimeout(cargarMateriales, 50);
+  if(id==='mi-asistencia') setTimeout(cargarMiAsistenciaHoy, 100);
 
   if(id==='transplante') { setTimeout(()=>cargarLabores('TRANSPLANTE','transplante'), 100); setTimeout(()=>cargarPersonalSeccion('transplante','transplante'), 150); }
   if(id==='saca-arroz')  { setTimeout(()=>cargarLabores('SACA','saca-arroz'), 100); setTimeout(()=>cargarPersonalSeccion('saca','saca-arroz'), 150); }
@@ -1410,11 +1414,59 @@ function renderModulo(id){
 
   if(id==='mi-asistencia'){
     return `
-      <div class="card" style="max-width:500px;margin:0 auto;text-align:center;padding:40px 20px">
-        <div style="font-size:64px;margin-bottom:14px"></div>
-        <h3 style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:6px">Auto-Registro de Asistencia</h3>
-        <p style="color:var(--ts);font-size:14px;margin-bottom:24px">Escanee el código QR del capataz en el campo para registrar su entrada de hoy.</p>
-        <button class="btn-p" style="font-size:15px;padding:12px 24px" onclick="mostrarToast('📷 Cámara activada. Buscando código QR...')">Simular Escaneo QR</button>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px">
+        <div class="card" style="max-width:500px; width:100%; text-align:center; padding:40px 20px">
+          <h3 style="font-family:'Playfair Display',serif; font-size:24px; margin-bottom:6px">Auto-Registro de Asistencia</h3>
+          <p style="color:var(--ts); font-size:14px; margin-bottom:24px">Escanee el código QR del capataz en el campo para registrar su entrada o salida de hoy.</p>
+          <div id="qr-reader" style="width:100%; max-width:400px; margin: 0 auto 20px; border-radius:12px; overflow:hidden; display:none"></div>
+          <button id="btn-scan" class="btn-p" style="font-size:15px; padding:12px 24px" onclick="ejecutarEscaneoQR()">Escanear QR</button>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%">
+          <div class="card" style="flex:1; min-width:320px; max-width:500px;">
+            <div class="card-hdr"><h3>Mis Marcados de Hoy</h3></div>
+            <div class="tabla-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-mi-asistencia-hoy">
+                  <tr><td colspan="3" style="text-align:center; padding:20px; color:var(--ts)">Cargando registros...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" id="seccion-asistencia-general" style="flex:1; min-width:320px; max-width:600px; display:none">
+            <div class="card-hdr">
+              <h3>Marcado General</h3>
+              <div class="htools" style="gap:5px">
+                <input type="date" id="asist-gral-desde" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
+                <input type="date" id="asist-gral-hasta" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
+                <button class="tbtn" onclick="setAsistHoy()" style="padding:4px 8px; font-size:11px">Hoy</button>
+              </div>
+            </div>
+            <div class="tabla-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Trabajador</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-asistencia-general">
+                  <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--ts)">Cargando registros...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -1939,7 +1991,7 @@ function listarTrabajadores(filtro=''){
             <td data-label="Cargo"><span class="badge bp">${t.cargo}</span></td>
             <td data-label="Tarifa" style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
             <td data-label="Acciones">
-              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
+              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a><a onclick="descargarQrTrabajador(${t.id})">Descargar QR</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
             </td>
           </tr>`).join('');
 
@@ -1963,6 +2015,132 @@ function filtrarTrabajadores(val){
   listarTrabajadores(val);
 }
 
+// ── Lógica de Mi Asistencia (QR) ──
+async function cargarMiAsistenciaHoy() {
+  const tbodyPropia = document.getElementById('lista-mi-asistencia-hoy');
+  const tbodyGral = document.getElementById('lista-asistencia-general');
+  const seccionGral = document.getElementById('seccion-asistencia-general');
+  
+  if(!tbodyPropia) return;
+
+  const inputDesde = document.getElementById('asist-gral-desde');
+  const inputHasta = document.getElementById('asist-gral-hasta');
+
+  let desde, hasta;
+  if (inputDesde && inputDesde.value) {
+    desde = inputDesde.value;
+    hasta = inputHasta.value || desde;
+  } else {
+    const d = new Date();
+    const hoy = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+    desde = hoy;
+    hasta = hoy;
+    if(inputDesde) inputDesde.value = hoy;
+    if(inputHasta) inputHasta.value = hoy;
+  }
+
+  const data = await apiFetch(`/api/reportes/asistencia-mixta?desde=${desde}&hasta=${hasta}`);
+  if(!data) return;
+
+  // Actualizar títulos según rango seleccionado
+  const labelFecha = (desde === hasta) ? `(${formatFecha(desde)})` : `(${formatFecha(desde)} al ${formatFecha(hasta)})`;
+  const h3Propio = tbodyPropia.closest('.card').querySelector('h3');
+  const h3Gral = tbodyGral?.closest('.card')?.querySelector('h3');
+  if(h3Propio) h3Propio.textContent = 'Mis Marcados ' + labelFecha;
+  if(h3Gral) h3Gral.textContent = 'Marcado General ' + labelFecha;
+
+  // 1. Llenar tabla propia
+  if(!data.propia || data.propia.length === 0) {
+    tbodyPropia.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--ts)">No has marcado asistencia hoy.</td></tr>`;
+  } else {
+    tbodyPropia.innerHTML = data.propia.map(a => `
+      <tr>
+        <td data-label="Entrada" style="font-weight:600; color:var(--v2)">${formatHora(a.horaEntrada)}</td>
+        <td data-label="Salida" style="font-weight:600; color:var(--r1)">${a.horaSalida ? formatHora(a.horaSalida) : '—'}</td>
+        <td data-label="Estado"><span class="badge ${a.horaSalida ? 'bv' : 'ba'}">${a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  // 2. Llenar tabla general si es admin
+  if(data.esAdmin) {
+    if(seccionGral) seccionGral.style.display = 'block';
+    if(tbodyGral) {
+      if(!data.general || data.general.length === 0) {
+        tbodyGral.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--ts)">No hay registros generales hoy.</td></tr>`;
+      } else {
+        tbodyGral.innerHTML = data.general.map(a => `
+          <tr>
+            <td data-label="Trabajador"><strong>${a.trabajador}</strong></td>
+            <td data-label="Entrada">${formatHora(a.horaEntrada)}</td>
+            <td data-label="Salida">${a.horaSalida ? formatHora(a.horaSalida) : '—'}</td>
+            <td data-label="Estado"><span class="badge ${a.horaSalida ? 'bv' : 'ba'}">${a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+  } else {
+    if(seccionGral) seccionGral.style.display = 'none';
+  }
+}
+
+function setAsistHoy() {
+  const d = new Date();
+  const hoy = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+  if(document.getElementById('asist-gral-desde')) document.getElementById('asist-gral-desde').value = hoy;
+  if(document.getElementById('asist-gral-hasta')) document.getElementById('asist-gral-hasta').value = hoy;
+  cargarMiAsistenciaHoy();
+}
+
+let html5QrCode = null;
+
+async function ejecutarEscaneoQR() {
+  const readerDiv = document.getElementById('qr-reader');
+  const btn = document.getElementById('btn-scan');
+  
+  if(!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader");
+
+  if(readerDiv.style.display === 'block') {
+    await detenerEscaneo();
+    return;
+  }
+
+  readerDiv.style.display = 'block';
+  btn.textContent = "Detener Cámara";
+  btn.classList.replace('btn-p', 'btn-s');
+
+  html5QrCode.start(
+    { facingMode: "user" }, 
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    async (decodedText) => {
+      await detenerEscaneo();
+      const res = await apiFetch('/api/asistencia/qr', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ token: decodedText })
+      });
+      if(res) {
+        mostrarToast(res.mensaje || "Marcado realizado con éxito");
+        cargarMiAsistenciaHoy();
+      }
+    }
+  ).catch(err => {
+    mostrarToast("No se pudo acceder a la cámara");
+    detenerEscaneo();
+  });
+}
+
+async function detenerEscaneo() {
+  const readerDiv = document.getElementById('qr-reader');
+  const btn = document.getElementById('btn-scan');
+  if(html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();
+  if(readerDiv) readerDiv.style.display = 'none';
+  if(btn) {
+    btn.textContent = "Escanear QR";
+    btn.classList.replace('btn-s', 'btn-p');
+  }
+}
+
 // ── Ver detalle completo del trabajador ──
 function verTrabajador(id) {
   const t = trabajadores.find(w => w.id === id);
@@ -1973,6 +2151,15 @@ function verTrabajador(id) {
   const tarifa = t.sueldoDia ? `S/${t.sueldoDia}/día` :
                  t.pagoPorTarea ? `S/${t.pagoPorTarea}/tarea` :
                  t.pagoPorSaco ? `S/${t.pagoPorSaco}/saco` : '—';
+
+  const qrHtml = t.qrToken 
+    ? `<div style="grid-column:1/-1; text-align:center; padding:15px; background:var(--bg); border-radius:12px; margin-top:10px">
+         <label style="display:block; font-size:10px; color:var(--ts); text-transform:uppercase; margin-bottom:8px">Identificador QR de Asistencia</label>
+         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.qrToken}" alt="QR" style="border:4px solid #fff; border-radius:8px; box-shadow:var(--sh)">
+         <p style="font-size:11px; color:var(--ts); margin-top:8px">Token: <code>${t.qrToken}</code></p>
+       </div>`
+    : `<div class="fc full" style="text-align:center; color:var(--r1); padding:10px">⚠️ Usuario sin token QR asignado.</div>`;
+
   abrirModal(`
     <h3 class="modal-tit">${t.nombre} ${t.apellido}</h3>
     <div class="form-grid">
@@ -1981,12 +2168,17 @@ function verTrabajador(id) {
       <div class="fc"><label>Tarifa</label><p style="padding:9px 0;font-size:16px;font-weight:700;color:var(--v2)">${tarifa}</p></div>
       <div class="fc"><label>Asistencias totales</label><p style="padding:9px 0;font-size:14px">${asists.length} registros</p></div>
       <div class="fc"><label>Sacos totales</label><p style="padding:9px 0;font-size:14px">${totalSacos} sacos</p></div>
+      ${qrHtml}
     </div>
     <div class="modal-foot">
       <button class="btn-s" onclick="cerrarModal()">Cerrar</button>
       ${isAdmin() ? '<button class="btn-p" onclick="cerrarModal();setTimeout(()=>abrirModalEditarTrabajador('+id+'),150)">Editar</button>' : ''}
     </div>
   `);
+}
+
+function descargarQrTrabajador(id) {
+  window.location.href = `/api/reportes/trabajador/${id}/qr/pdf`;
 }
 
 // ── Editar trabajador existente ──
@@ -2671,17 +2863,26 @@ function labelTarea(k){
 
 function formatFecha(f){
   if(!f) return '–';
-  const d=new Date(f+'T00:00:00');
+  let s = Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f;
+  const d=new Date(s+'T00:00:00');
   return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
 }
 
 function formatHora(h) {
   if (!h) return '—';
-  const [hh, mm] = h.split(':');
-  let hour = parseInt(hh);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  hour = hour % 12 || 12;
-  return `${hour}:${mm} ${ampm}`;
+  let hh, mm;
+  if (Array.isArray(h)) {
+    hh = h[0];
+    mm = String(h[1]).padStart(2, '0');
+  } else if (typeof h === 'string') {
+    const parts = h.split(':');
+    hh = parseInt(parts[0]);
+    mm = parts[1];
+  } else return '—';
+
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 || 12;
+  return `${h12}:${mm} ${ampm}`;
 }
 
 function mostrarToast(msg){

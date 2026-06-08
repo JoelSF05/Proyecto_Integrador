@@ -17,6 +17,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -24,6 +25,11 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import java.awt.image.BufferedImage;
 import java.awt.Color;
 
 @Service
@@ -412,6 +418,59 @@ public class ReportePdfService {
                 FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
             pTotal.setAlignment(Element.ALIGN_RIGHT);
             document.add(pTotal);
+
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Genera un PDF con el código QR único del trabajador para el control de asistencia.
+     */
+    public byte[] generarPdfQrTrabajador(Trabajador t) {
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            // Título
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, new Color(45, 139, 45));
+            Paragraph titulo = new Paragraph("CREDENCIAL DE ASISTENCIA", fontTitulo);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            document.add(titulo);
+            document.add(Chunk.NEWLINE);
+
+            // Datos del trabajador
+            Paragraph pNombre = new Paragraph(t.getNomTrab() + " " + t.getApeTrab(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+            pNombre.setAlignment(Element.ALIGN_CENTER);
+            document.add(pNombre);
+
+            Paragraph pDni = new Paragraph("DNI: " + t.getDniTrab(), FontFactory.getFont(FontFactory.HELVETICA, 14));
+            pDni.setAlignment(Element.ALIGN_CENTER);
+            document.add(pDni);
+            document.add(Chunk.NEWLINE);
+
+            // Generar QR usando ZXing
+            String qrData = (t.getQrToken() != null && !t.getQrToken().isEmpty()) ? t.getQrToken() : "TOKEN_NO_ASIGNADO";
+            
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 200, 200);
+            BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
+            Image imgQr = Image.getInstance(bufferedImage, null);
+            
+            imgQr.setAlignment(Element.ALIGN_CENTER);
+            imgQr.scaleAbsolute(200f, 200f);
+            document.add(imgQr);
+
+            document.add(Chunk.NEWLINE);
+            Paragraph pFooter = new Paragraph("Escanee este código en el campo para registrar su ingreso y salida.", 
+                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, Color.GRAY));
+            pFooter.setAlignment(Element.ALIGN_CENTER);
+            document.add(pFooter);
 
             document.close();
         } catch (Exception e) {

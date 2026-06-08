@@ -1,22 +1,36 @@
 package com.agricola.arroz.controller;
 
-import com.agricola.arroz.model.Asistencia;
-import com.agricola.arroz.model.PlanillaPago;
-import com.agricola.arroz.repository.AsistenciaRepository;
-import com.agricola.arroz.repository.PlanillaPagoRepository;
-import com.agricola.arroz.repository.TrabajadorRepository;
-import com.agricola.arroz.service.ReportePdfService;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.agricola.arroz.model.Asistencia;
+import com.agricola.arroz.model.PlanillaPago;
+import com.agricola.arroz.model.Trabajador;
+import com.agricola.arroz.model.Usuario;
+import com.agricola.arroz.repository.AsistenciaRepository;
+import com.agricola.arroz.repository.PlanillaPagoRepository;
+import com.agricola.arroz.repository.TrabajadorRepository;
+import com.agricola.arroz.repository.UsuarioRepository;
+import com.agricola.arroz.service.ReportePdfService;
 
 /**
  * ReporteController — endpoints para reportes de:
@@ -36,6 +50,9 @@ public class ReporteController {
 
     @Autowired
     private PlanillaPagoRepository planillaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private ReportePdfService pdfService;
@@ -308,5 +325,79 @@ public class ReporteController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(detalle);
+    }
+
+    /**
+     * Genera un PDF con el código QR del trabajador para su impresión.
+     */
+    @GetMapping("/trabajador/{id}/qr/pdf")
+    public ResponseEntity<byte[]> trabajadorQrPdf(@PathVariable Integer id) {
+        Trabajador t = trabajadorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Trabajador no encontrado"));
+        
+        byte[] pdfBytes = pdfService.generarPdfQrTrabajador(t);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=QR_" + t.getDniTrab() + ".pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdfBytes);
+    }
+
+    /**
+     * Retorna la asistencia del usuario actual y, si es administrador o supervisor, la de todos los usuarios.
+     * Permite al frontend mostrar ambas listas en paralelo o en tablas adyacentes.
+     */
+    @GetMapping("/asistencia-mixta")
+    public ResponseEntity<?> asistenciaMixta(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Usuario usuario = usuarioRepository.findByNombreUsuario(auth.getName()).orElse(null);
+
+        // Verificación de roles más robusta basada en las autoridades cargadas en el contexto
+        boolean esAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERVISOR"));
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("esAdmin", esAdmin);
+
+        // 1. Asistencia propia del trabajador vinculado al usuario logueado
+        List<Map<String, Object>> misAsistencias = new ArrayList<>();
+        if (usuario != null && usuario.getTrabajador() != null) {
+            respuesta.put("miNombre", usuario.getTrabajador().getNomTrab() + " " + usuario.getTrabajador().getApeTrab());
+            misAsistencias = asistenciaRepository.findByTrabajadorIdTrabAndFecAsistBetween(
+                    usuario.getTrabajador().getIdTrab(), desde, hasta)
+                .stream()
+                .filter(a -> a.getHoraEntrada() != null || a.getHoraSalida() != null)
+                .map(this::formatearAsistencia).collect(Collectors.toList());
+        }
+        respuesta.put("propia", misAsistencias);
+
+        // 2. Asistencia general (solo para ADMIN o SUPERVISOR)
+        List<Map<String, Object>> todasAsistencias = new ArrayList<>();
+        if (esAdmin) {
+            todasAsistencias = asistenciaRepository.findByFecAsistBetween(desde, hasta)
+                .stream()
+                .filter(a -> a.getHoraEntrada() != null || a.getHoraSalida() != null)
+                .map(this::formatearAsistencia).collect(Collectors.toList());
+        }
+        respuesta.put("general", todasAsistencias);
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+    private Map<String, Object> formatearAsistencia(Asistencia a) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", a.getIdAsist());
+        m.put("fecha", a.getFecAsist());
+        m.put("trabajador", (a.getTrabajador() != null) ? a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab() : "N/A");
+        m.put("tipo", a.getTipoTarea() != null ? a.getTipoTarea() : "JORNAL");
+        m.put("tareas", a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0);
+        m.put("sacos", a.getSacosCosechados() != null ? a.getSacosCosechados() : 0);
+        m.put("horaEntrada", a.getHoraEntrada());
+        m.put("horaSalida", a.getHoraSalida());
+        m.put("observacion", a.getObservacionSupervisor());
+        return m;
     }
 }
