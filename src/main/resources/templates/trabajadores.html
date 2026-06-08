@@ -59,14 +59,17 @@
             background-color: #2e7d32;
         }
         .boton {
-            min-width: 170px;
+            width: 100%;
             text-align: center;
         }
-        .action-row {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        @media (min-width: 600px) {
+            .boton { width: auto; min-width: 170px; }
+            .action-row {
+                margin-top: 20px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
         }
         .loading {
             text-align: center;
@@ -193,6 +196,7 @@
         
         <div id="tabla-container" style="display: none;">
             <div id="successMsg" class="success"></div>
+            <div style="overflow-x: auto;">
             <table id="tabla">
                 <thead>
                     <tr>
@@ -209,6 +213,7 @@
                 </thead>
                 <tbody id="tabla-body"></tbody>
             </table>
+            </div>
         </div>
         
         <div id="error-container" class="error" style="display: none;"></div>
@@ -500,8 +505,8 @@
                         row.insertCell(4).textContent = t.cargoNombre || '-';
                         row.insertCell(5).textContent = t.dniTrab || t.dni || '-';
                         row.insertCell(6).textContent = t.tipoPago || '-';
-                        row.insertCell(7).textContent = t.sueldoBaseDia ? `S/${t.sueldoBaseDia}` : '-';
-                        row.insertCell(8).textContent = t.pagoPorSaco ? `S/${t.pagoPorSaco}` : '-';
+                        row.insertCell(7).textContent = t.sueldoBaseDia ? `S/${parseFloat(t.sueldoBaseDia).toLocaleString('es-PE', {minimumFractionDigits: 2})}` : '-';
+                        row.insertCell(8).textContent = t.pagoPorSaco ? `S/${parseFloat(t.pagoPorSaco).toLocaleString('es-PE', {minimumFractionDigits: 2})}` : '-';
                         row.addEventListener('click', () => { radio.checked = true; });
                     });
                 })

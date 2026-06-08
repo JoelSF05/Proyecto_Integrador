@@ -1,15 +1,17 @@
 package com.agricola.arroz.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.agricola.arroz.model.Material;
 import com.agricola.arroz.model.MovimientoMaterial;
 import com.agricola.arroz.repository.MaterialRepository;
 import com.agricola.arroz.repository.MovimientoMaterialRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * NUEVO: MaterialService
@@ -24,6 +26,9 @@ public class MaterialService {
 
     @Autowired
     private MovimientoMaterialRepository movimientoRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // Listar solo materiales activos
     public List<Material> listarActivos() {
@@ -58,7 +63,7 @@ public class MaterialService {
         BigDecimal stockAnterior = mat.getStockActual();
 
         if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("El stock no puede ser negativo");
+            throw new RuntimeException("Error: Stock insuficiente. El stock no puede ser negativo.");
         }
 
         // Registrar movimiento en Java (doble seguridad con el trigger SQL)
@@ -82,6 +87,23 @@ public class MaterialService {
         movimientoRepository.save(mov);
 
         return mat;
+    }
+
+    /**
+     * Registra el uso de un material en una parcela y disminuye el stock.
+     */
+    @Transactional
+    public void registrarUso(Integer idMat, Integer idHect, String fecha, String hora, BigDecimal cantidad, String detalle) {
+        Material mat = materialRepository.findById(idMat)
+            .orElseThrow(() -> new RuntimeException("Material no encontrado"));
+
+        // 1. Disminuir el stock (esto también crea un registro en movimientos_material automáticamente)
+        BigDecimal nuevoStock = mat.getStockActual().subtract(cantidad);
+        actualizarStock(idMat, nuevoStock, "Uso en campo: " + detalle);
+
+        // 2. Insertar en la tabla uso_materiales para seguimiento agronómico
+        String sql = "INSERT INTO uso_materiales (id_mat, id_hect, fec_uso, hora_uso, cantidad, detalle_uso) VALUES (?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, idMat, idHect, java.sql.Date.valueOf(fecha), java.sql.Time.valueOf(hora), cantidad, detalle);
     }
 
     // Actualizar datos generales del material

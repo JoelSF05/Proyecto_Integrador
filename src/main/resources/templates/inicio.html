@@ -29,14 +29,15 @@
 
 <script>
 fetch('/api/trabajadores').then(res => res.json()).then(data => {
-    document.getElementById('totalTrabajadores').innerText = data.length;
+    document.getElementById('totalTrabajadores').innerText = data.length.toLocaleString('es-PE');
 });
 fetch('/api/asistencias').then(res => res.json()).then(data => {
-    const totalSacos = data.reduce((sum, a) => sum + (a.sacosCosechados || 0), 0);
-    document.getElementById('totalSacos').innerText = totalSacos;
+    const activeData = data.filter(a => a.trabajador && a.trabajador.activo);
+    const totalSacos = activeData.reduce((sum, a) => sum + (parseInt(a.sacosCosechados) || 0), 0);
+    document.getElementById('totalSacos').innerText = totalSacos.toLocaleString('es-PE');
     const tbody = document.getElementById('ultimasAsistencias');
     tbody.innerHTML = '';
-    data.slice(-5).reverse().forEach(a => {
+    activeData.slice(-5).reverse().forEach(a => {
         const nombre = a.trabajador ? `${a.trabajador.nomTrab} ${a.trabajador.apeTrab}` : '-';
         tbody.innerHTML += `<tr><td>${a.fecAsist || '-'}</td><td>${nombre}</td><td>${a.horaEntrada || '-'}</td><td>${a.horaSalida || '-'}</td><td>${a.sacosCosechados || 0}</td></tr>`;
     });

@@ -6,8 +6,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 10px;
             background-color: #f0f0f0;
+        }
+        @media (min-width: 600px) {
+            body { padding: 20px; }
         }
         .container {
             max-width: 1000px;
@@ -23,13 +26,16 @@
             margin-bottom: 15px;
         }
         label {
-            display: inline-block;
-            width: 150px;
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
         }
         input, select {
             padding: 8px;
-            width: 200px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         button {
             background-color: #4CAF50;
@@ -38,12 +44,18 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        @media (min-width: 600px) {
+            button { width: auto; margin-right: 10px; }
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            display: block;
+            overflow-x: auto;
         }
         th, td {
             border: 1px solid #ddd;
@@ -148,7 +160,8 @@
             .then(res => res.json())
             .then(data => {
                 const select = document.getElementById('idTrab');
-                data.forEach(t => {
+                // Filtrar solo trabajadores activos para el registro
+                data.filter(t => t.activo).forEach(t => {
                     select.innerHTML += `<option value="${t.idTrab}">${t.nomTrab} ${t.apeTrab} (ID: ${t.idTrab})</option>`;
                 });
             })
@@ -158,47 +171,44 @@
         
         // Cargar asistencias
         function cargarAsistencias() {
-    fetch('/api/asistencias')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('tabla-body');
-            tbody.innerHTML = '';
-            
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8">No hay registros de asistencia</td></tr>';
-                return;
-            }
-            
-            data.forEach(a => {
-                const estado = a.presente ? 'Presente' : 'Ausente';
-                const nombreTrabajador = a.trabajador ? `${a.trabajador.nomTrab} ${a.trabajador.apeTrab}` : 'ID: ' + (a.idTrab || '-');
-                
-                // Formatear fecha correctamente
-                let fechaMostrar = '-';
-                if (a.fecAsist) {
-                    fechaMostrar = a.fecAsist;
-                }
-                
-                const row = `
-                    <tr>
-                        <td>${a.idAsist}</td>
-                        <td>${nombreTrabajador}</td>
-                        <td>${fechaMostrar}</td>
-                        <td>${a.horaEntrada || '-'}</td>
-                        <td>${a.horaSalida || '-'}</td>
-                        <td>${estado}</td>
-                        <td>${a.sacosCosechados || 0}</td>
-                        <td><button onclick="eliminarAsistencia(${a.idAsist})" style="background:#f44336;color:white;border:none;padding:5px 10px;cursor:pointer;">Eliminar</button></td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('tabla-body').innerHTML = '<tr><td colspan="8">Error al cargar</td></tr>';
-        });
-}
+            fetch('/api/asistencias')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tabla-body');
+                    tbody.innerHTML = '';
+                    
+                    // Filtrar asistencias de trabajadores activos
+                    const activeData = data.filter(a => a.trabajador && a.trabajador.activo);
+                    
+                    if (activeData.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8">No hay registros de asistencia</td></tr>';
+                        return;
+                    }
+                    
+                    activeData.forEach(a => {
+                        const estado = a.presente ? 'Presente' : 'Ausente';
+                        const nombreTrabajador = a.trabajador ? `${a.trabajador.nomTrab} ${a.trabajador.apeTrab}` : 'ID: ' + (a.idTrab || '-');
+                        
+                        const row = `
+                            <tr>
+                                <td>${a.idAsist}</td>
+                                <td>${nombreTrabajador}</td>
+                                <td>${a.fecAsist || '-'}</td>
+                                <td>${a.horaEntrada || '-'}</td>
+                                <td>${a.horaSalida || '-'}</td>
+                                <td>${estado}</td>
+                                <td>${a.sacosCosechados || 0}</td>
+                                <td><button onclick="eliminarAsistencia(${a.idAsist})" style="background:#f44336;color:white;border:none;padding:5px 10px;cursor:pointer;">Eliminar</button></td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="8">Error al cargar</td></tr>';
+                });
+        }
         
         // Guardar asistencia
         function guardarAsistencia() {
@@ -292,4 +302,5 @@
         cargarAsistencias();
     </script>
 </body>
+
 </html>
