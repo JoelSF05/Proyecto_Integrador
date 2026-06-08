@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +25,13 @@ public class AsistenciaQrService {
     @Autowired
     private AsistenciaRepository asistenciaRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate; // Inyectar SimpMessagingTemplate
+
     @Transactional
     public String procesarMarcadoQr(String token) {
         // 1. Buscar trabajador por token
+        // Usando orElseThrow para un manejo de errores más claro
         Trabajador t = trabajadorRepository.findByQrToken(token)
                 .orElseThrow(() -> new RuntimeException("Código QR no reconocido o trabajador inactivo"));
 
@@ -36,12 +41,16 @@ public class AsistenciaQrService {
 
         LocalDate hoy = LocalDate.now(ZoneOffset.UTC);
         // Buscamos todos los registros de hoy para este trabajador
+        // Ordenamos por ID para asegurar un comportamiento consistente si existen múltiples registros "abiertos"
         List<Asistencia> registrosHoy = asistenciaRepository.findByTrabajadorIdTrabAndFecAsistOrderByIdAsistAsc(t.getIdTrab(), hoy);
 
         // Buscamos si existe algún registro "abierto" (sin hora de salida)
         Optional<Asistencia> registroAbierto = registrosHoy.stream()
                 .filter(a -> a.getHoraSalida() == null)
                 .findFirst();
+        
+        Asistencia asistenciaGuardada;
+        String mensaje;
 
         if (registroAbierto.isPresent()) {
             Asistencia abierta = registroAbierto.get();
@@ -49,24 +58,30 @@ public class AsistenciaQrService {
                 // Caso A: Hay una tarea asignada (ej. Riego) esperando entrada
                 abierta.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
                 abierta.setPresente(true);
-                asistenciaRepository.save(abierta);
-                return "ENTRADA REGISTRADA (Tarea): " + t.getNomTrab() + " a las " + abierta.getHoraEntrada();
+                asistenciaGuardada = asistenciaRepository.save(abierta);
+                mensaje = "ENTRADA REGISTRADA (Tarea): " + t.getNomTrab() + " a las " + abierta.getHoraEntrada();
             } else {
                 // Caso B: Ya entró, registramos su SALIDA
                 abierta.setHoraSalida(LocalTime.now(ZoneOffset.UTC));
-                asistenciaRepository.save(abierta);
-                return "SALIDA REGISTRADA: " + t.getNomTrab() + " a las " + abierta.getHoraSalida();
+                asistenciaGuardada = asistenciaRepository.save(abierta);
+                mensaje = "SALIDA REGISTRADA: " + t.getNomTrab() + " a las " + abierta.getHoraSalida();
             }
+        } else {
+            // Caso C: No hay registros hoy o todos están cerrados -> Nueva Entrada
+            Asistencia nueva = new Asistencia();
+            nueva.setTrabajador(t);
+            nueva.setFecAsist(hoy);
+            nueva.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
+            nueva.setPresente(true);
+            nueva.setEstadoAprobacion("PENDIENTE");
+            asistenciaGuardada = asistenciaRepository.save(nueva);
+            mensaje = "NUEVA ENTRADA: " + t.getNomTrab() + " a las " + nueva.getHoraEntrada();
         }
 
-        // Caso C: No hay registros hoy o todos están cerrados -> Nueva Entrada
-        Asistencia nueva = new Asistencia();
-        nueva.setTrabajador(t);
-        nueva.setFecAsist(hoy);
-        nueva.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
-        nueva.setPresente(true);
-        nueva.setEstadoAprobacion("PENDIENTE");
-        asistenciaRepository.save(nueva);
-        return "NUEVA ENTRADA: " + t.getNomTrab() + " a las " + nueva.getHoraEntrada();
+        // Publicar el registro de asistencia actualizado/creado a través de WebSocket
+        // El frontend puede suscribirse a "/topic/asistencia-updates"
+        messagingTemplate.convertAndSend("/topic/asistencia-updates", asistenciaGuardada);
+
+        return mensaje;
     }
 }

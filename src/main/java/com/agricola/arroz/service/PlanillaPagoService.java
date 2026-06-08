@@ -3,7 +3,6 @@ package com.agricola.arroz.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -87,15 +86,14 @@ public class PlanillaPagoService {
 
         if (tipo.esPorJornal()) {
             BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
-            int totalCant = asistencias.stream()
+            // Al permitir múltiples registros por día, contamos días únicos para el pago de jornal
+            long diasUnicos = asistencias.stream()
                 .filter(a -> Boolean.TRUE.equals(a.getPresente()))
-                .mapToInt(a -> {
-                    if (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) return a.getTareasCompletadas();
-                    if (a.getSacosCosechados() != null && a.getSacosCosechados() > 0) return a.getSacosCosechados();
-                    return 1;
-                }).sum();
-            planilla.setTotalDias(totalCant);
-            montoTotal = tarifa.multiply(BigDecimal.valueOf(totalCant));
+                .map(Asistencia::getFecAsist)
+                .distinct()
+                .count();
+            planilla.setTotalDias((int) diasUnicos);
+            montoTotal = tarifa.multiply(BigDecimal.valueOf(diasUnicos));
         } else if (tipo.esPorSaco()) {
             BigDecimal tarifa = trabajador.getPagoPorSaco() != null ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
             int totalSacos = asistencias.stream()

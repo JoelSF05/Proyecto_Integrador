@@ -6,6 +6,8 @@
 <title>AgroMoyobamba — Sistema Agrícola Integral</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <style>
 :root {
   --v0:#071a07; --v1:#0f2d0f; --v2:#1a5c1a; --v3:#2d8b2d; --v4:rgba(45,139,45,.15);
@@ -1993,7 +1995,7 @@ function listarTrabajadores(filtro=''){
             <td data-label="Cargo"><span class="badge bp">${t.cargo}</span></td>
             <td data-label="Tarifa" style="text-align:right;font-size:12px;color:var(--v2);font-weight:700">S/${t.sueldoDia||t.pagoPorTarea||t.pagoPorSaco||'—'}</td>
             <td data-label="Acciones">
-              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a><a onclick="descargarQrTrabajador(${t.id})">Descargar QR</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
+              <div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a onclick="verTrabajador(${t.id})">Ver detalle</a><a onclick="vistaPreviaQr(${t.id})">Vista previa QR</a><a onclick="descargarQrTrabajador(${t.id})">Descargar QR</a>${isAdmin() ? '<a onclick="abrirModalEditarTrabajador('+t.id+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarTrabajador('+t.id+')">Dar de baja</a>' : ''}</div></div>
             </td>
           </tr>`).join('');
 
@@ -2189,6 +2191,33 @@ function verTrabajador(id) {
 
 function descargarQrTrabajador(id) {
   window.location.href = `/api/reportes/trabajador/${id}/qr/pdf`;
+}
+
+function vistaPreviaQr(id) {
+  const t = trabajadores.find(w => w.id === id);
+  if(!t) return;
+  
+  const qrUrl = t.qrToken 
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${t.qrToken}`
+    : null;
+
+  abrirModal(`
+    <div style="text-align:center; padding:10px">
+      <h3 class="modal-tit" style="margin-bottom:5px">Vista Previa QR</h3>
+      <p style="font-size:14px; color:var(--ts); margin-bottom:20px">${t.nombre} ${t.apellido}</p>
+      
+      ${qrUrl ? `
+        <div style="background:#fff; padding:20px; border-radius:16px; display:inline-block; border:1px solid var(--borde); box-shadow:var(--sh)">
+          <img src="${qrUrl}" alt="Código QR" style="display:block; max-width:100%; height:auto;">
+        </div>
+        <p style="margin-top:15px; font-size:12px; color:var(--ts)">Token de seguridad: <code>${t.qrToken}</code></p>
+      ` : '<p style="color:var(--r1)">⚠️ El trabajador no tiene un token QR generado.</p>'}
+    </div>
+    <div class="modal-foot">
+      <button class="btn-s" onclick="cerrarModal()">Cerrar</button>
+      ${qrUrl ? `<button class="btn-p" onclick="descargarQrTrabajador(${id})">📥 Descargar PDF</button>` : ''}
+    </div>
+  `);
 }
 
 // ── Editar trabajador existente ──
@@ -2940,6 +2969,64 @@ document.getElementById('modal-overlay').addEventListener('click',function(e){
   if(e.target===this) cerrarModal();
 });
 
+// ── WebSocket Real-Time ──
+let stompClient = null;
+
+function conectarWebSocket() {
+    const socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null; // Silencia logs excesivos
+
+    stompClient.connect({}, function (frame) {
+        console.log('✅ Conectado al canal de tiempo real');
+        
+        stompClient.subscribe('/topic/asistencia-updates', function (message) {
+            const a = JSON.parse(message.body);
+            
+            // Adaptar el objeto del backend al formato del array local 'asistencias'
+            const asistenciaActualizada = {
+                id:          a.idAsist,
+                trabId:      a.trabajador?.idTrab,
+                fecAsist:    a.fecAsist,
+                fecha:       a.fecAsist,
+                tipoTarea:   a.tipoTarea || 'DIA',
+                presente:    a.presente,
+                estado:      a.estadoAprobacion || 'PENDIENTE',
+                hour:        a.horaEntrada || '06:00',
+                horaEntrada: a.horaEntrada,
+                horaSalida:  a.horaSalida,
+                sacos:       a.sacosCosechados,
+                tareasCompletadas: a.tareasCompletadas || 0,
+                observacion: a.observacionSupervisor || ''
+            };
+
+            // Actualizar el array global sin recargar
+            const index = asistencias.findIndex(x => x.id === asistenciaActualizada.id);
+            if (index !== -1) {
+                asistencias[index] = asistenciaActualizada;
+            } else {
+                asistencias.push(asistenciaActualizada);
+            }
+
+            // Refrescar solo la vista que está abierta actualmente
+            refrescarVistasRealTime(a.trabajador?.nomTrab || 'Un trabajador');
+        });
+    }, function(error) {
+        console.log('⚠️ Error en WebSocket, reintentando en 5s...');
+        setTimeout(conectarWebSocket, 5000);
+    });
+}
+
+function refrescarVistasRealTime(nombreTrabajador) {
+    if (modActivo === 'dashboard') initDashboard();
+    if (modActivo === 'mi-asistencia') cargarMiAsistenciaHoy();
+    if (modActivo === 'resumen-diario') irA('resumen-diario');
+    if (modActivo === 'verificar-tareas') listarVerificarTareas();
+    if (['transplante', 'saca-arroz', 'carga-arroz', 'riego'].includes(modActivo)) irA(modActivo);
+    
+    mostrarToast(`Actualización: Marcado de ${nombreTrabajador} registrado`);
+}
+
 // ── ARRANCADOR SEGURO (Previene pantallas en blanco ante fallos del API o tablas vacías) ──
 async function arrancarEcosistema() {
   try {
@@ -2956,6 +3043,9 @@ async function arrancarEcosistema() {
     console.error("Fallo al conectar con las tablas de PostgreSQL:", e);
     mostrarToast("Cargando modo de contingencia local");
   }
+
+  // Iniciar la escucha de actualizaciones en tiempo real
+  conectarWebSocket();
 
   // 3. Forzar el despliegue del cascarón de la APP y arrancar vistas
   document.getElementById('pantalla-app').style.display = 'block';
