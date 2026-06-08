@@ -2,6 +2,7 @@ package com.agricola.arroz.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +57,8 @@ public class ReporteController {
 
     @Autowired
     private ReportePdfService pdfService;
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     /**
      * Reporte de labores de riego en un rango de fechas.
@@ -112,6 +115,32 @@ public class ReporteController {
 
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Reporte_Riego.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdfBytes);
+    }
+
+    @GetMapping("/asistencia-general/pdf")
+    public ResponseEntity<byte[]> reporteAsistenciaGeneralPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        // Ampliamos el rango de búsqueda en la BD para capturar desfases UTC y luego filtramos por hora local Perú
+        List<Asistencia> registros = asistenciaRepository.findByFecAsistBetween(desde.minusDays(1), hasta.plusDays(1)).stream()
+                .filter(a -> a.getTrabajador() != null && a.getTrabajador().getActivo())
+                // Regla: Solo registros con entrada Y salida
+                .filter(a -> a.getHoraEntrada() != null && a.getHoraSalida() != null)
+                .filter(a -> {
+                    // Convertimos la fecha guardada en UTC a la fecha real en Perú para validar el rango
+                    LocalDate fechaPeru = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC"))
+                            .withZoneSameInstant(PERU_ZONE).toLocalDate();
+                    return !fechaPeru.isBefore(desde) && !fechaPeru.isAfter(hasta);
+                })
+                .collect(Collectors.toList());
+
+        byte[] pdfBytes = pdfService.generarPdfAsistenciaGeneral(registros, desde, hasta);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Reporte_Asistencia_General.pdf")
             .contentType(MediaType.APPLICATION_PDF)
             .body(pdfBytes);
     }

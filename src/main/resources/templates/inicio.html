@@ -39,7 +39,21 @@ fetch('/api/asistencias').then(res => res.json()).then(data => {
     tbody.innerHTML = '';
     activeData.slice(-5).reverse().forEach(a => {
         const nombre = a.trabajador ? `${a.trabajador.nomTrab} ${a.trabajador.apeTrab}` : '-';
+        const formatUTC = (h) => {
+            if(!h || !a.fecAsist) return '-';
+            const [hh, mm] = Array.isArray(h) ? [h[0], h[1]] : h.split(':');
+            const d = new Date(`${a.fecAsist}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`);
+            return d.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:true});
+        };
+        const formatFechaUTC = (f, h) => {
+            if(!f || !h) return f || '-';
+            const [hh, mm] = Array.isArray(h) ? [h[0], h[1]] : h.split(':');
+            const d = new Date(`${f}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`);
+            return d.toLocaleDateString('es-PE', {day:'2-digit', month:'short', year:'numeric'});
+        };
+
         tbody.innerHTML += `<tr><td>${a.fecAsist || '-'}</td><td>${nombre}</td><td>${a.horaEntrada || '-'}</td><td>${a.horaSalida || '-'}</td><td>${a.sacosCosechados || 0}</td></tr>`;
+        tbody.innerHTML += `<tr><td>${formatFechaUTC(a.fecAsist, a.horaEntrada)}</td><td>${nombre}</td><td>${formatUTC(a.horaEntrada)}</td><td>${formatUTC(a.horaSalida)}</td><td>${a.sacosCosechados || 0}</td></tr>`;
     });
 });
 </script>

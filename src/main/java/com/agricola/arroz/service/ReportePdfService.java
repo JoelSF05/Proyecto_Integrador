@@ -1,17 +1,25 @@
 package com.agricola.arroz.service;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDate;
-import java.util.List;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.agricola.arroz.model.Asistencia;
 import com.agricola.arroz.model.PlanillaPago;
 import com.agricola.arroz.model.Trabajador;
-import com.agricola.arroz.model.Asistencia;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
@@ -25,15 +33,76 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-import java.awt.image.BufferedImage;
-import java.awt.Color;
-
 @Service
 public class ReportePdfService {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
+
+    public byte[] generarPdfAsistenciaGeneral(List<Asistencia> registros, LocalDate desde, LocalDate hasta) {
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            // Header "Empresa"
+            Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(45, 139, 45));
+            document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
+            document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            document.add(new Paragraph("RUC: 20123456789", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+
+            // Título
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
+            Paragraph titulo = new Paragraph("Reporte General de Asistencias", fontTitulo);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            document.add(titulo);
+
+            Font fontSub = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
+            String periodoStr = desde.equals(hasta) ? "Fecha: " + desde : "Periodo: " + desde + " al " + hasta;
+            Paragraph sub = new Paragraph(periodoStr + " (Registros Completos)", fontSub);
+            sub.setAlignment(Element.ALIGN_CENTER);
+            document.add(sub);
+            document.add(Chunk.NEWLINE);
+
+            // Tabla
+            PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{20, 50, 15, 15});
+
+            addStyledTableHeader(table, new String[]{"Fecha", "Trabajador", "Entrada", "Salida"});
+
+            for (Asistencia a : registros) {
+                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                
+                String nombre = (a.getTrabajador() != null) ? a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab() : "N/A";
+                table.addCell(new Phrase(nombre, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+
+                // Conversión de UTC a Perú para el PDF
+                String hEntStr = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
+                String hSalStr = a.getFecAsist().atTime(a.getHoraSalida()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
+
+                table.addCell(new Phrase(hEntStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            }
+
+            document.add(table);
+            document.add(new Paragraph("\nTotal de registros completados: " + registros.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
+    }
+
+    private String formatFechaPeru(LocalDate fecha, LocalTime hora) {
+        if (fecha == null) return "N/A";
+        if (hora == null) return fecha.toString();
+        return fecha.atTime(hora).atZone(ZoneId.of("UTC"))
+                    .withZoneSameInstant(PERU_ZONE).toLocalDate().toString();
+    }
 
     public byte[] generarPdfRiego(List<Asistencia> registros, LocalDate desde, LocalDate hasta) {
         Document document = new Document(PageSize.A4);
@@ -72,7 +141,7 @@ public class ReportePdfService {
 
             int totalTareas = 0;
             for (Asistencia a : registros) {
-                table.addCell(new Phrase(a.getFecAsist().toString(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 if (a.getTrabajador() != null) {
                     table.addCell(new Phrase(a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                     table.addCell(new Phrase(a.getTrabajador().getDniTrab(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
@@ -82,9 +151,16 @@ public class ReportePdfService {
                 }
                 
                 // Horario (Rango horario solicitado)
-                String hEntrada = (a.getHoraEntrada() != null) ? a.getHoraEntrada().toString() : "--:--";
-                String hSalida = (a.getHoraSalida() != null) ? a.getHoraSalida().toString() : "--:--";
-                PdfPCell cellHorario = new PdfPCell(new Phrase(hEntrada + " - " + hSalida, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String hEntStr = "--:--";
+                String hSalStr = "--:--";
+                if (a.getHoraEntrada() != null) {
+                    hEntStr = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
+                }
+                if (a.getHoraSalida() != null) {
+                    hSalStr = a.getFecAsist().atTime(a.getHoraSalida()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
+                }
+
+                PdfPCell cellHorario = new PdfPCell(new Phrase(hEntStr + " - " + hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellHorario.setHorizontalAlignment(Element.ALIGN_CENTER);
                 table.addCell(cellHorario);
 

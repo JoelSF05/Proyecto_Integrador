@@ -189,13 +189,27 @@
                         const estado = a.presente ? 'Presente' : 'Ausente';
                         const nombreTrabajador = a.trabajador ? `${a.trabajador.nomTrab} ${a.trabajador.apeTrab}` : 'ID: ' + (a.idTrab || '-');
                         
+                        // Conversión de UTC a Local para la vista
+                        const formatUTC = (h) => {
+                            if(!h || !a.fecAsist) return '-';
+                            const [hh, mm] = Array.isArray(h) ? [h[0], h[1]] : h.split(':');
+                            const date = new Date(`${a.fecAsist}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`);
+                            return date.toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit', hour12:true});
+                        };
+                        const formatFechaUTC = (f, h) => {
+                            if(!f || !h) return f || '-';
+                            const [hh, mm] = Array.isArray(h) ? [h[0], h[1]] : h.split(':');
+                            const d = new Date(`${f}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`);
+                            return d.toLocaleDateString('es-PE', {day:'2-digit', month:'short', year:'numeric'});
+                        };
+
                         const row = `
                             <tr>
                                 <td>${a.idAsist}</td>
                                 <td>${nombreTrabajador}</td>
-                                <td>${a.fecAsist || '-'}</td>
-                                <td>${a.horaEntrada || '-'}</td>
-                                <td>${a.horaSalida || '-'}</td>
+                                <td>${formatFechaUTC(a.fecAsist, a.horaEntrada)}</td>
+                                <td>${formatUTC(a.horaEntrada)}</td>
+                                <td>${formatUTC(a.horaSalida)}</td>
                                 <td>${estado}</td>
                                 <td>${a.sacosCosechados || 0}</td>
                                 <td><button onclick="eliminarAsistencia(${a.idAsist})" style="background:#f44336;color:white;border:none;padding:5px 10px;cursor:pointer;">Eliminar</button></td>

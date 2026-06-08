@@ -66,6 +66,7 @@ body.dark-theme {
   --v3: #22c55e;
   --d1: #facc15;
   --d2: #fbbf24;
+  color-scheme: dark;
 }
 
 /* Ajustes específicos de visibilidad para Modo Oscuro */
@@ -304,7 +305,7 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 /* Barra herramientas de filtro*/
 input[type="date"],input[type="time"]{padding:10px 12px;border:1.5px solid var(--borde);border-radius:10px;font-family:'IBM Plex Sans',sans-serif;font-size:0.875rem;outline:none;background:var(--bg);color:var(--tx);min-height:42px;width:auto;transition:.2s;cursor:text}
-input[type="date"]:focus,input[type="time"]:focus{border-color:var(--v3);background:#fff;box-shadow:0 0 0 3px rgba(45,139,45,.1)}
+input[type="date"]:focus,input[type="time"]:focus{border-color:var(--v3);background:var(--card);box-shadow:0 0 0 3px rgba(45,139,45,.1)}
 
 /* Estilo para que el selector de hora se sienta como un campo de texto */
 input[type="time"]::-webkit-calendar-picker-indicator {
@@ -1445,6 +1446,7 @@ function renderModulo(id){
             <div class="card-hdr">
               <h3>Marcado General</h3>
               <div class="htools" style="gap:5px">
+                <button class="btn-d" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center" onclick="descargarReporteAsistenciaGeneralPdf()">PDF</button>
                 <input type="date" id="asist-gral-desde" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
                 <input type="date" id="asist-gral-hasta" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
                 <button class="tbtn" onclick="setAsistHoy()" style="padding:4px 8px; font-size:11px">Hoy</button>
@@ -2055,8 +2057,8 @@ async function cargarMiAsistenciaHoy() {
   } else {
     tbodyPropia.innerHTML = data.propia.map(a => `
       <tr>
-        <td data-label="Entrada" style="font-weight:600; color:var(--v2)">${formatHora(a.horaEntrada)}</td>
-        <td data-label="Salida" style="font-weight:600; color:var(--r1)">${a.horaSalida ? formatHora(a.horaSalida) : '—'}</td>
+        <td data-label="Entrada" style="font-weight:600; color:var(--v2)">${formatHora(a.horaEntrada, a.fecha)}</td>
+        <td data-label="Salida" style="font-weight:600; color:var(--r1)">${a.horaSalida ? formatHora(a.horaSalida, a.fecha) : '—'}</td>
         <td data-label="Estado"><span class="badge ${a.horaSalida ? 'bv' : 'ba'}">${a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}</span></td>
       </tr>
     `).join('');
@@ -2072,8 +2074,8 @@ async function cargarMiAsistenciaHoy() {
         tbodyGral.innerHTML = data.general.map(a => `
           <tr>
             <td data-label="Trabajador"><strong>${a.trabajador}</strong></td>
-            <td data-label="Entrada">${formatHora(a.horaEntrada)}</td>
-            <td data-label="Salida">${a.horaSalida ? formatHora(a.horaSalida) : '—'}</td>
+            <td data-label="Entrada">${formatHora(a.horaEntrada, a.fecha)}</td>
+            <td data-label="Salida">${a.horaSalida ? formatHora(a.horaSalida, a.fecha) : '—'}</td>
             <td data-label="Estado"><span class="badge ${a.horaSalida ? 'bv' : 'ba'}">${a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}</span></td>
           </tr>
         `).join('');
@@ -2090,6 +2092,14 @@ function setAsistHoy() {
   if(document.getElementById('asist-gral-desde')) document.getElementById('asist-gral-desde').value = hoy;
   if(document.getElementById('asist-gral-hasta')) document.getElementById('asist-gral-hasta').value = hoy;
   cargarMiAsistenciaHoy();
+}
+
+function descargarReporteAsistenciaGeneralPdf() {
+  const desde = document.getElementById('asist-gral-desde').value;
+  const hasta = document.getElementById('asist-gral-hasta').value;
+  if(!desde || !hasta) { mostrarToast('Seleccione un periodo de fechas'); return; }
+  
+  window.location.href = `/api/reportes/asistencia-general/pdf?desde=${desde}&hasta=${hasta}`;
 }
 
 let html5QrCode = null;
@@ -2299,7 +2309,7 @@ function listarVerificarTareas(){
     div.innerHTML = `
       <div class="tv-info">
         <div class="tv-name">${trab.nombre} ${trab.apellido}</div>
-        <div class="tv-tarea">${labelTarea(a.tipoTarea)} · Entrada: ${formatHora(a.hora)} · Tareas: ${tareas} · ${a.observacion||'—'}</div>
+        <div class="tv-tarea">${labelTarea(a.tipoTarea)} · Entrada: ${formatHora(a.hour, a.fecha)} · Tareas: ${tareas} · ${a.observacion||'—'}</div>
       </div>
       <span class="badge ${colorEstado}" id="vt-estado-${a.id}" style="margin-bottom:5px">${estado}</span>
       <div class="tv-pago">S/${pago.toFixed(2)}</div>
@@ -2861,16 +2871,27 @@ function labelTarea(k){
   return {TRANSPLANTE:'Transplante',SACA:'Saca de arroz',CARGA:'Carga',DIA:'Día',FUMIGACION:'Fumigación',ABONO:'Abono'}[k]||k;
 }
 
-function formatFecha(f){
+function formatFecha(f, h){
   if(!f) return '–';
   let s = Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f;
-  const d=new Date(s+'T00:00:00');
+  
+  // Si tenemos hora, convertimos desde UTC completo
+  if (h) {
+    let hh = Array.isArray(h) ? h[0] : parseInt(h.split(':')[0]);
+    let mm = Array.isArray(h) ? h[1] : parseInt(h.split(':')[1]);
+    const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`;
+    return new Date(isoStr).toLocaleDateString('es-PE', {day:'2-digit',month:'short',year:'numeric'});
+  }
+
+  const d=new Date(s+'T00:00:00'); // Fallback local
   return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
 }
 
-function formatHora(h) {
+function formatHora(h, f) {
   if (!h) return '—';
-  let hh, mm;
+  let hh, mm, ss = 0;
+  
+  // Parseo del formato del servidor (Array de Jackson o String ISO)
   if (Array.isArray(h)) {
     hh = h[0];
     mm = String(h[1]).padStart(2, '0');
@@ -2878,11 +2899,15 @@ function formatHora(h) {
     const parts = h.split(':');
     hh = parseInt(parts[0]);
     mm = parts[1];
+    ss = parts[2] || 0;
   } else return '—';
 
-  const ampm = hh >= 12 ? 'PM' : 'AM';
-  const h12 = hh % 12 || 12;
-  return `${h12}:${mm} ${ampm}`;
+  // Usamos la fecha del registro (o hoy) para crear un objeto Date UTC
+  const s = f ? (Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f) : new Date().toISOString().split('T')[0];
+  const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}Z`;
+  const date = new Date(isoStr);
+
+  return date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function mostrarToast(msg){
@@ -2970,7 +2995,7 @@ async function generarReporteRiego() {
             <td data-label="Fecha" style="padding:6px 10px">${formatFecha(r.fecha)}</td>
             <td data-label="Trabajador" style="padding:6px 10px"><strong>${r.trabajador}</strong></td>
             <td data-label="DNI" style="padding:6px 10px"><code>${r.dni}</code></td>
-            <td data-label="Horario" style="padding:6px 10px;text-align:center;font-size:0.6875rem;color:var(--ts)">${formatHora(r.horaEntrada)} - ${formatHora(r.horaSalida)}</td>
+            <td data-label="Horario" style="padding:6px 10px;text-align:center;font-size:0.6875rem;color:var(--ts)">${formatHora(r.horaEntrada, r.fecha)} - ${formatHora(r.horaSalida, r.fecha)}</td>
             <td data-label="Tareas" style="padding:6px 10px;text-align:center;font-weight:600">${r.tareas}</td>
           </tr>`).join('')}
       </tbody>

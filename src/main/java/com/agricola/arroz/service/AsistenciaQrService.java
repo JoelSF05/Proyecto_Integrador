@@ -2,6 +2,7 @@ package com.agricola.arroz.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +34,7 @@ public class AsistenciaQrService {
             throw new RuntimeException("El trabajador se encuentra inactivo");
         }
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(ZoneOffset.UTC);
         // Buscamos todos los registros de hoy para este trabajador
         List<Asistencia> registrosHoy = asistenciaRepository.findByTrabajadorIdTrabAndFecAsistOrderByIdAsistAsc(t.getIdTrab(), hoy);
 
@@ -46,13 +47,13 @@ public class AsistenciaQrService {
             Asistencia abierta = registroAbierto.get();
             if (abierta.getHoraEntrada() == null) {
                 // Caso A: Hay una tarea asignada (ej. Riego) esperando entrada
-                abierta.setHoraEntrada(LocalTime.now());
+                abierta.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
                 abierta.setPresente(true);
                 asistenciaRepository.save(abierta);
                 return "ENTRADA REGISTRADA (Tarea): " + t.getNomTrab() + " a las " + abierta.getHoraEntrada();
             } else {
                 // Caso B: Ya entró, registramos su SALIDA
-                abierta.setHoraSalida(LocalTime.now());
+                abierta.setHoraSalida(LocalTime.now(ZoneOffset.UTC));
                 asistenciaRepository.save(abierta);
                 return "SALIDA REGISTRADA: " + t.getNomTrab() + " a las " + abierta.getHoraSalida();
             }
@@ -62,7 +63,7 @@ public class AsistenciaQrService {
         Asistencia nueva = new Asistencia();
         nueva.setTrabajador(t);
         nueva.setFecAsist(hoy);
-        nueva.setHoraEntrada(LocalTime.now());
+        nueva.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
         nueva.setPresente(true);
         nueva.setEstadoAprobacion("PENDIENTE");
         asistenciaRepository.save(nueva);
