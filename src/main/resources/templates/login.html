@@ -348,8 +348,8 @@
             <h2>Ingresa a tu cuenta</h2>
         </div>
 
-        <div class="alerta-error" id="alertaError">
-            ⚠️ Usuario o contraseña incorrectos. Intente nuevamente.
+        <div class="alerta-error" id="alertaError" role="alert">
+            <span id="alertaTexto">⚠️ Usuario o contraseña incorrectos. Intente nuevamente.</span>
         </div>
 
         <form action="/login" method="POST">
@@ -386,6 +386,29 @@
         </div>
     </div>
 
-    
+    <script>
+        // Mostrar alerta según parámetro en la URL
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var alerta = document.getElementById('alertaError');
+            var texto  = document.getElementById('alertaTexto');
+
+            if (params.get('error') === 'true') {
+                texto.textContent = '⚠️ Usuario o contraseña incorrectos. Por seguridad, la cuenta se bloqueará tras 5 intentos fallidos.';
+                alerta.style.display = 'block';
+            }
+            if (params.get('bloqueado') === 'true') {
+                texto.textContent = '🔒 Tu cuenta ha sido bloqueada por demasiados intentos fallidos. Contacta al administrador.';
+                alerta.style.display = 'block';
+            }
+            if (params.get('logout') === 'true') {
+                alerta.style.background  = '#f0fdf4';
+                alerta.style.borderColor = '#86efac';
+                alerta.style.color       = '#16a34a';
+                texto.textContent = '✅ Sesión cerrada correctamente.';
+                alerta.style.display = 'block';
+            }
+        })();
+    </script>
 </body>
 </html>

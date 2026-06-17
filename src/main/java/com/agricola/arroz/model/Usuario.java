@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,6 +39,7 @@ public class Usuario {
     @Column(name = "rol", length = 20)
     private String rol = "TRABAJADOR";
 
+    @Email(message = "El formato del email no es válido")
     @Column(length = 100)
     private String email;
 

@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.authentication.LockedException;
 
 @Configuration
 @EnableWebSecurity
@@ -37,24 +38,36 @@ public class SecurityConfig {
         http
             .userDetailsService(usuarioDetailsService)
             .authorizeHttpRequests(auth -> auth
-                // Rutas públicas — solo login y recursos estáticos
                 .requestMatchers(
                     "/login",
                     "/api/auth/login",
                     "/css/**", "/js/**", "/images/**"
                 ).permitAll()
-                // Solo admins pueden crear/gestionar usuarios
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
-                // Registro de trabajador solo para ADMIN
                 .requestMatchers("/api/auth/registro-trabajador").hasRole("ADMIN")
-                // El resto requiere autenticación
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
                 .defaultSuccessUrl("/layout", true)
-                .failureUrl("/login?error=true")
+                // ✅ SUCCESS: resetea contador de intentos y guarda ultimoLogin
+                .successHandler((request, response, authentication) -> {
+                    usuarioDetailsService.registrarLoginExitoso(authentication.getName());
+                    response.sendRedirect("/layout");
+                })
+                // ✅ FAILURE: incrementa contador; si llega a 5 bloquea la cuenta
+                .failureHandler((request, response, exception) -> {
+                    String username = request.getParameter("username");
+                    if (username != null && !username.isBlank()) {
+                        boolean bloqueado = usuarioDetailsService.registrarLoginFallido(username);
+                        if (bloqueado || exception instanceof LockedException) {
+                            response.sendRedirect("/login?bloqueado=true");
+                            return;
+                        }
+                    }
+                    response.sendRedirect("/login?error=true");
+                })
                 .permitAll()
             )
             .logout(logout -> logout
@@ -64,9 +77,8 @@ public class SecurityConfig {
                 .clearAuthentication(true)
                 .permitAll()
             )
-            // ✅ CSRF activado — se excluyen solo las APIs REST con token propio
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/asistencias/qr/**") // WebSocket QR usa token propio
+                .ignoringRequestMatchers("/api/**")
             );
 
         return http.build();

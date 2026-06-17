@@ -110,6 +110,12 @@ public class AuthController {
         if (dni == null || username == null || password == null) {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "dni, username y password son obligatorios"));
         }
+        if (username.trim().length() < 4 || username.trim().length() > 50) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "El nombre de usuario debe tener entre 4 y 50 caracteres"));
+        }
+        if (password.length() < 8) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "La contraseña debe tener al menos 8 caracteres"));
+        }
         if (usuarioRepository.findByNombreUsuario(username).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "error", "El nombre de usuario ya existe"));
         }
