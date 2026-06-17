@@ -6,30 +6,24 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * Modelo Trabajador — versión extendida con pago_por_tarea.
+ * Modelo Trabajador con Lombok.
+ * @Getter + @Setter elimina todos los getters/setters manuales.
+ * @NoArgsConstructor elimina el constructor vacío manual.
  *
- * Campos de pago según tipo:
- *   - sueldo_base_dia  → usado cuando tipoPago = jornal / tiempo
- *   - pago_por_saco    → usado cuando tipoPago = por_saco / rendimiento / destajo
- *   - pago_por_tarea   → NUEVO: usado cuando tipoPago = transplante / saca / carga / riego
+ * NOTA: Los métodos con lógica especial (getCargoId, getCargoNombre)
+ * se mantienen escritos a mano — Lombok no los toca.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "trabajadores")
 public class Trabajador {
@@ -61,21 +55,12 @@ public class Trabajador {
     @Enumerated(EnumType.STRING)
     private TipoPago tipoPago;
 
-    /** Usado para tipoPago = jornal / tiempo */
     private BigDecimal sueldoBaseDia;
-
-    /** Usado para tipoPago = por_saco / rendimiento / destajo */
     private BigDecimal pagoPorSaco;
 
-    /**
-     * NUEVO — Monto fijo por tarea completada.
-     * Usado para tipoPago = transplante / saca / carga / riego.
-    * Ejemplo: S/ 50 por tarea de transplante terminada.
-     */
     @Column(name = "pago_por_tarea")
     private BigDecimal pagoPorTarea;
 
-    /** Token único para el marcado de asistencia por QR */
     @Column(name = "qr_token", unique = true)
     private String qrToken;
 
@@ -86,8 +71,6 @@ public class Trabajador {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    public Trabajador() {}
 
     @PrePersist
     public void prePersist() {
@@ -100,49 +83,14 @@ public class Trabajador {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // ── Getters y Setters ────────────────────────────────────
-
-    public Integer getIdTrab() { return idTrab; }
-    public void setIdTrab(Integer idTrab) { this.idTrab = idTrab; }
-
-    public String getNomTrab() { return nomTrab; }
-    public void setNomTrab(String nomTrab) { this.nomTrab = nomTrab; }
-
-    public String getApeTrab() { return apeTrab; }
-    public void setApeTrab(String apeTrab) { this.apeTrab = apeTrab; }
-
-    public String getDniTrab() { return dniTrab; }
-    public void setDniTrab(String dniTrab) { this.dniTrab = dniTrab; }
-
-    public Cargo getCargo() { return cargo; }
-    public void setCargo(Cargo cargo) { this.cargo = cargo; }
+    // ── Métodos con lógica especial — se mantienen manuales ──
 
     public Integer getCargoId() {
         return cargoId != null ? cargoId : (cargo != null ? cargo.getIdCargo() : null);
     }
-    public void setCargoId(Integer cargoId) { this.cargoId = cargoId; }
 
     @JsonProperty("cargoNombre")
-    public String getCargoNombre() { return cargo != null ? cargo.getNomCargo() : null; }
-
-    public TipoPago getTipoPago() { return tipoPago; }
-    public void setTipoPago(TipoPago tipoPago) { this.tipoPago = tipoPago; }
-
-    public BigDecimal getSueldoBaseDia() { return sueldoBaseDia; }
-    public void setSueldoBaseDia(BigDecimal s) { this.sueldoBaseDia = s; }
-
-    public BigDecimal getPagoPorSaco() { return pagoPorSaco; }
-    public void setPagoPorSaco(BigDecimal p) { this.pagoPorSaco = p; }
-
-    public BigDecimal getPagoPorTarea() { return pagoPorTarea; }
-    public void setPagoPorTarea(BigDecimal p) { this.pagoPorTarea = p; }
-
-    public String getQrToken() { return qrToken; }
-    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
-
-    public Boolean getActivo() { return activo; }
-    public void setActivo(Boolean activo) { this.activo = activo; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public String getCargoNombre() {
+        return cargo != null ? cargo.getNomCargo() : null;
+    }
 }

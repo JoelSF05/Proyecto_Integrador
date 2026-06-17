@@ -1,8 +1,9 @@
 package com.agricola.arroz.controller;
 
 import java.util.List;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,58 +15,55 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.agricola.arroz.model.Asistencia;
-import com.agricola.arroz.repository.AsistenciaRepository;
+import com.agricola.arroz.service.AsistenciaService;
 
 @RestController
 @RequestMapping("/api/asistencias")
 public class AsistenciaController {
-    
-    @Autowired
-    private AsistenciaRepository asistenciaRepository;
-    
+
+    private final AsistenciaService asistenciaService;
+
+    public AsistenciaController(AsistenciaService asistenciaService) {
+        this.asistenciaService = asistenciaService;
+    }
+
     /**
      * GET /api/asistencias              → todas
      * GET /api/asistencias?tipoTarea=TRANSPLANTE → solo ese tipo
      */
     @GetMapping
-    public List<Asistencia> listarTodos(
+    public ResponseEntity<List<Asistencia>> listarTodos(
             @RequestParam(required = false) String tipoTarea) {
-        if (tipoTarea != null && !tipoTarea.isBlank()) {
-            return asistenciaRepository.findByTipoTarea(tipoTarea.toUpperCase());
-        }
-        return asistenciaRepository.findAll();
+        return ResponseEntity.ok(asistenciaService.listarTodos(tipoTarea));
     }
-    
+
     @GetMapping("/{id}")
-    public Asistencia buscarPorId(@PathVariable Integer id) {
-        return asistenciaRepository.findById(id).orElse(null);
+    public ResponseEntity<Asistencia> buscarPorId(@PathVariable Integer id) {
+        return ResponseEntity.ok(asistenciaService.buscarPorId(id));
+        // Si no existe → GlobalExceptionHandler devuelve 400 con mensaje claro
     }
-    
+
     @PostMapping
-    public Asistencia crear(@RequestBody Asistencia asistencia) {
-        return asistenciaRepository.save(asistencia);
+    public ResponseEntity<Asistencia> crear(@RequestBody Asistencia asistencia) {
+        return ResponseEntity.ok(asistenciaService.crear(asistencia));
     }
-    
+
     @DeleteMapping("/{id}")
-    public void eliminar(@PathVariable Integer id) {
-        asistenciaRepository.deleteById(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+        asistenciaService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/aprobar")
-    public Asistencia aprobar(@PathVariable Integer id) {
-        return asistenciaRepository.findById(id).map(a -> {
-            a.setEstadoAprobacion("APROBADO");
-            return asistenciaRepository.save(a);
-        }).orElse(null);
+    public ResponseEntity<Asistencia> aprobar(@PathVariable Integer id) {
+        return ResponseEntity.ok(asistenciaService.aprobar(id));
     }
 
     @PatchMapping("/{id}/observar")
-    public Asistencia observar(@PathVariable Integer id, @RequestBody(required = false) java.util.Map<String,String> body) {
-        final String motivo = body != null ? body.getOrDefault("motivo", "") : "";
-        return asistenciaRepository.findById(id).map(a -> {
-            a.setEstadoAprobacion("OBSERVADO");
-            if(motivo != null && !motivo.isBlank()) a.setObservacionSupervisor(motivo);
-            return asistenciaRepository.save(a);
-        }).orElse(null);
+    public ResponseEntity<Asistencia> observar(
+            @PathVariable Integer id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String motivo = body != null ? body.getOrDefault("motivo", "") : "";
+        return ResponseEntity.ok(asistenciaService.observar(id, motivo));
     }
 }

@@ -1,26 +1,26 @@
 package com.agricola.arroz.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * NUEVO: GlobalExceptionHandler
- * Captura errores y devuelve respuestas JSON claras al frontend.
- * Crear en: src/main/java/com/agricola/arroz/exception/GlobalExceptionHandler.java
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Errores de validación (@NotBlank, @Size, etc.)
+    // ✅ Logger propio — trazas internas no llegan al cliente
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Errores de validación (@NotBlank, @Size, @Min, etc.)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> manejarValidaciones(
             MethodArgumentNotValidException ex) {
@@ -39,9 +39,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(respuesta);
     }
 
-    // Errores de negocio (lanzados desde los Services)
+    // Errores de negocio lanzados desde los Services
+    // ✅ Solo devuelve el mensaje — no el stack trace
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> manejarRuntimeException(RuntimeException ex) {
+        log.warn("Error de negocio: {}", ex.getMessage());
+
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("timestamp", LocalDateTime.now().toString());
         respuesta.put("status", 400);
@@ -50,20 +53,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(respuesta);
     }
 
-    // Manejar recursos no encontrados (como el favicon.ico) para evitar el error 500
+    // Recursos estáticos no encontrados (favicon.ico, etc.) — evita 500 innecesarios
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Void> manejarRecursoNoEncontrado() {
         return ResponseEntity.notFound().build();
     }
 
     // Cualquier otro error inesperado
+    // ✅ El detalle interno solo va al log, no al cliente
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarException(Exception ex) {
+        log.error("Error inesperado", ex);
+
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("timestamp", LocalDateTime.now().toString());
         respuesta.put("status", 500);
         respuesta.put("error", "Error interno del servidor");
-        respuesta.put("detalle", ex.getMessage());
+        // ✅ NO incluir ex.getMessage() aquí — puede exponer info sensible
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(respuesta);
     }

@@ -37,15 +37,16 @@ public class SecurityConfig {
         http
             .userDetailsService(usuarioDetailsService)
             .authorizeHttpRequests(auth -> auth
-                // ✅ Rutas públicas — incluyendo el nuevo endpoint de registro
+                // Rutas públicas — solo login y recursos estáticos
                 .requestMatchers(
                     "/login",
                     "/api/auth/login",
-                    "/api/auth/registro-trabajador",   // ← NUEVO
                     "/css/**", "/js/**", "/images/**"
                 ).permitAll()
-                // Solo admins pueden crear usuarios desde el panel
+                // Solo admins pueden crear/gestionar usuarios
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                // Registro de trabajador solo para ADMIN
+                .requestMatchers("/api/auth/registro-trabajador").hasRole("ADMIN")
                 // El resto requiere autenticación
                 .anyRequest().authenticated()
             )
@@ -63,7 +64,10 @@ public class SecurityConfig {
                 .clearAuthentication(true)
                 .permitAll()
             )
-            .csrf(csrf -> csrf.disable());
+            // ✅ CSRF activado — se excluyen solo las APIs REST con token propio
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/asistencias/qr/**") // WebSocket QR usa token propio
+            );
 
         return http.build();
     }

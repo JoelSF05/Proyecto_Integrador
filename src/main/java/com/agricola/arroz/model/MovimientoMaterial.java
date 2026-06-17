@@ -1,9 +1,23 @@
 package com.agricola.arroz.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "movimientos_material")
 public class MovimientoMaterial {
@@ -36,34 +50,4 @@ public class MovimientoMaterial {
     @ManyToOne
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
-
-    public MovimientoMaterial() {}
-
-    // Getters y Setters
-    public Integer getIdMovimiento() { return idMovimiento; }
-    public void setIdMovimiento(Integer id) { this.idMovimiento = id; }
-
-    public Material getMaterial() { return material; }
-    public void setMaterial(Material material) { this.material = material; }
-
-    public String getTipoMovimiento() { return tipoMovimiento; }
-    public void setTipoMovimiento(String tipo) { this.tipoMovimiento = tipo; }
-
-    public BigDecimal getCantidad() { return cantidad; }
-    public void setCantidad(BigDecimal cantidad) { this.cantidad = cantidad; }
-
-    public BigDecimal getStockAnterior() { return stockAnterior; }
-    public void setStockAnterior(BigDecimal sa) { this.stockAnterior = sa; }
-
-    public BigDecimal getStockNuevo() { return stockNuevo; }
-    public void setStockNuevo(BigDecimal sn) { this.stockNuevo = sn; }
-
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String obs) { this.observacion = obs; }
-
-    public LocalDateTime getFechaMovimiento() { return fechaMovimiento; }
-    public void setFechaMovimiento(LocalDateTime f) { this.fechaMovimiento = f; }
-
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 }

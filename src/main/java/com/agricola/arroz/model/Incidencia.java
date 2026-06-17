@@ -11,7 +11,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "incidencia")
 public class Incidencia {
@@ -35,29 +41,10 @@ public class Incidencia {
 
     private String estado;
 
-    public Incidencia() {}
-
+    // ── Lógica especial — se mantiene manual, Lombok no la toca ──
     @PrePersist
     public void prePersist() {
         if (this.fecha == null) this.fecha = LocalDate.now();
         if (this.estado == null) this.estado = "Pendiente";
     }
-
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public Trabajador getTrabajador() { return trabajador; }
-    public void setTrabajador(Trabajador trabajador) { this.trabajador = trabajador; }
-
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
-
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
-
-    public LocalDate getFecha() { return fecha; }
-    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
-
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
 }
