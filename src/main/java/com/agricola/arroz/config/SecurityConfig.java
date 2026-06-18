@@ -78,8 +78,9 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**")
-            );
+    .ignoringRequestMatchers("/api/**")
+    .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+);
 
         return http.build();
     }
