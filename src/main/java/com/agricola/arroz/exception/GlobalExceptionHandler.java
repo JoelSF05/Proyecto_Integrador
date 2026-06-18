@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.agricola.arroz.controller",
+                      annotations = org.springframework.web.bind.annotation.RestController.class)
 public class GlobalExceptionHandler {
 
     // ✅ Logger propio — trazas internas no llegan al cliente
