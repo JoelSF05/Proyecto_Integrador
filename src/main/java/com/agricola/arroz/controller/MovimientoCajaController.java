@@ -2,6 +2,7 @@ package com.agricola.arroz.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,8 @@ import com.agricola.arroz.repository.MovimientoCajaRepository;
 @RestController
 @RequestMapping("/api/caja")
 public class MovimientoCajaController {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Autowired
     private MovimientoCajaRepository movimientoCajaRepository;
@@ -73,7 +76,7 @@ public class MovimientoCajaController {
 
             String fechaStr = (String) body.get("fecha");
             if (fechaStr != null && !fechaStr.isBlank()) m.setFecha(LocalDate.parse(fechaStr));
-            else m.setFecha(LocalDate.now());
+            else m.setFecha(LocalDate.now(PERU_ZONE));
 
             // categoría obligatoria en el esquema
             m.setCategoria((String) body.getOrDefault("categoria", "General"));

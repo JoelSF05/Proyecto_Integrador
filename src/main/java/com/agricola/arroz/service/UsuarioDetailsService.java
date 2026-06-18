@@ -12,11 +12,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 
 @Service
 public class UsuarioDetailsService implements UserDetailsService {
 
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
     private static final int MAX_INTENTOS = 5;
 
     @Autowired
@@ -52,7 +54,7 @@ public class UsuarioDetailsService implements UserDetailsService {
     public void registrarLoginExitoso(String username) {
         usuarioRepository.findByNombreUsuario(username).ifPresent(u -> {
             u.setIntentosFallidos(0);
-            u.setUltimoLogin(LocalDateTime.now());
+            u.setUltimoLogin(Instant.now());
             usuarioRepository.save(u);
         });
     }

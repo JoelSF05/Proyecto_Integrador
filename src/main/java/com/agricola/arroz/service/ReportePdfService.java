@@ -263,7 +263,7 @@ public class ReportePdfService {
             addInfoCell(infoTable, "CARGO:", t.getCargo() != null ? t.getCargo().getNomCargo() : "Personal");
             addInfoCell(infoTable, "TIPO PAGO:", t.getTipoPago().getEtiqueta());
             addInfoCell(infoTable, "PERIODO:", planilla.getFechaInicio() + " al " + planilla.getFechaFin());
-            addInfoCell(infoTable, "EMITIDO EL:", LocalDate.now().toString());
+            addInfoCell(infoTable, "EMITIDO EL:", LocalDate.now(PERU_ZONE).toString());
             
             document.add(infoTable);
             document.add(Chunk.NEWLINE);

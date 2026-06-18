@@ -1,7 +1,8 @@
 package com.agricola.arroz.model;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,8 @@ import jakarta.validation.constraints.NotNull;
 @Entity
 @Table(name = "abono")
 public class Abono {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,22 +49,22 @@ public class Abono {
 
     // ✅ Timestamps completos
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     public Abono() {}
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 
     // --- Getters y Setters ---
@@ -86,6 +89,6 @@ public class Abono {
     public String getObservacion() { return observacion; }
     public void setObservacion(String observacion) { this.observacion = observacion; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

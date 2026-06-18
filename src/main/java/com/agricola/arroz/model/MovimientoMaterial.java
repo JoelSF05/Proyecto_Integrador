@@ -2,6 +2,7 @@ package com.agricola.arroz.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "movimientos_material")
 public class MovimientoMaterial {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +47,7 @@ public class MovimientoMaterial {
     private String observacion;
 
     @Column(name = "fecha_movimiento")
-    private LocalDateTime fechaMovimiento = LocalDateTime.now();
+    private LocalDateTime fechaMovimiento = LocalDateTime.now(PERU_ZONE);
 
     @ManyToOne
     @JoinColumn(name = "id_usuario")

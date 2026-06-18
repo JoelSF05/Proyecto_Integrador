@@ -3,6 +3,7 @@ package com.agricola.arroz.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,6 +31,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "planilla_pago")
 public class PlanillaPago {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -78,7 +81,7 @@ public class PlanillaPago {
     private String observacion;
 
     @Column(name = "fecha_generacion")
-    private LocalDateTime fechaGeneracion = LocalDateTime.now();
+    private LocalDateTime fechaGeneracion = LocalDateTime.now(PERU_ZONE);
 
     // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
     public PlanillaPago() {}

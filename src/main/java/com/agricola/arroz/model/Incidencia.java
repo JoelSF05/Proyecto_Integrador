@@ -1,6 +1,7 @@
 package com.agricola.arroz.model;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "incidencia")
 public class Incidencia {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +46,7 @@ public class Incidencia {
     // ── Lógica especial — se mantiene manual, Lombok no la toca ──
     @PrePersist
     public void prePersist() {
-        if (this.fecha == null) this.fecha = LocalDate.now();
+        if (this.fecha == null) this.fecha = LocalDate.now(PERU_ZONE);
         if (this.estado == null) this.estado = "Pendiente";
     }
 

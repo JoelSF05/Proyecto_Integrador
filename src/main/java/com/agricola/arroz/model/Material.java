@@ -3,6 +3,7 @@ package com.agricola.arroz.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
+import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -16,6 +17,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "materiales")
 public class Material {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,13 +50,13 @@ public class Material {
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(PERU_ZONE);
+        this.updatedAt = LocalDateTime.now(PERU_ZONE);
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(PERU_ZONE);
     }
 
     // Getters y Setters

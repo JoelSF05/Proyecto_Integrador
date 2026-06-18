@@ -906,7 +906,7 @@ async function usarMaterial(id) {
   abrirModal(`
     <h3 class="modal-tit">Registrar Uso de Material: ${mat.nombre}</h3>
     <div class="form-grid">
-      <div class="fc"><label>Fecha de Aplicación</label><input type="date" id="uso-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fc"><label>Fecha de Aplicación</label><input type="date" id="uso-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
       <div class="fc"><label>Hora</label><input type="time" id="uso-hora" value="${new Date().toTimeString().slice(0,5)}"></div>
       <div class="fc full"><label>Parcela / Hectárea Destino</label>
         <select id="uso-hect">
@@ -1331,7 +1331,7 @@ function renderModulo(id){
               <button class="btn-s" onclick="abrirModalEspecial('por_saco')">+ Por Saco</button>
             </div>
           <div class="htools">
-            <input type="date" id="filtro-fecha-vt" value="${new Date().toISOString().slice(0,10)}" class="filtro" onchange="listarVerificarTareas()">
+            <input type="date" id="filtro-fecha-vt" value="${new Date().toLocaleDateString('en-CA')}" class="filtro" onchange="listarVerificarTareas()">
             <select class="filtro" id="filtro-sector-vt" onchange="listarVerificarTareas()">
               <option value="">Todos los sectores</option>
               <option value="TRANSPLANTE">Transplante</option>
@@ -1684,7 +1684,7 @@ function renderModulo(id){
   // ── RESUMEN DIARIO ──────────────────────────────────────
   if(id==='resumen-diario'){
     const hoy = new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-    const hoyISO = new Date().toISOString().slice(0, 10);
+    const hoyISO = new Date().toLocaleDateString('en-CA');
     const asistenciasHoy = asistencias.filter(a => a.fecAsist === hoyISO);
 
     const totalSacos = asistenciasHoy.reduce((a,c)=>a+(c.sacos||0),0);
@@ -2905,7 +2905,7 @@ async function guardarCajaLocal(){
   const monto = parseFloat(document.getElementById('c-monto').value) || 0;
   const desc  = document.getElementById('c-desc').value || '';
   const categoria = document.getElementById('c-cat').value;
-  const body = { tipo, monto, desc, categoria, fecha: new Date().toISOString().slice(0,10) };
+  const body = { tipo, monto, desc, categoria, fecha: new Date().toLocaleDateString('en-CA') };
   try {
     const r = await fetch('/api/caja', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(r.ok){
@@ -2937,7 +2937,7 @@ function formatFecha(f, h){
   if (h) {
     let hh = Array.isArray(h) ? h[0] : parseInt(h.split(':')[0]);
     let mm = Array.isArray(h) ? h[1] : parseInt(h.split(':')[1]);
-    const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00Z`;
+    const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00`;
     return new Date(isoStr).toLocaleDateString('es-PE', {day:'2-digit',month:'short',year:'numeric'});
   }
 
@@ -2960,12 +2960,12 @@ function formatHora(h, f) {
     ss = parts[2] || 0;
   } else return '—';
 
-  // Usamos la fecha del registro (o hoy) para crear un objeto Date UTC
-  const s = f ? (Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f) : new Date().toISOString().split('T')[0];
-  const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}Z`;
-  const date = new Date(isoStr);
-
-  return date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true });
+  // Creamos la fecha local y forzamos la interpretación como America/Lima
+  const s = f ? (Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f) : new Date().toLocaleDateString('en-CA');
+  const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  
+  // El navegador convertirá cualquier hora (UTC o local) a la visualización de Lima
+  return new Date(isoStr).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Lima' });
 }
 
 function mostrarToast(msg){
@@ -3414,7 +3414,7 @@ function abrirModalRiego(){
   abrirModal(`
     <h3 class="modal-tit">Registrar Labor de Riego</h3>
     <div class="form-grid">
-      <div class="fc"><label>Fecha</label><input type="date" id="ri-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fc"><label>Fecha</label><input type="date" id="ri-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
       <div class="fc"><label>Parcela</label>
         <select id="ri-hect">
           <option value="1">Lote A – Zona Norte</option>
@@ -3473,7 +3473,7 @@ function abrirModalIncidencia(){
         </select>
       </div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Fecha</label><input type="date" id="inc-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="fc"><label>Fecha</label><input type="date" id="inc-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
         <div class="fc"><label>Tipo de Incidencia</label>
           <select id="inc-tipo">
             <option value="ACCIDENTE">Accidente</option>
@@ -3688,7 +3688,7 @@ function abrirModalAbono(){
         </select>
       </div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Fecha</label><input type="date" id="ab-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="fc"><label>Fecha</label><input type="date" id="ab-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
         <div class="fc"><label>Tipo de Saco</label>
           <select id="ab-tipo">
             <option value="UREA">Urea</option>
@@ -3859,7 +3859,7 @@ function abrirModalGasolina(){
     <h3 style="margin-bottom:16px">Nuevo Registro de Gasolina</h3>
     <div style="display:grid;gap:14px">
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Fecha</label><input type="date" id="gas-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="fc"><label>Fecha</label><input type="date" id="gas-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
         <div class="fc"><label>Tipo de Uso</label>
           <select id="gas-tipo" onchange="toggleCamposGasolina(this.value)">
             <option value="TRANSPORTE_PERSONAL">Transporte Personal</option>
@@ -4035,7 +4035,7 @@ async function abrirModalLabor(tipoTarea, tipoPago) {
   abrirModal(`
     <h3 class="modal-tit">Registrar Labor — ${tipoTarea}</h3>
     <div class="form-grid">
-      <div class="fc"><label>Fecha</label><input type="date" id="lab-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fc"><label>Fecha</label><input type="date" id="lab-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
       <div class="fc"><label>Parcela / Sector</label>
         <select id="lab-parcela">
           <option value="Lote A – Zona Norte">Lote A – Zona Norte</option>
@@ -4153,7 +4153,7 @@ function abrirModalEspecial(tipo) {
   abrirModal(`
     <h3 class="modal-tit">Registrar Labor: ${esJornal ? 'Jornal' : 'Por Saco'}</h3>
     <div class="form-grid">
-      <div class="fc"><label>Fecha</label><input type="date" id="esp-fecha" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fc"><label>Fecha</label><input type="date" id="esp-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
       <div class="fc"><label>Trabajador</label><select id="esp-trab">${opsTrab}</select></div>
       ${esJornal ? 
         `<div class="fc"><label>Días / Jornales</label><input type="number" id="esp-cant" value="1" min="1"></div>` :

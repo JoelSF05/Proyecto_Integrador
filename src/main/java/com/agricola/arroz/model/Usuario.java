@@ -1,6 +1,6 @@
 package com.agricola.arroz.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,7 +52,7 @@ public class Usuario {
     private Integer intentosFallidos = 0;
 
     @Column(name = "ultimo_login")
-    private LocalDateTime ultimoLogin;
+    private Instant ultimoLogin;
 
     // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
     public Usuario() {}
@@ -91,6 +91,6 @@ public class Usuario {
     public Integer getIntentosFallidos() { return intentosFallidos; }
     public void setIntentosFallidos(Integer intentosFallidos) { this.intentosFallidos = intentosFallidos; }
 
-    public LocalDateTime getUltimoLogin() { return ultimoLogin; }
-    public void setUltimoLogin(LocalDateTime ultimoLogin) { this.ultimoLogin = ultimoLogin; }
+    public Instant getUltimoLogin() { return ultimoLogin; }
+    public void setUltimoLogin(Instant ultimoLogin) { this.ultimoLogin = ultimoLogin; }
 }
