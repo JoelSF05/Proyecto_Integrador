@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -79,9 +80,9 @@ public class ReportePdfService {
                 String nombre = (a.getTrabajador() != null) ? a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab() : "N/A";
                 table.addCell(new Phrase(nombre, FontFactory.getFont(FontFactory.HELVETICA, 9)));
 
-                // Conversión de UTC a Perú para el PDF
-                String hEntStr = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
-                String hSalStr = a.getFecAsist().atTime(a.getHoraSalida()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
+                // Las horas ya se guardan en horario local (America/Lima) según el cambio en AsistenciaQrService
+                String hEntStr = a.getHoraEntrada().toString();
+                String hSalStr = a.getHoraSalida().toString();
 
                 table.addCell(new Phrase(hEntStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 table.addCell(new Phrase(hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
@@ -99,9 +100,7 @@ public class ReportePdfService {
 
     private String formatFechaPeru(LocalDate fecha, LocalTime hora) {
         if (fecha == null) return "N/A";
-        if (hora == null) return fecha.toString();
-        return fecha.atTime(hora).atZone(ZoneId.of("UTC"))
-                    .withZoneSameInstant(PERU_ZONE).toLocalDate().toString();
+        return fecha.toString();
     }
 
     public byte[] generarPdfRiego(List<Asistencia> registros, LocalDate desde, LocalDate hasta) {
@@ -151,14 +150,8 @@ public class ReportePdfService {
                 }
                 
                 // Horario (Rango horario solicitado)
-                String hEntStr = "--:--";
-                String hSalStr = "--:--";
-                if (a.getHoraEntrada() != null) {
-                    hEntStr = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
-                }
-                if (a.getHoraSalida() != null) {
-                    hSalStr = a.getFecAsist().atTime(a.getHoraSalida()).atZone(ZoneId.of("UTC")).withZoneSameInstant(PERU_ZONE).toLocalTime().toString();
-                }
+                String hEntStr = a.getHoraEntrada() != null ? a.getHoraEntrada().toString() : "--:--";
+                String hSalStr = a.getHoraSalida() != null ? a.getHoraSalida().toString() : "--:--";
 
                 PdfPCell cellHorario = new PdfPCell(new Phrase(hEntStr + " - " + hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellHorario.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -482,7 +475,7 @@ public class ReportePdfService {
                 table.addCell(t.getNomTrab() + " " + t.getApeTrab() + "\nDNI: " + t.getDniTrab());
                 table.addCell(t.getCargo() != null ? t.getCargo().getNomCargo() : "N/A");
                 table.addCell(actividades);
-                table.addCell("S/ " + totalTrabajador.setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+                table.addCell("S/ " + totalTrabajador.setScale(2, RoundingMode.HALF_UP).toString());
                 
                 granTotal = granTotal.add(totalTrabajador);
             }
@@ -490,7 +483,7 @@ public class ReportePdfService {
             document.add(table);
             document.add(Chunk.NEWLINE);
             
-            Paragraph pTotal = new Paragraph("TOTAL GENERAL DEL PERIODO: S/ " + granTotal.setScale(2, BigDecimal.ROUND_HALF_UP).toString(), 
+            Paragraph pTotal = new Paragraph("TOTAL GENERAL DEL PERIODO: S/ " + granTotal.setScale(2, RoundingMode.HALF_UP).toString(), 
                 FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
             pTotal.setAlignment(Element.ALIGN_RIGHT);
             document.add(pTotal);

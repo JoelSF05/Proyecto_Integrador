@@ -27,7 +27,6 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "planilla_pago")
 public class PlanillaPago {
@@ -80,4 +79,45 @@ public class PlanillaPago {
 
     @Column(name = "fecha_generacion")
     private LocalDateTime fechaGeneracion = LocalDateTime.now();
+
+    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
+    public PlanillaPago() {}
+
+    // ── Métodos manuales (Fix para fallos de Lombok) ──
+
+    public Integer getIdPlanilla() { return idPlanilla; }
+    public void setIdPlanilla(Integer idPlanilla) { this.idPlanilla = idPlanilla; }
+
+    public Trabajador getTrabajador() { return trabajador; }
+    public void setTrabajador(Trabajador trabajador) { this.trabajador = trabajador; }
+
+    public LocalDate getFechaInicio() { return fechaInicio; }
+    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
+
+    public LocalDate getFechaFin() { return fechaFin; }
+    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
+
+    public Integer getTotalSacos() { return totalSacos; }
+    public void setTotalSacos(Integer totalSacos) { this.totalSacos = totalSacos; }
+
+    public Integer getTotalDias() { return totalDias; }
+    public void setTotalDias(Integer totalDias) { this.totalDias = totalDias; }
+
+    public Integer getTotalTareas() { return totalTareas; }
+    public void setTotalTareas(Integer totalTareas) { this.totalTareas = totalTareas; }
+
+    public String getTipoTareaPlanilla() { return tipoTareaPlanilla; }
+    public void setTipoTareaPlanilla(String tipoTareaPlanilla) { this.tipoTareaPlanilla = tipoTareaPlanilla; }
+
+    public BigDecimal getMontoTotal() { return montoTotal; }
+    public void setMontoTotal(BigDecimal montoTotal) { this.montoTotal = montoTotal; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public String getObservacion() { return observacion; }
+    public void setObservacion(String observacion) { this.observacion = observacion; }
+
+    public LocalDateTime getFechaGeneracion() { return fechaGeneracion; }
+    public void setFechaGeneracion(LocalDateTime fechaGeneracion) { this.fechaGeneracion = fechaGeneracion; }
 }

@@ -2,6 +2,8 @@ package com.agricola.arroz.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,8 @@ public class PlanillaPagoService {
 
     @Autowired
     private TrabajadorRepository trabajadorRepository;
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     public List<PlanillaPago> listarTodas() {
         return planillaRepository.findAll();
@@ -73,7 +77,7 @@ public class PlanillaPagoService {
         planilla.setTrabajador(trabajador);
         planilla.setFechaInicio(fechaInicio);
         planilla.setFechaFin(fechaFin);
-        planilla.setFechaGeneracion(java.time.LocalDateTime.now());
+        planilla.setFechaGeneracion(LocalDateTime.now(PERU_ZONE));
 
         TipoPago tipo = trabajador.getTipoPago();
         BigDecimal montoTotal = BigDecimal.ZERO;
@@ -107,7 +111,7 @@ public class PlanillaPagoService {
                 .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
                 .sum();
             planilla.setTotalTareas(totalTareas);
-            planilla.setTipoTareaPlanilla(tipo.name().toUpperCase());
+            planilla.setTipoTareaPlanilla(tipo.name());
             montoTotal = tarifa.multiply(BigDecimal.valueOf(totalTareas));
         }
 

@@ -2801,16 +2801,45 @@ function eliminarCalendario(id){
 function listarRecomendaciones() {
   const container = document.getElementById('lista-recomendaciones');
   if (!container) return;
-  if (!recomendacionesAgro.length) {
+
+  // Generar recomendaciones dinámicas basadas en el estado del campo (igual que notificaciones)
+  let dinámicas = [];
+  
+  // Alertas de Plagas Críticas
+  plagas.filter(p => p.nivel === 'ALTO').forEach(p => {
+    dinámicas.push({
+      id: 'dyn-p-' + p.id,
+      titulo: `Control Urgente: ${p.nombre}`,
+      desc: `Se detectó nivel crítico en Parcela ${p.parcela}. Aplicar inmediatamente: ${p.producto} (${p.dosis}).`,
+      alerta: true
+    });
+  });
+
+  // Alertas de Stock
+  materiales.filter(m => m.stockActual <= m.stockMinimo).forEach(m => {
+    dinámicas.push({
+      id: 'dyn-m-' + m.id,
+      titulo: `Reponer Insumo: ${m.nombre}`,
+      desc: `El stock actual (${m.stockActual} ${m.unidad}) es igual o menor al mínimo permitido. Solicitar compra.`,
+      alerta: true
+    });
+  });
+
+  const todas = [...dinámicas, ...recomendacionesAgro];
+
+  if (!todas.length) {
     container.innerHTML = '<p style="color:var(--ts);text-align:center;padding:20px;font-size:0.8125rem">No hay recomendaciones técnicas activas.</p>';
     return;
   }
-  container.innerHTML = recomendacionesAgro.map(r => `
+
+  container.innerHTML = todas.map(r => `
     <div class="cf-item ${r.alerta ? 'cf-alerta' : ''}" style="margin-bottom:0">
       <div class="cf-contenido">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px">
-          <h5 style="font-size:0.875rem; color:var(--v2)">${r.titulo}</h5>
-          ${(isAdmin() || SESSION.rol === 'INGENIERO') ? `<button class="tbtn peligro" onclick="eliminarRecomendacion(${r.id})" style="padding:2px 6px; font-size:10px">Eliminar</button>` : ''}
+          <h5 style="font-size:0.875rem; color:${r.alerta ? '#b45309' : 'var(--v2)'}">${r.titulo}</h5>
+          ${((isAdmin() || SESSION.rol === 'INGENIERO') && !r.id.toString().startsWith('dyn-')) 
+            ? `<button class="tbtn peligro" onclick="eliminarRecomendacion(${r.id})" style="padding:2px 6px; font-size:10px">Eliminar</button>` 
+            : ''}
         </div>
         <p style="font-size:0.8125rem; margin-top:5px">${r.desc}</p>
       </div>

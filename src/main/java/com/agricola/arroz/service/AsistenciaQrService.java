@@ -2,7 +2,7 @@ package com.agricola.arroz.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +28,8 @@ public class AsistenciaQrService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate; // Inyectar SimpMessagingTemplate
 
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
+
     @Transactional
     public String procesarMarcadoQr(String token) {
         // 1. Buscar trabajador por token
@@ -39,7 +41,7 @@ public class AsistenciaQrService {
             throw new RuntimeException("El trabajador se encuentra inactivo");
         }
 
-        LocalDate hoy = LocalDate.now(ZoneOffset.UTC);
+        LocalDate hoy = LocalDate.now(PERU_ZONE);
         // Buscamos todos los registros de hoy para este trabajador
         // Ordenamos por ID para asegurar un comportamiento consistente si existen múltiples registros "abiertos"
         List<Asistencia> registrosHoy = asistenciaRepository.findByTrabajadorIdTrabAndFecAsistOrderByIdAsistAsc(t.getIdTrab(), hoy);
@@ -56,13 +58,13 @@ public class AsistenciaQrService {
             Asistencia abierta = registroAbierto.get();
             if (abierta.getHoraEntrada() == null) {
                 // Caso A: Hay una tarea asignada (ej. Riego) esperando entrada
-                abierta.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
+                abierta.setHoraEntrada(LocalTime.now(PERU_ZONE));
                 abierta.setPresente(true);
                 asistenciaGuardada = asistenciaRepository.save(abierta);
                 mensaje = "ENTRADA REGISTRADA (Tarea): " + t.getNomTrab() + " a las " + abierta.getHoraEntrada();
             } else {
                 // Caso B: Ya entró, registramos su SALIDA
-                abierta.setHoraSalida(LocalTime.now(ZoneOffset.UTC));
+                abierta.setHoraSalida(LocalTime.now(PERU_ZONE));
                 asistenciaGuardada = asistenciaRepository.save(abierta);
                 mensaje = "SALIDA REGISTRADA: " + t.getNomTrab() + " a las " + abierta.getHoraSalida();
             }
@@ -71,7 +73,7 @@ public class AsistenciaQrService {
             Asistencia nueva = new Asistencia();
             nueva.setTrabajador(t);
             nueva.setFecAsist(hoy);
-            nueva.setHoraEntrada(LocalTime.now(ZoneOffset.UTC));
+            nueva.setHoraEntrada(LocalTime.now(PERU_ZONE));
             nueva.setPresente(true);
             nueva.setEstadoAprobacion("PENDIENTE");
             asistenciaGuardada = asistenciaRepository.save(nueva);

@@ -17,7 +17,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
@@ -54,4 +53,44 @@ public class Usuario {
 
     @Column(name = "ultimo_login")
     private LocalDateTime ultimoLogin;
+
+    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
+    public Usuario() {}
+
+    // ── Métodos manuales (Fix para fallos de Lombok) ──
+
+    public Integer getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
+
+    public Trabajador getTrabajador() { return trabajador; }
+    public void setTrabajador(Trabajador trabajador) { this.trabajador = trabajador; }
+
+    public String getNombreUsuario() { return nombreUsuario; }
+    public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
+
+    public String getContrasenaHash() { return contrasenaHash; }
+    public void setContrasenaHash(String contrasenaHash) { this.contrasenaHash = contrasenaHash; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
+    }
+
+    public Boolean getActivo() { return activo; }
+    public void setActivo(Boolean activo) { this.activo = activo; }
+
+    public Boolean getBloqueado() { return bloqueado; }
+    public void setBloqueado(Boolean bloqueado) { this.bloqueado = bloqueado; }
+
+    public Integer getIntentosFallidos() { return intentosFallidos; }
+    public void setIntentosFallidos(Integer intentosFallidos) { this.intentosFallidos = intentosFallidos; }
+
+    public LocalDateTime getUltimoLogin() { return ultimoLogin; }
+    public void setUltimoLogin(LocalDateTime ultimoLogin) { this.ultimoLogin = ultimoLogin; }
 }

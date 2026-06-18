@@ -2,6 +2,7 @@ package com.agricola.arroz.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,10 +24,11 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "trabajadores")
 public class Trabajador {
+
+    private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,7 +54,8 @@ public class Trabajador {
     @JsonProperty("cargoId")
     private Integer cargoId;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TipoPagoConverter.class)
+    @Column(name = "tipo_pago")
     private TipoPago tipoPago;
 
     private BigDecimal sueldoBaseDia;
@@ -72,18 +75,65 @@ public class Trabajador {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
+    public Trabajador() {}
+
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(PERU_ZONE);
+        this.updatedAt = LocalDateTime.now(PERU_ZONE);
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(PERU_ZONE);
     }
 
-    // ── Métodos con lógica especial — se mantienen manuales ──
+    // ── Métodos manuales (Fix para errores de compilación "symbol not found") ──
+
+    public Integer getIdTrab() {
+        return idTrab;
+    }
+
+    public String getNomTrab() {
+        return nomTrab;
+    }
+
+    public String getApeTrab() {
+        return apeTrab;
+    }
+
+    public String getDniTrab() {
+        return dniTrab;
+    }
+
+    public void setNomTrab(String nomTrab) { this.nomTrab = nomTrab; }
+    public void setApeTrab(String apeTrab) { this.apeTrab = apeTrab; }
+    public void setDniTrab(String dniTrab) { this.dniTrab = dniTrab; }
+
+    public TipoPago getTipoPago() {
+        return tipoPago;
+    }
+
+    public void setTipoPago(TipoPago tipoPago) { this.tipoPago = tipoPago; }
+
+    public BigDecimal getSueldoBaseDia() { return sueldoBaseDia; }
+    public void setSueldoBaseDia(BigDecimal sueldoBaseDia) { this.sueldoBaseDia = sueldoBaseDia; }
+
+    public BigDecimal getPagoPorSaco() { return pagoPorSaco; }
+    public void setPagoPorSaco(BigDecimal pagoPorSaco) { this.pagoPorSaco = pagoPorSaco; }
+
+    public BigDecimal getPagoPorTarea() { return pagoPorTarea; }
+    public void setPagoPorTarea(BigDecimal pagoPorTarea) { this.pagoPorTarea = pagoPorTarea; }
+
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
+
+    public Boolean getActivo() { return activo; }
+    public void setActivo(Boolean activo) { this.activo = activo; }
+
+    public Cargo getCargo() { return cargo; }
+    public void setCargo(Cargo cargo) { this.cargo = cargo; }
 
     public Integer getCargoId() {
         return cargoId != null ? cargoId : (cargo != null ? cargo.getIdCargo() : null);

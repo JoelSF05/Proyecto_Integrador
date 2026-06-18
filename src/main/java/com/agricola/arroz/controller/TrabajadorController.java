@@ -41,7 +41,7 @@ public class TrabajadorController {
     @GetMapping("/tipo/{tipo}")
     public ResponseEntity<?> listarPorTipo(@PathVariable String tipo) {
         try {
-            TipoPago tipoPago = TipoPago.valueOf(tipo.toLowerCase());
+            TipoPago tipoPago = TipoPago.valueOf(tipo.toUpperCase());
             return ResponseEntity.ok(trabajadorService.listarPorTipoPago(tipoPago));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()

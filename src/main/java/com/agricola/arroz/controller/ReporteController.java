@@ -124,17 +124,11 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
 
-        // Ampliamos el rango de búsqueda en la BD para capturar desfases UTC y luego filtramos por hora local Perú
-        List<Asistencia> registros = asistenciaRepository.findByFecAsistBetween(desde.minusDays(1), hasta.plusDays(1)).stream()
+        // Los registros ahora se guardan directamente con la fecha de Perú (America/Lima)
+        List<Asistencia> registros = asistenciaRepository.findByFecAsistBetween(desde, hasta).stream()
                 .filter(a -> a.getTrabajador() != null && a.getTrabajador().getActivo())
                 // Regla: Solo registros con entrada Y salida
                 .filter(a -> a.getHoraEntrada() != null && a.getHoraSalida() != null)
-                .filter(a -> {
-                    // Convertimos la fecha guardada en UTC a la fecha real en Perú para validar el rango
-                    LocalDate fechaPeru = a.getFecAsist().atTime(a.getHoraEntrada()).atZone(ZoneId.of("UTC"))
-                            .withZoneSameInstant(PERU_ZONE).toLocalDate();
-                    return !fechaPeru.isBefore(desde) && !fechaPeru.isAfter(hasta);
-                })
                 .collect(Collectors.toList());
 
         byte[] pdfBytes = pdfService.generarPdfAsistenciaGeneral(registros, desde, hasta);

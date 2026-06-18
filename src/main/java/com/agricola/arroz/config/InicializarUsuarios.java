@@ -1,5 +1,7 @@
 package com.agricola.arroz.config;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.agricola.arroz.model.Cargo;
 import com.agricola.arroz.model.Trabajador;
 import com.agricola.arroz.model.Usuario;
+import com.agricola.arroz.model.TipoPago;
 import com.agricola.arroz.repository.CargoRepository;
 import com.agricola.arroz.repository.TrabajadorRepository;
 import com.agricola.arroz.repository.UsuarioRepository;
@@ -27,16 +30,16 @@ public class InicializarUsuarios implements CommandLineRunner {
     }
 
     private void hacer(String user, String pass, int idCargo) {
-        // Si existe pero tiene hash invalido, corregirlo
-        usuarioRepo.findByNombreUsuario(user).ifPresent(u -> {
+        Optional<Usuario> existente = usuarioRepo.findByNombreUsuario(user);
+        
+        if (existente.isPresent()) {
+            Usuario u = existente.get();
             if (u.getContrasenaHash() == null || !u.getContrasenaHash().startsWith("$2")) {
                 u.setContrasenaHash(passwordEncoder.encode(pass));
                 usuarioRepo.save(u);
-                System.out.println("Hash corregido: " + user);
             }
-        });
-
-        if (usuarioRepo.findByNombreUsuario(user).isPresent()) return;
+            return;
+        }
 
         Cargo cargo = cargoRepo.findById(idCargo).orElse(null);
         if (cargo == null) {
@@ -52,7 +55,7 @@ public class InicializarUsuarios implements CommandLineRunner {
             t.setApeTrab("Sistema");
             t.setDniTrab("SYS0000" + idCargo);
             t.setCargo(cargo);
-            t.setTipoPago(com.agricola.arroz.model.TipoPago.tiempo);
+            t.setTipoPago(TipoPago.TIEMPO); // Esto guardará "TIEMPO" en la BD
             t = trabajadorRepo.save(t);
         }
 

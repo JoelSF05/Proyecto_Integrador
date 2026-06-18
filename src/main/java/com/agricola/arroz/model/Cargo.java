@@ -14,7 +14,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "cargos")
 public class Cargo {
@@ -28,8 +27,29 @@ public class Cargo {
     @OneToMany(mappedBy = "cargo")
     private List<Trabajador> trabajadores;
 
+    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
+    public Cargo() {
+    }
+
     // ── Constructor con parámetro — Lombok no lo genera, se mantiene manual ──
     public Cargo(String nomCargo) {
+        this.nomCargo = nomCargo;
+    }
+
+    // ── Métodos manuales para asegurar compilación (fix para "cannot find symbol") ──
+    public Integer getIdCargo() {
+        return idCargo;
+    }
+
+    public String getNomCargo() {
+        return nomCargo;
+    }
+
+    public void setIdCargo(Integer idCargo) {
+        this.idCargo = idCargo;
+    }
+
+    public void setNomCargo(String nomCargo) {
         this.nomCargo = nomCargo;
     }
 }

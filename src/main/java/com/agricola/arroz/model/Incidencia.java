@@ -17,7 +17,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "incidencia")
 public class Incidencia {
@@ -47,4 +46,27 @@ public class Incidencia {
         if (this.fecha == null) this.fecha = LocalDate.now();
         if (this.estado == null) this.estado = "Pendiente";
     }
+
+    // Constructor manual
+    public Incidencia() {}
+
+    // ── Métodos manuales (Fix para fallos de Lombok) ──
+
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
+    public Trabajador getTrabajador() { return trabajador; }
+    public void setTrabajador(Trabajador trabajador) { this.trabajador = trabajador; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public LocalDate getFecha() { return fecha; }
+    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 }

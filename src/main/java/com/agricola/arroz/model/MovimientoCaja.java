@@ -17,7 +17,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "movimientos_caja")
 public class MovimientoCaja {
@@ -46,4 +45,30 @@ public class MovimientoCaja {
     // Campo requerido en el esquema
     @Column(name = "categoria")
     private String categoria;
+
+    // Constructor manual
+    public MovimientoCaja() {}
+
+    // ── Métodos manuales (Fix para fallos de Lombok) ──
+
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getDesc() { return desc; }
+    public void setDesc(String desc) { this.desc = desc; }
+
+    public BigDecimal getMonto() { return monto; }
+    public void setMonto(BigDecimal monto) { this.monto = monto; }
+
+    public LocalDate getFecha() { return fecha; }
+    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
+
+    public String getIco() { return ico; }
+    public void setIco(String ico) { this.ico = ico; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
 }

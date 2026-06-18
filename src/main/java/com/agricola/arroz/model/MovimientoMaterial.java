@@ -17,7 +17,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "movimientos_material")
 public class MovimientoMaterial {
@@ -50,4 +49,36 @@ public class MovimientoMaterial {
     @ManyToOne
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
+    // Constructor manual
+    public MovimientoMaterial() {}
+
+    // ── Métodos manuales (Fix para fallos de Lombok) ──
+
+    public Integer getIdMovimiento() { return idMovimiento; }
+    public void setIdMovimiento(Integer idMovimiento) { this.idMovimiento = idMovimiento; }
+
+    public Material getMaterial() { return material; }
+    public void setMaterial(Material material) { this.material = material; }
+
+    public String getTipoMovimiento() { return tipoMovimiento; }
+    public void setTipoMovimiento(String tipoMovimiento) { this.tipoMovimiento = tipoMovimiento; }
+
+    public BigDecimal getCantidad() { return cantidad; }
+    public void setCantidad(BigDecimal cantidad) { this.cantidad = cantidad; }
+
+    public BigDecimal getStockAnterior() { return stockAnterior; }
+    public void setStockAnterior(BigDecimal stockAnterior) { this.stockAnterior = stockAnterior; }
+
+    public BigDecimal getStockNuevo() { return stockNuevo; }
+    public void setStockNuevo(BigDecimal stockNuevo) { this.stockNuevo = stockNuevo; }
+
+    public String getObservacion() { return observacion; }
+    public void setObservacion(String observacion) { this.observacion = observacion; }
+
+    public LocalDateTime getFechaMovimiento() { return fechaMovimiento; }
+    public void setFechaMovimiento(LocalDateTime fechaMovimiento) { this.fechaMovimiento = fechaMovimiento; }
+
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 }

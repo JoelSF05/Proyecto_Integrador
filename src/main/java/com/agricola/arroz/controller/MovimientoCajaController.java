@@ -50,13 +50,12 @@ public class MovimientoCajaController {
                 m.setMonto(BigDecimal.valueOf(((Number) montoObj).doubleValue()));
             } else if (montoObj instanceof String) {
                 String s = ((String) montoObj).trim();
-                // remove currency symbols and spaces, allow comma as decimal separator
-                s = s.replaceAll("[^0-9,\\.-]", "");
+                // Normalización de moneda y decimales
+                s = s.replaceAll("[S/$\\s]", "").replace(",", ".");
+                
                 if (s.isBlank()) {
                     m.setMonto(BigDecimal.ZERO);
                 } else {
-                    // normalize comma to dot if present
-                    if (s.indexOf(',') >= 0 && s.indexOf('.') < 0) s = s.replace(',', '.');
                     try {
                         m.setMonto(new BigDecimal(s));
                     } catch (NumberFormatException nfe) {
