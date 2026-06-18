@@ -31,17 +31,20 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final UsuarioRepository usuarioRepository;
+    private final TrabajadorRepository trabajadorRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private TrabajadorRepository trabajadorRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AuthController(AuthenticationManager authenticationManager,
+                          UsuarioRepository usuarioRepository,
+                          TrabajadorRepository trabajadorRepository,
+                          PasswordEncoder passwordEncoder) {
+        this.authenticationManager = authenticationManager;
+        this.usuarioRepository = usuarioRepository;
+        this.trabajadorRepository = trabajadorRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     // POST /api/auth/login
     @PostMapping("/login")
