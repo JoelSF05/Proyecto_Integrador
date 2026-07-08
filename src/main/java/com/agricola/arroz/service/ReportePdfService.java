@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.agricola.arroz.model.Asistencia;
+import com.agricola.arroz.model.MovimientoCaja;
+import com.agricola.arroz.model.MovimientoMaterial;
 import com.agricola.arroz.model.PlanillaPago;
 import com.agricola.arroz.model.Trabajador;
 import com.google.zxing.BarcodeFormat;
@@ -81,8 +84,8 @@ public class ReportePdfService {
                 table.addCell(new Phrase(nombre, FontFactory.getFont(FontFactory.HELVETICA, 9)));
 
                 // Las horas ya se guardan en horario local (America/Lima) según el cambio en AsistenciaQrService
-                String hEntStr = a.getHoraEntrada().toString();
-                String hSalStr = a.getHoraSalida().toString();
+                String hEntStr = formatHoraPdf(a.getHoraEntrada());
+                String hSalStr = formatHoraPdf(a.getHoraSalida());
 
                 table.addCell(new Phrase(hEntStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 table.addCell(new Phrase(hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
@@ -101,6 +104,37 @@ public class ReportePdfService {
     private String formatFechaPeru(LocalDate fecha, LocalTime hora) {
         if (fecha == null) return "N/A";
         return fecha.toString();
+    }
+
+    private String formatHoraPdf(LocalTime hora) {
+        if (hora == null) return "--:--";
+        return String.format("%02d:%02d", hora.getHour(), hora.getMinute());
+    }
+
+    private String formatMonedaPdf(BigDecimal valor) {
+        if (valor == null) valor = BigDecimal.ZERO;
+        return "S/ " + String.format("%,.2f", valor.setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private String formatFechaHoraPdf(LocalDateTime fechaHora) {
+        if (fechaHora == null) return "-";
+        return fechaHora.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    private String formatCantidadMaterialPdf(BigDecimal cantidad, String unidad) {
+        if (cantidad == null) return "-";
+        String cantidadStr = cantidad.stripTrailingZeros().toPlainString();
+        if (cantidadStr.isEmpty()) cantidadStr = "0";
+        return cantidadStr + (unidad != null && !unidad.isBlank() ? " " + unidad : "");
+    }
+
+    private String describirMovimientoMaterial(MovimientoMaterial movimiento) {
+        if (movimiento == null || movimiento.getTipoMovimiento() == null) return "-";
+        return switch (movimiento.getTipoMovimiento().trim().toUpperCase()) {
+            case "ENTRADA" -> "Ingreso de material";
+            case "SALIDA" -> "Salida de material";
+            default -> "Ajuste de stock";
+        };
     }
 
     public byte[] generarPdfRiego(List<Asistencia> registros, LocalDate desde, LocalDate hasta) {
@@ -150,8 +184,8 @@ public class ReportePdfService {
                 }
                 
                 // Horario (Rango horario solicitado)
-                String hEntStr = a.getHoraEntrada() != null ? a.getHoraEntrada().toString() : "--:--";
-                String hSalStr = a.getHoraSalida() != null ? a.getHoraSalida().toString() : "--:--";
+                String hEntStr = formatHoraPdf(a.getHoraEntrada());
+                String hSalStr = formatHoraPdf(a.getHoraSalida());
 
                 PdfPCell cellHorario = new PdfPCell(new Phrase(hEntStr + " - " + hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellHorario.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -409,6 +443,167 @@ public class ReportePdfService {
         c1.setBorder(0); c2.setBorder(0);
         c1.setPadding(2); c2.setPadding(2);
         table.addCell(c1); table.addCell(c2);
+    }
+
+    public byte[] generarPdfCaja(List<MovimientoCaja> movimientos, List<MovimientoCaja> saldoBaseMovimientos, LocalDate desde, LocalDate hasta) {
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(45, 139, 45));
+            document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
+            document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
+            Paragraph titulo = new Paragraph("Reporte de Caja", fontTitulo);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            document.add(titulo);
+
+            Font fontSub = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
+            Paragraph sub = new Paragraph("Periodo: " + desde + " al " + hasta, fontSub);
+            sub.setAlignment(Element.ALIGN_CENTER);
+            document.add(sub);
+            document.add(Chunk.NEWLINE);
+
+            List<MovimientoCaja> resumenMovimientos = saldoBaseMovimientos != null && !saldoBaseMovimientos.isEmpty()
+                ? saldoBaseMovimientos
+                : movimientos;
+
+            BigDecimal ingresos = resumenMovimientos.stream()
+                .filter(m -> "Ingreso".equalsIgnoreCase(m.getTipo()))
+                .map(MovimientoCaja::getMonto)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal egresos = resumenMovimientos.stream()
+                .filter(m -> "Egreso".equalsIgnoreCase(m.getTipo()))
+                .map(MovimientoCaja::getMonto)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            PdfPTable resumen = new PdfPTable(3);
+            resumen.setWidthPercentage(100);
+            resumen.setWidths(new float[]{33, 33, 34});
+            addStyledTableHeader(resumen, new String[]{"Ingresos", "Egresos", "Saldo"});
+            resumen.addCell(new Phrase(formatMonedaPdf(ingresos), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatMonedaPdf(egresos), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatMonedaPdf(ingresos.subtract(egresos)), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9)));
+            document.add(resumen);
+            document.add(Chunk.NEWLINE);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{12, 12, 20, 38, 18});
+            addStyledTableHeader(table, new String[]{"Fecha", "Tipo", "Categoría", "Descripción", "Monto"});
+
+            for (MovimientoCaja m : movimientos) {
+                table.addCell(new Phrase(m.getFecha() != null ? m.getFecha().toString() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getTipo() != null ? m.getTipo() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getCategoria() != null ? m.getCategoria() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getDesc() != null ? m.getDesc() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                PdfPCell cellMonto = new PdfPCell(new Phrase(formatMonedaPdf(m.getMonto()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                cellMonto.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                table.addCell(cellMonto);
+            }
+
+            document.add(table);
+            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
+    }
+
+    public byte[] generarPdfMateriales(List<MovimientoMaterial> movimientos, LocalDate desde, LocalDate hasta) {
+        Document document = new Document(PageSize.A4);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(45, 139, 45));
+            document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
+            document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
+            Paragraph titulo = new Paragraph("Reporte de Uso de Materiales", fontTitulo);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            document.add(titulo);
+
+            Font fontSub = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
+            Paragraph sub = new Paragraph("Periodo: " + desde + " al " + hasta + " • Registros del sistema", fontSub);
+            sub.setAlignment(Element.ALIGN_CENTER);
+            document.add(sub);
+            document.add(Chunk.NEWLINE);
+
+            BigDecimal totalCantidad = movimientos.stream()
+                .map(MovimientoMaterial::getCantidad)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal totalEntradas = movimientos.stream()
+                .filter(m -> "ENTRADA".equalsIgnoreCase(m.getTipoMovimiento()))
+                .map(MovimientoMaterial::getCantidad)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal totalSalidas = movimientos.stream()
+                .filter(m -> "SALIDA".equalsIgnoreCase(m.getTipoMovimiento()))
+                .map(MovimientoMaterial::getCantidad)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            Font fontResumen = FontFactory.getFont(FontFactory.HELVETICA, 10, new Color(70, 70, 70));
+            Paragraph resumenHeader = new Paragraph(
+                "Entradas de materiales: " + formatCantidadMaterialPdf(totalEntradas, "") +
+                "   •   Salidas de materiales: " + formatCantidadMaterialPdf(totalSalidas, ""),
+                fontResumen
+            );
+            resumenHeader.setAlignment(Element.ALIGN_CENTER);
+            document.add(resumenHeader);
+            document.add(Chunk.NEWLINE);
+
+            PdfPTable resumen = new PdfPTable(2);
+            resumen.setWidthPercentage(100);
+            resumen.setWidths(new float[]{50, 50});
+            addStyledTableHeader(resumen, new String[]{"Entradas de materiales", "Salidas de materiales"});
+            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalEntradas, ""), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalSalidas, ""), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            document.add(resumen);
+            document.add(Chunk.NEWLINE);
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{15, 22, 20, 15, 28});
+            addStyledTableHeader(table, new String[]{"Fecha registro", "Material", "Movimiento", "Cantidad", "Detalle"});
+
+            for (MovimientoMaterial m : movimientos) {
+                table.addCell(new Phrase(formatFechaHoraPdf(m.getFechaMovimiento()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String nombreMat = m.getMaterial() != null ? m.getMaterial().getNomMat() : "-";
+                table.addCell(new Phrase(nombreMat, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(describirMovimientoMaterial(m), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String unidad = m.getMaterial() != null && m.getMaterial().getUnidadMedida() != null ? m.getMaterial().getUnidadMedida() : "-";
+                table.addCell(new Phrase(formatCantidadMaterialPdf(m.getCantidad(), unidad), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String detalle = m.getObservacion() != null && !m.getObservacion().isBlank() ? m.getObservacion() : "Registro del sistema";
+                table.addCell(new Phrase(detalle, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            }
+
+            document.add(table);
+            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
     }
 
     public byte[] generarPdfResumen(List<Asistencia> registros, LocalDate desde, LocalDate hasta) {

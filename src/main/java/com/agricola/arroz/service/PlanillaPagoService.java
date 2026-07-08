@@ -5,6 +5,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,7 +75,13 @@ public class PlanillaPagoService {
             asistenciaRepository.findByTrabajadorIdTrabAndFecAsistBetween(idTrab, fechaInicio, fechaFin);
 
         PlanillaPago existente = planillaRepository
-            .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFin(idTrab, fechaInicio, fechaFin);
+            .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFinOrderByIdPlanillaDesc(idTrab, fechaInicio, fechaFin);
+
+        // Si la planilla ya fue pagada o anulada, no la sobrescribimos
+        if (existente != null && ("pagado".equalsIgnoreCase(existente.getEstado()) 
+                || "anulado".equalsIgnoreCase(existente.getEstado()))) {
+            return existente;
+        }
 
         PlanillaPago planilla = (existente != null) ? existente : new PlanillaPago();
         planilla.setTrabajador(trabajador);
@@ -125,11 +135,121 @@ public class PlanillaPagoService {
     @Transactional
     public void generarPlanillasPeriodo(LocalDate desde, LocalDate hasta) {
         List<Asistencia> todas = asistenciaRepository.findByFecAsistBetween(desde, hasta);
+        if (todas.isEmpty()) {
+            return;
+        }
 
-        todas.stream()
-            .map(a -> a.getTrabajador().getIdTrab())
+        // Obtener todos los IDs de trabajadores únicos que tienen asistencia
+        List<Integer> idTrabajadores = todas.stream()
+            .map(a -> a.getTrabajador() != null ? a.getTrabajador().getIdTrab() : null)
+            .filter(id -> id != null)
             .distinct()
-            .forEach(id -> generarPlanilla(id, desde, hasta));
+            .collect(Collectors.toList());
+
+        if (idTrabajadores.isEmpty()) {
+            return;
+        }
+
+        // Cargar todos los trabajadores en una sola consulta
+        List<Trabajador> trabajadores = trabajadorRepository.findAllById(idTrabajadores);
+        Map<Integer, Trabajador> trabajadorMap = trabajadores.stream()
+            .collect(Collectors.toMap(Trabajador::getIdTrab, t -> t));
+
+        // Cargar todas las planillas existentes para este rango exacto en una sola consulta
+        List<PlanillaPago> planillasExistentes = planillaRepository.findByFechaInicioAndFechaFin(desde, hasta);
+        
+        // Agrupar planillas existentes por trabajador ID
+        Map<Integer, List<PlanillaPago>> planillasPorTrabajador = planillasExistentes.stream()
+            .filter(p -> p.getTrabajador() != null)
+            .collect(Collectors.groupingBy(p -> p.getTrabajador().getIdTrab()));
+
+        // Agrupar asistencias por trabajador ID
+        Map<Integer, List<Asistencia>> asistenciasPorTrabajador = todas.stream()
+            .filter(a -> a.getTrabajador() != null)
+            .collect(Collectors.groupingBy(a -> a.getTrabajador().getIdTrab()));
+
+        // Generar planillas para cada trabajador
+        for (Integer idTrab : idTrabajadores) {
+            Trabajador trabajador = trabajadorMap.get(idTrab);
+            if (trabajador == null) continue;
+
+            List<Asistencia> asistencias = asistenciasPorTrabajador.getOrDefault(idTrab, Collections.emptyList());
+            List<PlanillaPago> existingList = planillasPorTrabajador.getOrDefault(idTrab, Collections.emptyList());
+            
+            // Si hay duplicados, preferir la pagada; si no, la de mayor ID
+            PlanillaPago planilla = null;
+            if (!existingList.isEmpty()) {
+                // Primero buscar si alguna ya fue pagada
+                planilla = existingList.stream()
+                    .filter(p -> "pagado".equalsIgnoreCase(p.getEstado()))
+                    .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
+                    .orElse(null);
+                // Si ya fue pagada, no la tocamos
+                if (planilla != null) {
+                    continue;
+                }
+                // Si no, tomar la de mayor ID
+                planilla = existingList.stream()
+                    .filter(p -> !"anulado".equalsIgnoreCase(p.getEstado()))
+                    .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
+                    .orElse(null);
+            }
+
+            if (planilla == null) {
+                planilla = new PlanillaPago();
+                planilla.setTrabajador(trabajador);
+                planilla.setFechaInicio(desde);
+                planilla.setFechaFin(hasta);
+                planilla.setEstado("pendiente");
+            }
+            
+            planilla.setFechaGeneracion(LocalDateTime.now(PERU_ZONE));
+
+            TipoPago tipo = trabajador.getTipoPago();
+            BigDecimal montoTotal = BigDecimal.ZERO;
+
+            if (tipo == null) {
+                planilla.setMontoTotal(BigDecimal.ZERO);
+                planilla.setObservacion("Sin tipo de pago asignado");
+                planillaRepository.save(planilla);
+                continue;
+            }
+
+            // Reiniciamos los contadores a 0 por si reutilizamos una planilla existente
+            planilla.setTotalDias(0);
+            planilla.setTotalSacos(0);
+            planilla.setTotalTareas(0);
+            planilla.setTipoTareaPlanilla(null);
+
+            if (tipo.esPorJornal()) {
+                BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
+                long diasUnicos = asistencias.stream()
+                    .filter(a -> Boolean.TRUE.equals(a.getPresente()))
+                    .map(Asistencia::getFecAsist)
+                    .distinct()
+                    .count();
+                planilla.setTotalDias((int) diasUnicos);
+                montoTotal = tarifa.multiply(BigDecimal.valueOf(diasUnicos));
+            } else if (tipo.esPorSaco()) {
+                BigDecimal tarifa = trabajador.getPagoPorSaco() != null ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
+                int totalSacos = asistencias.stream()
+                    .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
+                    .sum();
+                planilla.setTotalSacos(totalSacos);
+                montoTotal = tarifa.multiply(BigDecimal.valueOf(totalSacos));
+            } else if (tipo.esPorTarea()) {
+                BigDecimal tarifa = trabajador.getPagoPorTarea() != null ? trabajador.getPagoPorTarea() : BigDecimal.ZERO;
+                int totalTareas = asistencias.stream()
+                    .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
+                    .sum();
+                planilla.setTotalTareas(totalTareas);
+                planilla.setTipoTareaPlanilla(tipo.name());
+                montoTotal = tarifa.multiply(BigDecimal.valueOf(totalTareas));
+            }
+
+            planilla.setMontoTotal(montoTotal);
+            planillaRepository.save(planilla);
+        }
     }
 
     @Transactional

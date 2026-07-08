@@ -2,6 +2,8 @@ package com.agricola.arroz.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,10 +26,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.agricola.arroz.model.Asistencia;
+import com.agricola.arroz.model.MovimientoCaja;
+import com.agricola.arroz.model.MovimientoMaterial;
 import com.agricola.arroz.model.PlanillaPago;
 import com.agricola.arroz.model.Trabajador;
 import com.agricola.arroz.model.Usuario;
 import com.agricola.arroz.repository.AsistenciaRepository;
+import com.agricola.arroz.repository.MovimientoCajaRepository;
+import com.agricola.arroz.repository.MovimientoMaterialRepository;
 import com.agricola.arroz.repository.PlanillaPagoRepository;
 import com.agricola.arroz.repository.TrabajadorRepository;
 import com.agricola.arroz.repository.UsuarioRepository;
@@ -51,6 +57,12 @@ public class ReporteController {
 
     @Autowired
     private PlanillaPagoRepository planillaRepository;
+
+    @Autowired
+    private MovimientoCajaRepository movimientoCajaRepository;
+
+    @Autowired
+    private MovimientoMaterialRepository movimientoMaterialRepository;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -278,6 +290,125 @@ public class ReporteController {
 
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Resumen_Labores.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdfBytes);
+    }
+
+    @GetMapping("/materiales")
+    public ResponseEntity<?> reporteMateriales(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        LocalDateTime inicio = desde.atStartOfDay();
+        LocalDateTime fin = hasta.atTime(LocalTime.MAX);
+
+        List<MovimientoMaterial> movimientos = movimientoMaterialRepository
+                .findByFechaMovimientoBetweenOrderByFechaMovimientoDesc(inicio, fin);
+
+        BigDecimal entradas = movimientos.stream()
+                .filter(m -> "ENTRADA".equalsIgnoreCase(m.getTipoMovimiento()))
+                .map(MovimientoMaterial::getCantidad)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal salidas = movimientos.stream()
+                .filter(m -> "SALIDA".equalsIgnoreCase(m.getTipoMovimiento()))
+                .map(MovimientoMaterial::getCantidad)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<Map<String, Object>> detalle = movimientos.stream().map(m -> {
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("id", m.getIdMovimiento());
+            fila.put("fecha", m.getFechaMovimiento());
+            fila.put("material", m.getMaterial() != null ? m.getMaterial().getNomMat() : "-");
+            fila.put("tipo", m.getTipoMovimiento());
+            fila.put("cantidad", m.getCantidad());
+            fila.put("unidad", m.getMaterial() != null ? m.getMaterial().getUnidadMedida() : "-");
+            fila.put("observacion", m.getObservacion());
+            return fila;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("periodo", Map.of("desde", desde, "hasta", hasta));
+        respuesta.put("totalMovimientos", movimientos.size());
+        respuesta.put("totalEntradas", entradas);
+        respuesta.put("totalSalidas", salidas);
+        respuesta.put("detalle", detalle);
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/materiales/pdf")
+    public ResponseEntity<byte[]> reporteMaterialesPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        LocalDateTime inicio = desde.atStartOfDay();
+        LocalDateTime fin = hasta.atTime(LocalTime.MAX);
+        List<MovimientoMaterial> movimientos = movimientoMaterialRepository
+                .findByFechaMovimientoBetweenOrderByFechaMovimientoDesc(inicio, fin);
+        byte[] pdfBytes = pdfService.generarPdfMateriales(movimientos, desde, hasta);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Reporte_Uso_Materiales.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdfBytes);
+    }
+
+    @GetMapping("/caja")
+    public ResponseEntity<?> reporteCaja(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        List<MovimientoCaja> movimientos = movimientoCajaRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
+        List<MovimientoCaja> saldoBase = movimientoCajaRepository.findAllByOrderByFechaDesc();
+
+        BigDecimal ingresos = saldoBase.stream()
+                .filter(m -> "Ingreso".equalsIgnoreCase(m.getTipo()))
+                .map(MovimientoCaja::getMonto)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal egresos = saldoBase.stream()
+                .filter(m -> "Egreso".equalsIgnoreCase(m.getTipo()))
+                .map(MovimientoCaja::getMonto)
+                .filter(m -> m != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<Map<String, Object>> detalle = movimientos.stream().map(m -> {
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("id", m.getId());
+            fila.put("fecha", m.getFecha());
+            fila.put("tipo", m.getTipo());
+            fila.put("categoria", m.getCategoria());
+            fila.put("descripcion", m.getDesc());
+            fila.put("monto", m.getMonto());
+            return fila;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("periodo", Map.of("desde", desde, "hasta", hasta));
+        respuesta.put("totalMovimientos", movimientos.size());
+        respuesta.put("totalIngresos", ingresos);
+        respuesta.put("totalEgresos", egresos);
+        respuesta.put("saldo", ingresos.subtract(egresos));
+        respuesta.put("detalle", detalle);
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/caja/pdf")
+    public ResponseEntity<byte[]> reporteCajaPdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+
+        List<MovimientoCaja> movimientos = movimientoCajaRepository.findByFechaBetweenOrderByFechaDesc(desde, hasta);
+        List<MovimientoCaja> saldoBase = movimientoCajaRepository.findAllByOrderByFechaDesc();
+        byte[] pdfBytes = pdfService.generarPdfCaja(movimientos, saldoBase, desde, hasta);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Reporte_Caja.pdf")
             .contentType(MediaType.APPLICATION_PDF)
             .body(pdfBytes);
     }

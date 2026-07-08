@@ -678,12 +678,12 @@ function renderNotifContent() {
   const lowStock = materiales.filter(m => m.stockActual <= m.stockMinimo);
   let items = [];
 
-  criticalPlagas.forEach(p => items.push({ ico: '🦠', tit: `Alerta: ${p.nombre}`, txt: `Nivel crítico en parcela ${p.parcela}. Usar: ${p.producto}`, tag: 'Plaga', cls: 'br', mod: 'control-plagas' }));
+  criticalPlagas.forEach(p => items.push({ ico: '🦠', tit: `Alerta: ${p.nombre}`, txt: `Nivel crítico en área ${p.parcela}. Usar: ${p.producto}`, tag: 'Plaga', cls: 'br', mod: 'control-plagas' }));
   lowStock.forEach(m => items.push({ ico: '📦', tit: `Stock Bajo: ${m.nombre}`, txt: `Solo quedan ${m.stockActual} ${m.unidad}. Mínimo: ${m.stockMinimo}`, tag: 'Insumo', cls: 'ba', mod: 'materiales' }));
   
   // Recomendación específica si hay Pyricularia
   if (plagas.some(p => p.nombre.includes('Pyricularia') && p.nivel === 'ALTO')) {
-    items.push({ ico: '🧪', tit: 'Recomendación Urgente', txt: 'Aplicar preventivo en parcelas colindantes a la Parcela A.', tag: 'Sanitario', cls: 'bp', mod: 'recomendaciones' });
+    items.push({ ico: '🧪', tit: 'Recomendación Urgente', txt: 'Aplicar preventivo en zonas colindantes al área A.', tag: 'Sanitario', cls: 'bp', mod: 'recomendaciones' });
   }
 
   if (!items.length) {
@@ -908,7 +908,7 @@ async function usarMaterial(id) {
     <div class="form-grid">
       <div class="fc"><label>Fecha de Aplicación</label><input type="date" id="uso-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
       <div class="fc"><label>Hora</label><input type="time" id="uso-hora" value="${new Date().toTimeString().slice(0,5)}"></div>
-      <div class="fc full"><label>Parcela / Hectárea Destino</label>
+      <div class="fc full"><label>Destino / Área</label>
         <select id="uso-hect">
           <option value="1">Lote A – Zona Norte</option>
           <option value="2">Lote B – Zona Sur</option>
@@ -1250,6 +1250,10 @@ function construirSidebar(){
   if(id==='caja') listarCaja();
   if(id==='materiales') setTimeout(cargarMateriales, 50);
   if(id==='mi-asistencia') setTimeout(cargarMiAsistenciaHoy, 100);
+  if(id==='reportes') {
+    configurarBotonesOcultarReportes();
+    setTimeout(inicializarReportes, 120);
+  }
 
   if(id==='transplante') { setTimeout(()=>cargarLabores('TRANSPLANTE','transplante'), 100); setTimeout(()=>cargarPersonalSeccion('transplante','transplante'), 150); }
   if(id==='saca-arroz')  { setTimeout(()=>cargarLabores('SACA','saca-arroz'), 100); setTimeout(()=>cargarPersonalSeccion('saca','saca-arroz'), 150); }
@@ -1363,8 +1367,8 @@ function renderModulo(id){
         <div class="card">
           <div class="card-hdr"><h3>🧪 Historial de Aplicaciones Fitosanitarias</h3></div>
           <div style="padding:18px">
-            <div class="dato-fila"><span>Parcela A - Fungicida</span><span class="val">Completado</span></div>
-            <div class="dato-fila"><span>Parcela B - Insecticida</span><span class="val">Mañana 06:00</span></div>
+            <div class="dato-fila"><span>Área A - Fungicida</span><span class="val">Completado</span></div>
+            <div class="dato-fila"><span>Área B - Insecticida</span><span class="val">Mañana 06:00</span></div>
           </div>
         </div>
       </div>
@@ -1448,7 +1452,7 @@ function renderModulo(id){
             <div class="card-hdr">
               <h3>Marcado General</h3>
               <div class="htools" style="gap:5px">
-                <button class="btn-d" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center" onclick="descargarReporteAsistenciaGeneralPdf()">PDF</button>
+                <button class="btn-b" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center" onclick="abrirReporteAsistenciaDesdeOtraSeccion()">Ver en Reportes</button>
                 <input type="date" id="asist-gral-desde" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
                 <input type="date" id="asist-gral-hasta" class="filtro" style="padding:4px 8px; font-size:12px; min-height:auto" onchange="cargarMiAsistenciaHoy()">
                 <button class="tbtn" onclick="setAsistHoy()" style="padding:4px 8px; font-size:11px">Hoy</button>
@@ -1480,9 +1484,26 @@ function renderModulo(id){
   if(id==='reportes'){
     return `
       <div class="info-cols">
+        <div class="card" id="card-reporte-asistencia-general">
+          <div class="card-hdr"><h3>Reporte de Asistencia General</h3>
+            <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-reporte-asistencia" data-pdf-btn="btn-pdf-asistencia-general" data-placeholder="Seleccione fechas y presione Generar.">Ocultar</button>
+              <button id="btn-pdf-asistencia-general" class="btn-d" style="display:none" onclick="descargarReporteAsistenciaGeneralPdfDesdeReportes()">PDF</button>
+              <button class="btn-p" onclick="generarReporteAsistenciaGeneral()">Generar</button>
+            </div>
+          </div>
+          <div style="padding:18px">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+              <div class="fc"><label>Desde</label><input type="date" id="reporte-asistencia-desde"></div>
+              <div class="fc"><label>Hasta</label><input type="date" id="reporte-asistencia-hasta"></div>
+            </div>
+            <div id="tabla-reporte-asistencia" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p></div>
+          </div>
+        </div>
         <div class="card">
           <div class="card-hdr"><h3>Reporte de Riego</h3>
             <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-reporte-riego" data-pdf-btn="btn-pdf-riego" data-placeholder="Seleccione fechas y presione Generar.">Ocultar</button>
               <button id="btn-pdf-riego" class="btn-d" style="display:none" onclick="descargarReporteRiegoPdf()">PDF</button>
               <button class="btn-p" onclick="generarReporteRiego()">Generar</button>
             </div>
@@ -1492,12 +1513,13 @@ function renderModulo(id){
               <div class="fc"><label>Desde</label><input type="date" id="riego-desde"></div>
               <div class="fc"><label>Hasta</label><input type="date" id="riego-hasta"></div>
             </div>
-            <div id="tabla-reporte-riego"><p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p></div>
+            <div id="tabla-reporte-riego" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p></div>
           </div>
         </div>
         <div class="card">
           <div class="card-hdr"><h3>Reporte por Tarea</h3>
             <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-reporte-tareas" data-pdf-btn="btn-pdf-tareas" data-placeholder="Seleccione tipo y mes.">Ocultar</button>
               <button id="btn-pdf-tareas" class="btn-d" style="display:none" onclick="descargarReporteTareasPdf()">PDF</button>
               <button class="btn-p" onclick="generarReporteTareas()">Generar</button>
             </div>
@@ -1514,12 +1536,45 @@ function renderModulo(id){
               </div>
               <div class="fc"><label>Mes</label><input type="month" id="tarea-mes"></div>
             </div>
-            <div id="tabla-reporte-tareas"><p style="color:var(--ts);font-size:0.8125rem">Seleccione tipo y mes.</p></div>
+            <div id="tabla-reporte-tareas" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Seleccione tipo y mes.</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h3>Reporte de Caja</h3>
+            <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-reporte-caja" data-pdf-btn="btn-pdf-caja" data-placeholder="Seleccione fechas y presione Generar.">Ocultar</button>
+              <button id="btn-pdf-caja" class="btn-d" style="display:none" onclick="descargarReporteCajaPdf()">PDF</button>
+              <button class="btn-p" onclick="generarReporteCaja()">Generar</button>
+            </div>
+          </div>
+          <div style="padding:18px">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+              <div class="fc"><label>Desde</label><input type="date" id="caja-reporte-desde"></div>
+              <div class="fc"><label>Hasta</label><input type="date" id="caja-reporte-hasta"></div>
+            </div>
+            <div id="tabla-reporte-caja" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><h3>Reporte de Uso de Materiales</h3>
+            <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-reporte-materiales" data-pdf-btn="btn-pdf-materiales" data-placeholder="Seleccione fechas y presione Generar.">Ocultar</button>
+              <button id="btn-pdf-materiales" class="btn-d" style="display:none" onclick="descargarReporteMaterialesPdf()">PDF</button>
+              <button class="btn-p" onclick="generarReporteMateriales()">Generar</button>
+            </div>
+          </div>
+          <div style="padding:18px">
+            <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+              <div class="fc"><label>Desde</label><input type="date" id="materiales-reporte-desde"></div>
+              <div class="fc"><label>Hasta</label><input type="date" id="materiales-reporte-hasta"></div>
+            </div>
+            <div id="tabla-reporte-materiales" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p></div>
           </div>
         </div>
         <div class="card" style="grid-column:1/-1">
           <div class="card-hdr"><h3>Generar Planilla de Pagos</h3>
             <div style="display:flex;gap:8px">
+              <button class="tbtn" style="padding:4px 8px; font-size:11px" data-action="ocultar-reporte" data-container="tabla-planilla" data-pdf-btn="btn-pdf-resumen" data-placeholder="Configure el período y presione Calcular.">Ocultar</button>
               <button id="btn-pdf-resumen" class="btn-d" style="display:none" onclick="descargarResumenPdf()">PDF Resumen</button>
               <button class="btn-p" onclick="generarPlanilla()">Calcular</button>
             </div>
@@ -1548,7 +1603,7 @@ function renderModulo(id){
               <div class="fc"><label>Desde</label><input type="date" id="planilla-desde"></div>
               <div class="fc"><label>Hasta</label><input type="date" id="planilla-hasta"></div>
             </div>
-            <div id="tabla-planilla"><p style="color:var(--ts);font-size:0.8125rem">Configure el período y presione Calcular.</p></div>
+            <div id="tabla-planilla" style="max-height:320px; overflow:auto; padding-right:4px;"><p style="color:var(--ts);font-size:0.8125rem">Configure el período y presione Calcular.</p></div>
           </div>
         </div>
       </div>
@@ -1648,7 +1703,7 @@ function renderModulo(id){
             </div>
             <div class="tabla-wrap">
               <table>
-                <thead><tr><th>Fecha</th><th>Trabajador</th><th>Parcela</th><th>Tareas</th><th>Pago/Tarea</th><th>Total</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Trabajador</th><th>Área</th><th>Tareas</th><th>Pago/Tarea</th><th>Total</th></tr></thead>
                 <tbody id="lista-labor-${id}"><tr><td colspan="6" style="text-align:center;color:var(--ts);padding:18px;font-size:0.8125rem">Cargando registros...</td></tr></tbody>
               </table>
             </div>
@@ -1755,7 +1810,7 @@ function renderModulo(id){
         </div>
         <div class="tabla-wrap">
           <table>
-            <thead><tr><th>Fecha</th><th>Trabajador</th><th>Tipo de Saco</th><th>Cantidad</th><th>Parcela</th><th>Observación</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Trabajador</th><th>Tipo de Saco</th><th>Cantidad</th><th>Observación</th><th>Acciones</th></tr></thead>
             <tbody id="lista-abonos">
               <tr><td colspan="7" style="text-align:center;color:var(--ts);padding:24px">Cargando registros...</td></tr>
             </tbody>
@@ -1799,7 +1854,7 @@ function renderModulo(id){
         </div>
         <div class="tabla-wrap" style="margin-top:18px">
           <table>
-            <thead><tr><th>Fecha</th><th>Tipo Uso</th><th>Vehículo / Máquina</th><th>Litros</th><th>Parcela</th><th>Responsable</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Tipo Uso</th><th>Vehículo / Máquina</th><th>Litros</th><th>Responsable</th><th>Acciones</th></tr></thead>
             <tbody id="lista-gasolina">
               <tr><td colspan="7" style="text-align:center;color:var(--ts);padding:24px">Cargando registros...</td></tr>
             </tbody>
@@ -1846,7 +1901,7 @@ function renderModulo(id){
           <div class="card-hdr"><h3>📅 Cronograma de Próximas Aplicaciones</h3></div>
           <div style="padding:18px;display:flex;flex-direction:column;gap:10px">
             <div class="dato-fila"><span>2ª Fertilización (Urea)</span><span class="val">05/Jun</span></div>
-            <div class="dato-fila"><span>Fungicida preventivo (Parcelas B,C)</span><span class="val">08/Jun</span></div>
+            <div class="dato-fila"><span>Fungicida preventivo (Áreas B,C)</span><span class="val">08/Jun</span></div>
             <div class="dato-fila"><span>Control Sogata (Imidacloprid)</span><span class="val">12/Jun</span></div>
             <div class="dato-fila"><span>Reducción de riego (pre-cosecha)</span><span class="val">20/Jun</span></div>
             <div class="dato-fila"><span>Estimado inicio cosecha</span><span class="val">15/Jul</span></div>
@@ -1860,7 +1915,7 @@ function renderModulo(id){
   return `
     <div class="info-section">
       <h2>Módulo de Control Técnico</h2>
-      <p style="color:var(--ts);margin-top:10px">Sección configurada para el registro de parámetros en tiempo real en las parcelas de Moyobamba.</p>
+      <p style="color:var(--ts);margin-top:10px">Sección configurada para el registro de parámetros en tiempo real en las áreas operativas de Moyobamba.</p>
     </div>
   `;
 }
@@ -2096,11 +2151,237 @@ function setAsistHoy() {
   cargarMiAsistenciaHoy();
 }
 
+function inicializarReportes() {
+  const hoy = new Date();
+  const valorHoy = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, '0') + "-" + String(hoy.getDate()).padStart(2, '0');
+  const desde = document.getElementById('reporte-asistencia-desde');
+  const hasta = document.getElementById('reporte-asistencia-hasta');
+  const cajaDesde = document.getElementById('caja-reporte-desde');
+  const cajaHasta = document.getElementById('caja-reporte-hasta');
+  const matDesde = document.getElementById('materiales-reporte-desde');
+  const matHasta = document.getElementById('materiales-reporte-hasta');
+  if(desde && !desde.value) desde.value = valorHoy;
+  if(hasta && !hasta.value) hasta.value = valorHoy;
+  if(cajaDesde && !cajaDesde.value) cajaDesde.value = valorHoy;
+  if(cajaHasta && !cajaHasta.value) cajaHasta.value = valorHoy;
+  if(matDesde && !matDesde.value) matDesde.value = valorHoy;
+  if(matHasta && !matHasta.value) matHasta.value = valorHoy;
+}
+
+function ocultarReporte(containerId, btnPdfId, placeholderHtml) {
+  const cont = document.getElementById(containerId);
+  const btnPdf = btnPdfId ? document.getElementById(btnPdfId) : null;
+  if(cont) {
+    cont.innerHTML = placeholderHtml || '<p style="color:var(--ts);font-size:0.8125rem">Reporte oculto.</p>';
+    cont.dataset.hidden = 'true';
+  }
+  if(btnPdf) btnPdf.style.display = 'none';
+}
+
+function configurarBotonesOcultarReportes() {
+  document.querySelectorAll('[data-action="ocultar-reporte"]').forEach(btn => {
+    btn.onclick = null;
+    btn.addEventListener('click', () => {
+      const containerId = btn.getAttribute('data-container');
+      const btnPdfId = btn.getAttribute('data-pdf-btn');
+      const placeholder = btn.getAttribute('data-placeholder') || 'Reporte oculto.';
+      const placeholderHtml = `<p style="color:var(--ts);font-size:0.8125rem">${placeholder}</p>`;
+      ocultarReporte(containerId, btnPdfId, placeholderHtml);
+    });
+  });
+}
+
+function abrirReporteAsistenciaDesdeOtraSeccion() {
+  const desde = document.getElementById('asist-gral-desde')?.value || '';
+  const hasta = document.getElementById('asist-gral-hasta')?.value || desde;
+  irA('reportes');
+  setTimeout(() => {
+    const inputDesde = document.getElementById('reporte-asistencia-desde');
+    const inputHasta = document.getElementById('reporte-asistencia-hasta');
+    if(inputDesde) inputDesde.value = desde || new Date().toISOString().slice(0, 10);
+    if(inputHasta) inputHasta.value = hasta || inputDesde.value;
+    generarReporteAsistenciaGeneral();
+    const card = document.getElementById('card-reporte-asistencia-general');
+    if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 180);
+}
+
+async function generarReporteAsistenciaGeneral() {
+  const desde = document.getElementById('reporte-asistencia-desde')?.value;
+  const hasta = document.getElementById('reporte-asistencia-hasta')?.value || desde;
+  const cont = document.getElementById('tabla-reporte-asistencia');
+  const btnPdf = document.getElementById('btn-pdf-asistencia-general');
+  if(!cont) return;
+  if(!desde || !hasta) {
+    cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p>';
+    if(btnPdf) btnPdf.style.display = 'none';
+    return;
+  }
+  cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Generando reporte...</p>';
+  try {
+    const data = await apiFetch(`/api/reportes/asistencia-mixta?desde=${desde}&hasta=${hasta}`);
+    const registros = [];
+    if(data?.propia) {
+      (data.propia || []).forEach(a => registros.push({trabajador: data.miNombre || 'Tú', fecha: a.fecha, horaEntrada: a.horaEntrada, horaSalida: a.horaSalida, estado: a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}));
+    }
+    if(data?.general) {
+      (data.general || []).forEach(a => registros.push({trabajador: a.trabajador || '-', fecha: a.fecha, horaEntrada: a.horaEntrada, horaSalida: a.horaSalida, estado: a.horaSalida ? 'COMPLETO' : 'EN CAMPO'}));
+    }
+    if(registros.length === 0) {
+      cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">No hay registros para ese periodo.</p>';
+      if(btnPdf) btnPdf.style.display = 'none';
+      return;
+    }
+    cont.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:0.8125rem;color:var(--v2);font-weight:600">${registros.length} registros</span>
+        <span style="font-size:0.75rem;color:var(--ts)">${formatFecha(desde)} al ${formatFecha(hasta)}</span>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Trabajador</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Estado</th></tr></thead>
+          <tbody>
+            ${registros.map(r => `
+              <tr>
+                <td><strong>${r.trabajador}</strong></td>
+                <td>${formatFecha(r.fecha)}</td>
+                <td>${formatHora(r.horaEntrada, r.fecha)}</td>
+                <td>${r.horaSalida ? formatHora(r.horaSalida, r.fecha) : '—'}</td>
+                <td><span class="badge ${r.horaSalida ? 'bv' : 'ba'}">${r.estado}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    if(btnPdf) btnPdf.style.display = 'inline-flex';
+  } catch (e) {
+    cont.innerHTML = '<p style="color:#dc2626;font-size:0.8125rem">No se pudo generar el reporte.</p>';
+    if(btnPdf) btnPdf.style.display = 'none';
+  }
+}
+
+function descargarReporteCajaPdf() {
+  const desde = document.getElementById('caja-reporte-desde')?.value;
+  const hasta = document.getElementById('caja-reporte-hasta')?.value || desde;
+  if(!desde || !hasta) { mostrarToast('Seleccione un periodo de fechas'); return; }
+  window.location.href = `/api/reportes/caja/pdf?desde=${desde}&hasta=${hasta}`;
+}
+
+function descargarReporteMaterialesPdf() {
+  const desde = document.getElementById('materiales-reporte-desde')?.value;
+  const hasta = document.getElementById('materiales-reporte-hasta')?.value || desde;
+  if(!desde || !hasta) { mostrarToast('Seleccione un periodo de fechas'); return; }
+  window.location.href = `/api/reportes/materiales/pdf?desde=${desde}&hasta=${hasta}`;
+}
+
+async function generarReporteCaja() {
+  const desde = document.getElementById('caja-reporte-desde')?.value;
+  const hasta = document.getElementById('caja-reporte-hasta')?.value || desde;
+  const cont = document.getElementById('tabla-reporte-caja');
+  const btnPdf = document.getElementById('btn-pdf-caja');
+  if(!cont) return;
+  if(!desde || !hasta) {
+    cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p>';
+    if(btnPdf) btnPdf.style.display = 'none';
+    return;
+  }
+  cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Generando reporte...</p>';
+  try {
+    const data = await apiFetch(`/api/reportes/caja?desde=${desde}&hasta=${hasta}`);
+    const movimientos = data?.detalle || [];
+    if(!movimientos.length) {
+      cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">No hay movimientos para ese periodo.</p>';
+      if(btnPdf) btnPdf.style.display = 'none';
+      return;
+    }
+    const totalIngresos = Number(data?.totalIngresos || 0);
+    const totalEgresos = Number(data?.totalEgresos || 0);
+    const saldo = Number(data?.saldo || 0);
+    cont.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:0.8125rem;color:var(--v2);font-weight:600">${movimientos.length} movimientos</span>
+        <span style="font-size:0.75rem;color:var(--ts)">Ingresos: ${formatMoneda(totalIngresos)} • Egresos: ${formatMoneda(totalEgresos)} • Saldo actual: ${formatMoneda(saldo)}</span>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead>
+          <tbody>
+            ${movimientos.map(m => `
+              <tr>
+                <td>${formatFecha(m.fecha)}</td>
+                <td><span class="badge ${m.tipo === 'Ingreso' ? 'bv' : 'br'}">${m.tipo || '-'}</span></td>
+                <td>${m.categoria || '-'}</td>
+                <td>${m.descripcion || '-'}</td>
+                <td style="text-align:right;font-weight:700">${formatMoneda(m.monto || 0)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    if(btnPdf) btnPdf.style.display = 'inline-flex';
+  } catch (e) {
+    cont.innerHTML = '<p style="color:#dc2626;font-size:0.8125rem">No se pudo generar el reporte de caja.</p>';
+  }
+}
+
+async function generarReporteMateriales() {
+  const desde = document.getElementById('materiales-reporte-desde')?.value;
+  const hasta = document.getElementById('materiales-reporte-hasta')?.value || desde;
+  const cont = document.getElementById('tabla-reporte-materiales');
+  const btnPdf = document.getElementById('btn-pdf-materiales');
+  if(!cont) return;
+  if(!desde || !hasta) {
+    cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Seleccione fechas y presione Generar.</p>';
+    if(btnPdf) btnPdf.style.display = 'none';
+    return;
+  }
+  cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">Generando reporte...</p>';
+  try {
+    const data = await apiFetch(`/api/reportes/materiales?desde=${desde}&hasta=${hasta}`);
+    const movimientos = data?.detalle || [];
+    if(!movimientos.length) {
+      cont.innerHTML = '<p style="color:var(--ts);font-size:0.8125rem">No hay movimientos de materiales para ese periodo.</p>';
+      if(btnPdf) btnPdf.style.display = 'none';
+      return;
+    }
+    const totalEntradas = Number(data?.totalEntradas || 0);
+    const totalSalidas = Number(data?.totalSalidas || 0);
+    cont.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:0.8125rem;color:var(--v2);font-weight:600">${movimientos.length} movimientos</span>
+        <span style="font-size:0.75rem;color:var(--ts)">Entradas: ${totalEntradas.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} • Salidas: ${totalSalidas.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Material</th><th>Tipo</th><th>Cantidad</th><th>Observación</th></tr></thead>
+          <tbody>
+            ${movimientos.map(m => `
+              <tr>
+                <td>${formatFecha(m.fecha ? new Date(m.fecha) : null)}</td>
+                <td><strong>${m.material || '-'}</strong></td>
+                <td><span class="badge ${m.tipo === 'ENTRADA' ? 'bv' : 'br'}">${m.tipo || '-'}</span></td>
+                <td>${Number(m.cantidad || 0).toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${m.unidad || ''}</td>
+                <td>${m.observacion || '-'}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    if(btnPdf) btnPdf.style.display = 'inline-flex';
+  } catch (e) {
+    cont.innerHTML = '<p style="color:#dc2626;font-size:0.8125rem">No se pudo generar el reporte de materiales.</p>';
+  }
+}
+
 function descargarReporteAsistenciaGeneralPdf() {
   const desde = document.getElementById('asist-gral-desde').value;
   const hasta = document.getElementById('asist-gral-hasta').value;
   if(!desde || !hasta) { mostrarToast('Seleccione un periodo de fechas'); return; }
   
+  window.location.href = `/api/reportes/asistencia-general/pdf?desde=${desde}&hasta=${hasta}`;
+}
+
+function descargarReporteAsistenciaGeneralPdfDesdeReportes() {
+  const desde = document.getElementById('reporte-asistencia-desde').value;
+  const hasta = document.getElementById('reporte-asistencia-hasta').value;
+  if(!desde || !hasta) { mostrarToast('Seleccione un periodo de fechas'); return; }
   window.location.href = `/api/reportes/asistencia-general/pdf?desde=${desde}&hasta=${hasta}`;
 }
 
@@ -2455,7 +2736,7 @@ function listarPlagas(){
         <div class="plaga-hdr"><h4>${p.nombre}</h4><span class="badge ${p.nivel==='ALTO'?'br':'ba'}">${p.nivel}</span>${(isAdmin() || SESSION.rol === 'INGENIERO') ? '<div class="acc-wrap" style="margin-left:auto"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarPlaga('+p.id+')">Eliminar</a></div></div>' : ''}</div>
         <p class="plaga-desc">${p.notas}</p>
         <div class="plaga-meta">
-          <span class="plaga-chip">Parcela ${p.parcela}</span>
+          <span class="plaga-chip">Área ${p.parcela}</span>
           <span class="plaga-chip">Receta: ${p.producto} (${p.dosis})</span>
         </div>
       </div>
@@ -2487,25 +2768,25 @@ async function toggleAccordion(idTrab, desde, hasta, rowId) {
   const yaPagado = planilla && (planilla.estado||'').toUpperCase() === 'PAGADO';
 
   content.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--borde); border-radius:8px; padding:0.75rem">
+    <div style="background:var(--card); border:1px solid var(--borde); border-radius:8px; padding:0.75rem">
       <div style="font-size:0.6875rem; color:var(--v2); font-weight:700; margin-bottom:0.625rem; text-transform:uppercase">
         Desglose de actividades
         ${yaPagado ? ' — <span style="color:var(--v2)">Pago verificado</span>' : ''}
       </div>
-      <table style="width:100%; font-size:12px">
+      <table style="width:100%; font-size:12px; color:var(--tx)">
         <thead>
           <tr style="border-bottom:1px solid var(--borde)">
-            <th style="padding:8px">Fecha</th>
-            <th style="padding:8px">Labor</th>
-            <th style="padding:8px; text-align:center">Cantidad</th>
-            <th style="padding:8px; text-align:right">Precio Unit.</th>
-            <th style="padding:8px; text-align:right">Subtotal</th>
-            ${yaPagado ? '<th style="padding:8px; text-align:center">PDF</th>' : ''}
+            <th style="padding:8px; color:var(--ts)">Fecha</th>
+            <th style="padding:8px; color:var(--ts)">Labor</th>
+            <th style="padding:8px; text-align:center; color:var(--ts)">Cantidad</th>
+            <th style="padding:8px; text-align:right; color:var(--ts)">Precio Unit.</th>
+            <th style="padding:8px; text-align:right; color:var(--ts)">Subtotal</th>
+            ${yaPagado ? '<th style="padding:8px; text-align:center; color:var(--ts)">PDF</th>' : ''}
           </tr>
         </thead>
         <tbody>
           ${data.map(d => `
-            <tr>
+            <tr style="border-bottom:1px solid var(--borde)">
               <td style="padding:6px">${formatFecha(d.fecha)}</td>
               <td style="padding:6px">${d.actividad}</td>
               <td style="padding:6px; text-align:center">${d.cantidad}</td>
@@ -2720,7 +3001,7 @@ function abrirModalPlaga(){
     <div class="form-grid">
       <div class="fc"><label>Nombre Fitosanitario</label><input type="text" placeholder="Ej. Pyricularia" id="p-nom"></div>
       <div class="fc"><label>Severidad</label><select id="p-nv"><option>BAJO</option><option>MEDIO</option><option>ALTO</option></select></div>
-      <div class="fc"><label>Parcela / Sector</label><input type="text" placeholder="Sector A-2" id="p-par"></div>
+      <div class="fc"><label>Área / Sector</label><input type="text" placeholder="Sector A-2" id="p-par"></div>
       <div class="fc"><label>Prescripción Técnica</label><input type="text" placeholder="Producto y dosis sugerida" id="p-prod"></div>
       <div class="fc full"><label>Observaciones de campo</label><textarea id="p-not"></textarea></div>
     </div>
@@ -2810,7 +3091,7 @@ function listarRecomendaciones() {
     dinámicas.push({
       id: 'dyn-p-' + p.id,
       titulo: `Control Urgente: ${p.nombre}`,
-      desc: `Se detectó nivel crítico en Parcela ${p.parcela}. Aplicar inmediatamente: ${p.producto} (${p.dosis}).`,
+      desc: `Se detectó nivel crítico en Área ${p.parcela}. Aplicar inmediatamente: ${p.producto} (${p.dosis}).`,
       alerta: true
     });
   });
@@ -2929,6 +3210,11 @@ function labelTarea(k){
   return {TRANSPLANTE:'Transplante',SACA:'Saca de arroz',CARGA:'Carga',DIA:'Día',FUMIGACION:'Fumigación',ABONO:'Abono'}[k]||k;
 }
 
+function formatMoneda(v){
+  const n = Number(v || 0);
+  return 'S/' + n.toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
 function formatFecha(f, h){
   if(!f) return '–';
   let s = Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f;
@@ -2949,23 +3235,20 @@ function formatHora(h, f) {
   if (!h) return '—';
   let hh, mm, ss = 0;
   
-  // Parseo del formato del servidor (Array de Jackson o String ISO)
   if (Array.isArray(h)) {
     hh = h[0];
     mm = String(h[1]).padStart(2, '0');
   } else if (typeof h === 'string') {
     const parts = h.split(':');
     hh = parseInt(parts[0]);
-    mm = parts[1];
+    mm = parts[1] || '00';
     ss = parts[2] || 0;
   } else return '—';
 
-  // Creamos la fecha local y forzamos la interpretación como America/Lima
   const s = f ? (Array.isArray(f) ? `${f[0]}-${String(f[1]).padStart(2,'0')}-${String(f[2]).padStart(2,'0')}` : f) : new Date().toLocaleDateString('en-CA');
   const isoStr = `${s}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-  
-  // El navegador convertirá cualquier hora (UTC o local) a la visualización de Lima
-  return new Date(isoStr).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Lima' });
+  const d = new Date(isoStr);
+  return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Lima' });
 }
 
 function mostrarToast(msg){
@@ -3252,12 +3535,23 @@ async function generarPlanilla() {
       });
     }
 
-    // Filtrar para mostrar solo la planilla más reciente por trabajador y evitar duplicados
+    // Filtrar para mostrar solo la planilla más relevante por trabajador (preferir pagado sobre pendiente)
     const planillasUnicas = new Map();
     planillas.forEach(p => {
       const tid = p.trabajador?.idTrab;
-      if(!planillasUnicas.has(tid) || (p.idPlanilla || p.id) > (planillasUnicas.get(tid).idPlanilla || planillasUnicas.get(tid).id)) {
+      if(!tid) return;
+      const existing = planillasUnicas.get(tid);
+      if(!existing) {
         planillasUnicas.set(tid, p);
+      } else {
+        const estNuevo = (p.estado||'').toUpperCase();
+        const estExist = (existing.estado||'').toUpperCase();
+        // Priorizar: PAGADO > PENDIENTE > otros
+        if(estNuevo === 'PAGADO' && estExist !== 'PAGADO') {
+          planillasUnicas.set(tid, p);
+        } else if(estNuevo === estExist && (p.idPlanilla || p.id) > (existing.idPlanilla || existing.id)) {
+          planillasUnicas.set(tid, p);
+        }
       }
     });
     planillas = Array.from(planillasUnicas.values());
@@ -3284,10 +3578,14 @@ async function generarPlanilla() {
           <td data-label="Tipo"><span class="badge bb">${etiquetaTipoPago(t.tipoPago)}</span></td>
           <td data-label="Detalle" style="font-size:0.75rem; color:var(--ts)">${detalleTxt}</td>
           <td data-label="Monto" style="text-align:right; font-weight:700">S/${parseFloat(p.montoTotal||0).toFixed(2)}</td>
-          <td data-label="Estado"><span class="badge ${yaPagado?'bv':'ba'}">${p.estado.toUpperCase()}</span></td>
+          <td data-label="Estado"><span class="badge ${yaPagado?'bv':'ba'}">${(p.estado || 'pendiente').toUpperCase()}</span></td>
           <td data-label="Acciones" style="white-space:nowrap">
             <button class="tbtn" onclick="toggleAccordion(${t.idTrab}, '${desde}', '${hasta}', ${p.idPlanilla || p.id})" title="Ver Desglose">Ver Desglose</button>
-            ${yaPagado ? `<button class="tbtn" onclick="descargarBoletaPdf(${p.idPlanilla})" title="Boleta PDF">PDF</button>` : ''}
+            ${yaPagado ? `
+              <button class="tbtn" onclick="descargarBoletaPdf(${p.idPlanilla})" title="Boleta PDF">PDF</button>
+            ` : `
+              <button class="tbtn" onclick="pagarPlanilla(${p.idPlanilla || p.id})" title="Pagar" style="background-color: var(--v2); color: white;">Pagar</button>
+            `}
           </td>
         </tr>
         <tr id="acc-${p.idPlanilla || p.id}" style="display:none; background:rgba(45,139,45,0.02)">
@@ -3342,29 +3640,55 @@ async function pagarPlanilla(id) {
     if(r.ok){
       mostrarToast('Planilla marcada como PAGADA');
       // Actualizar estado y botón en el DOM
-      const btn = document.querySelector(`[onclick="pagarPlanilla(${id})"]`);
-      const statusStrong = btn?.closest('div')?.querySelector('strong');
-      if(statusStrong) statusStrong.textContent = 'PAGADO';
+      const btn = document.querySelector(`[onclick^="pagarPlanilla(${id})"]` || `[onclick="pagarPlanilla(${id})"]`);
+      let inTable = false;
+      if (btn) {
+        const row = btn.closest('tr');
+        if (row) {
+          inTable = true;
+          const statusBadge = row.querySelector('[data-label="Estado"] .badge');
+          if (statusBadge) {
+            statusBadge.className = 'badge bv';
+            statusBadge.textContent = 'PAGADO';
+          }
+        } else {
+          const parent = btn.closest('div');
+          const statusStrong = parent?.querySelector('strong');
+          if (statusStrong) statusStrong.textContent = 'PAGADO';
+        }
+      }
+
       // Intentar leer monto y trabajador desde el DOM; si falla, intentar fetch de la planilla
       let monto = 0;
       let desc = `Pago planilla ${id}`;
       try {
         if(btn){
-          const parent = btn.closest('div')?.parentElement;
-          const display = parent?.querySelector('.pago-display');
-          if(display){
-            const montoTxt = display.querySelector('.pago-num')?.textContent || '';
+          const row = btn.closest('tr');
+          if (row) {
+            const nameTd = row.querySelector('[data-label="Trabajador"]');
+            const nombre = nameTd?.textContent?.trim();
+            const montoTd = row.querySelector('[data-label="Monto"]');
+            const montoTxt = montoTd?.textContent || '';
             const mclean = montoTxt.replace(/[^0-9.,-]/g, '').replace(',', '.');
             monto = parseFloat(mclean) || 0;
-            const info = display.querySelector('div')?.textContent || '';
-            const nombre = info.split('·')[0]?.trim();
             if(nombre) desc = `Pago planilla ${id} · ${nombre}`;
           } else {
-            const pd = await fetch(`/api/planillas/${id}`);
-            if(pd.ok){
-              const pdj = await pd.json();
-              monto = parseFloat(pdj.montoTotal || 0);
-              if(pdj.trabajador) desc = `Pago planilla ${id} · ${pdj.trabajador.nomTrab || pdj.trabajador.nombre || ''} ${pdj.trabajador.apeTrab || pdj.trabajador.apellido || ''}`.trim();
+            const parent = btn.closest('div')?.parentElement;
+            const display = parent?.querySelector('.pago-display');
+            if(display){
+              const montoTxt = display.querySelector('.pago-num')?.textContent || '';
+              const mclean = montoTxt.replace(/[^0-9.,-]/g, '').replace(',', '.');
+              monto = parseFloat(mclean) || 0;
+              const info = display.querySelector('div')?.textContent || '';
+              const nombre = info.split('·')[0]?.trim();
+              if(nombre) desc = `Pago planilla ${id} · ${nombre}`;
+            } else {
+              const pd = await fetch(`/api/planillas/${id}`);
+              if(pd.ok){
+                const pdj = await pd.json();
+                monto = parseFloat(pdj.montoTotal || 0);
+                if(pdj.trabajador) desc = `Pago planilla ${id} · ${pdj.trabajador.nomTrab || pdj.trabajador.nombre || ''} ${pdj.trabajador.apeTrab || pdj.trabajador.apellido || ''}`.trim();
+              }
             }
           }
         }
@@ -3372,7 +3696,13 @@ async function pagarPlanilla(id) {
         console.warn('No se pudo obtener monto/descripcion de planilla:', e);
       }
 
-      if(btn){ btn.outerHTML = `<span class="badge bv" style="font-size:0.8125rem;padding:6px 14px">Planilla pagada</span>`; }
+      if(btn){
+        if (inTable) {
+          btn.outerHTML = `<button class="tbtn" onclick="descargarBoletaPdf(${id})" title="Boleta PDF">PDF</button>`;
+        } else {
+          btn.outerHTML = `<span class="badge bv" style="font-size:0.8125rem;padding:6px 14px">Planilla pagada</span>`;
+        }
+      }
 
       // Registrar movimiento en caja (EGRESO) en backend
       try {
@@ -3415,7 +3745,7 @@ function abrirModalRiego(){
     <h3 class="modal-tit">Registrar Labor de Riego</h3>
     <div class="form-grid">
       <div class="fc"><label>Fecha</label><input type="date" id="ri-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
-      <div class="fc"><label>Parcela</label>
+      <div class="fc"><label>Destino / Área</label>
         <select id="ri-hect">
           <option value="1">Lote A – Zona Norte</option>
           <option value="2">Lote B – Zona Sur</option>
@@ -3662,7 +3992,6 @@ function renderTablaAbonos(data) {
     <td>${a.trabajador?.nombre||'—'} ${a.trabajador?.apellido||''}</td>
     <td><span class="badge bb">${a.tipoSaco||'—'}</span></td>
     <td style="font-weight:700;text-align:center">${a.cantidadSacos||0} sacos</td>
-    <td>${a.parcela||'—'}</td>
     <td style="color:var(--ts);font-size:12px">${a.observacion||'—'}</td>
     <td>${isAdmin() ? '<div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu"><a class="rojo" onclick="eliminarAbono('+(a.idAbono||a.id)+')">Eliminar</a></div></div>' : ''}</td>
   </tr>`).join('');
@@ -3699,10 +4028,7 @@ function abrirModalAbono(){
           </select>
         </div>
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Cantidad de Sacos</label><input type="number" id="ab-cantidad" min="0" value="0"></div>
-        <div class="fc"><label>Parcela</label><input type="text" id="ab-parcela" placeholder="Ej: A-1"></div>
-      </div>
+      <div class="fc"><label>Cantidad de Sacos</label><input type="number" id="ab-cantidad" min="0" value="0"></div>
       <div class="fc"><label>Observación</label><input type="text" id="ab-obs" placeholder="Opcional"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
@@ -3721,7 +4047,6 @@ async function guardarAbono(){
     fecha,
     tipoSaco:      document.getElementById('ab-tipo')?.value,
     cantidadSacos: parseInt(document.getElementById('ab-cantidad')?.value)||0,
-    parcela:       document.getElementById('ab-parcela')?.value,
     observacion:   document.getElementById('ab-obs')?.value
   };
   try{
@@ -3782,7 +4107,6 @@ function renderTablaGasolina(data) {
     <td>${g.tipoUso==='FUMIGACION'?'Fumigación':'Transporte'}</td>
     <td>${g.vehiculo||g.maquinaFumigacion||'—'}</td>
     <td style="font-weight:700;text-align:center">${g.litros||0} L</td>
-    <td>${g.parcela||'—'}</td>
     <td>${g.responsable||'—'}</td>
     <td><div class="acc-wrap"><button class="acc-btn" onclick="toggleMenu(this)">&#8943;</button><div class="acc-menu">${isAdmin() ? '<a onclick="abrirModalEditarGasolina('+(g.idGasolina||g.id)+')">Editar</a><div class="acc-sep"></div><a class="rojo" onclick="eliminarGasolina('+(g.idGasolina||g.id)+')">Eliminar</a>' : ''}</div></div></td>
   </tr>`).join('');
@@ -3818,10 +4142,7 @@ function abrirModalEditarGasolina(id) {
       <div class="fc" id="egas-maquina-fc" ${g.tipoUso!=='FUMIGACION'?'style="display:none"':''}>
         <label>Máquina de Fumigación</label><input type="text" id="egas-maquina" value="${g.maquinaFumigacion||''}">
       </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Litros</label><input type="number" id="egas-litros" step="0.1" value="${g.litros||0}"></div>
-        <div class="fc"><label>Parcela</label><input type="text" id="egas-parcela" value="${g.parcela||''}"></div>
-      </div>
+      <div class="fc"><label>Litros</label><input type="number" id="egas-litros" step="0.1" value="${g.litros||0}"></div>
       <div class="fc"><label>Observación</label><input type="text" id="egas-obs" value="${g.observacion||''}"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn-s" onclick="cerrarModal()">Cancelar</button>
@@ -3844,7 +4165,6 @@ async function guardarEdicionGasolina(id) {
     litros:   parseFloat(document.getElementById('egas-litros')?.value)||0,
     vehiculo: document.getElementById('egas-vehiculo')?.value||null,
     maquinaFumigacion: document.getElementById('egas-maquina')?.value||null,
-    parcela:  document.getElementById('egas-parcela')?.value||null,
     observacion: document.getElementById('egas-obs')?.value||null
   };
   try {
@@ -3869,10 +4189,7 @@ function abrirModalGasolina(){
       </div>
       <div class="fc" id="gas-vehiculo-fc"><label>Vehículo</label><input type="text" id="gas-vehiculo" placeholder="Ej: Moto Honda"></div>
       <div class="fc" id="gas-maquina-fc" style="display:none"><label>Máquina de Fumigación</label><input type="text" id="gas-maquina" placeholder="Ej: Mochila Stihl SR400"></div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
-        <div class="fc"><label>Litros</label><input type="number" id="gas-litros" step="0.1" min="0" value="0"></div>
-        <div class="fc"><label>Parcela</label><input type="text" id="gas-parcela" placeholder="Ej: B-2"></div>
-      </div>
+      <div class="fc"><label>Litros</label><input type="number" id="gas-litros" step="0.1" min="0" value="0"></div>
       <div class="fc"><label>Responsable</label>
         <select id="gas-responsable">
           <option value="">— Seleccione —</option>
@@ -3907,7 +4224,6 @@ async function guardarGasolina(){
     litros:          parseFloat(document.getElementById('gas-litros')?.value)||0,
     vehiculo:        document.getElementById('gas-vehiculo')?.value||null,
     maquinaFumigacion: document.getElementById('gas-maquina')?.value||null,
-    parcela:         document.getElementById('gas-parcela')?.value||null,
     responsable:     document.getElementById('gas-responsable')?.value||null,
     observacion:     document.getElementById('gas-obs')?.value||null
   };
@@ -4036,7 +4352,7 @@ async function abrirModalLabor(tipoTarea, tipoPago) {
     <h3 class="modal-tit">Registrar Labor — ${tipoTarea}</h3>
     <div class="form-grid">
       <div class="fc"><label>Fecha</label><input type="date" id="lab-fecha" value="${new Date().toLocaleDateString('en-CA')}"></div>
-      <div class="fc"><label>Parcela / Sector</label>
+      <div class="fc"><label>Área / Sector</label>
         <select id="lab-parcela">
           <option value="Lote A – Zona Norte">Lote A – Zona Norte</option>
           <option value="Lote B – Zona Sur">Lote B – Zona Sur</option>
@@ -4118,7 +4434,7 @@ async function cargarLaboresRiego() {
           <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--ts)">Fecha</th>
           <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--ts)">Trabajador</th>
           <th style="padding:8px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:var(--ts)">Tareas</th>
-          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--ts)">Parcela/Obs.</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--ts)">Área/Obs.</th>
         </tr></thead>
         <tbody>
           ${data.map(a => {
@@ -4159,7 +4475,7 @@ function abrirModalEspecial(tipo) {
         `<div class="fc"><label>Días / Jornales</label><input type="number" id="esp-cant" value="1" min="1"></div>` :
         `<div class="fc"><label>Cantidad de Sacos</label><input type="number" id="esp-cant" value="1" min="1"></div>`
       }
-      <div class="fc full"><label>Observaciones / Detalles</label><textarea id="esp-obs" placeholder="Ej: Parcela A..."></textarea></div>
+      <div class="fc full"><label>Observaciones / Detalles</label><textarea id="esp-obs" placeholder="Ej: Área A..."></textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn-s" onclick="cerrarModal()">Cancelar</button>

@@ -10,4 +10,5 @@ import com.agricola.arroz.model.MovimientoCaja;
 @Repository
 public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, Integer> {
     List<MovimientoCaja> findAllByOrderByFechaDesc();
+    List<MovimientoCaja> findByFechaBetweenOrderByFechaDesc(java.time.LocalDate desde, java.time.LocalDate hasta);
 }

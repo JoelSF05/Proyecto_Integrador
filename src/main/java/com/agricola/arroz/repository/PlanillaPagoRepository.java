@@ -18,6 +18,9 @@ public interface PlanillaPagoRepository extends JpaRepository<PlanillaPago, Inte
 
     List<PlanillaPago> findByEstado(String estado);
 
-    PlanillaPago findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFin(
+    PlanillaPago findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFinOrderByIdPlanillaDesc(
         Integer idTrab, LocalDate fechaInicio, LocalDate fechaFin);
+
+    List<PlanillaPago> findByFechaInicioAndFechaFin(
+        LocalDate fechaInicio, LocalDate fechaFin);
 }

@@ -53,8 +53,8 @@ public class MaterialService {
         return materialRepository.save(material);
     }
 
-    // Actualizar stock - registra movimiento automáticamente en Java
-    // (el trigger SQL también lo hace como respaldo)
+    // Actualizar stock y dejar que el trigger de la base de datos registre
+    // un único movimiento por cambio real de stock.
     @Transactional
     public Material actualizarStock(Integer id, BigDecimal nuevoStock, String observacion) {
         Material mat = materialRepository.findById(id)
@@ -66,27 +66,8 @@ public class MaterialService {
             throw new RuntimeException("Error: Stock insuficiente. El stock no puede ser negativo.");
         }
 
-        // Registrar movimiento en Java (doble seguridad con el trigger SQL)
-        MovimientoMaterial mov = new MovimientoMaterial();
-        mov.setMaterial(mat);
-        mov.setCantidad(nuevoStock.subtract(stockAnterior).abs());
-        mov.setStockAnterior(stockAnterior);
-        mov.setStockNuevo(nuevoStock);
-        mov.setObservacion(observacion != null ? observacion : "Actualización manual");
-
-        if (nuevoStock.compareTo(stockAnterior) > 0) {
-            mov.setTipoMovimiento("ENTRADA");
-        } else if (nuevoStock.compareTo(stockAnterior) < 0) {
-            mov.setTipoMovimiento("SALIDA");
-        } else {
-            mov.setTipoMovimiento("AJUSTE");
-        }
-
         mat.setStockActual(nuevoStock);
-        materialRepository.save(mat);
-        movimientoRepository.save(mov);
-
-        return mat;
+        return materialRepository.save(mat);
     }
 
     /**
