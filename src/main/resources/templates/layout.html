@@ -3104,6 +3104,7 @@
         {
           sec: 'Mi Trabajo', items: [
             { id: 'mi-asistencia', ico: '✅', label: 'Marcar Asistencia' },
+            { id: 'mis-tareas', ico: '📝', label: 'Mis Tareas' },
           ]
         },
         {
@@ -3145,10 +3146,10 @@
 
       // Filtro por rol
       const PERMISOS = {
-        TRABAJADOR: ['mi-asistencia'],
-        SUPERVISOR: ['dashboard', 'verificar-tareas', 'incidencias', 'resumen-diario', 'riego', 'materiales', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'reportes', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones'],
-        INGENIERO: ['dashboard', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad'],
-        CONTADOR: ['dashboard', 'caja', 'reportes'],
+        TRABAJADOR: ['mi-asistencia', 'mis-tareas'],
+        SUPERVISOR: ['dashboard', 'verificar-tareas', 'incidencias', 'resumen-diario', 'riego', 'materiales', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'reportes', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'mis-tareas'],
+        INGENIERO: ['dashboard', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'mis-tareas'],
+        CONTADOR: ['dashboard', 'caja', 'reportes', 'mis-tareas'],
         ADMIN: null, // todo
       };
 
@@ -3198,6 +3199,7 @@
       const tits = {
         dashboard: 'Dashboard',
         'mi-asistencia': 'Mi Asistencia',
+        'mis-tareas': 'Mis Tareas Registradas',
         'verificar-tareas': 'Verificar Tareas del Día',
         incidencias: 'Incidencias del Campo',
         'resumen-diario': 'Resumen Diario de Producción',
@@ -3222,6 +3224,7 @@
       if (id === 'trabajadores') listarTrabajadores();
       if (id === 'verificar-tareas') listarVerificarTareas();
       if (id === 'calendario-fitosanitario') listarCalendario();
+      if (id === 'mis-tareas') listarMisTareas();
       if (id === 'recomendaciones') listarRecomendaciones();
       if (id === 'control-plagas') listarPlagas();
       if (id === 'caja') listarCaja();
@@ -3332,6 +3335,20 @@
         <div class="task-verify" id="lista-verificar-tareas"></div>
       </div>
     `;
+      }
+
+      if (id === 'mis-tareas') {
+        return `
+      <div class="card">
+        <div class="card-hdr">
+          <h3>Consulta de Labores Personales</h3>
+          <div class="htools">
+            <input type="date" id="filtro-fecha-mt" value="${new Date().toLocaleDateString('en-CA')}" class="filtro" onchange="listarMisTareas()">
+            <button class="btn-s" onclick="listarMisTareas()">Buscar</button>
+          </div>
+        </div>
+        <div class="task-verify" id="lista-mis-tareas"></div>
+      </div>`;
       }
 
       if (id === 'control-plagas') {
@@ -4640,6 +4657,47 @@
       });
     }
 
+    function listarMisTareas() {
+      const container = document.getElementById('lista-mis-tareas');
+      if (!container) return;
+
+      const fechaFiltro = document.getElementById('filtro-fecha-mt')?.value || '';
+
+      // Necesitamos el ID del trabajador desde la sesión del backend
+      // Como no lo tenemos, asumimos que el backend nos lo dará o lo deducimos del usuario.
+      // Por ahora, simularemos que lo obtenemos de la sesión.
+      // En un caso real, esto vendría de `SESSION.trabajadorId`
+      const miIdTrabajador = trabajadores.find(t => t.dni === SESSION.username)?.id;
+
+      let misTareas = asistencias.filter(a => a.trabId === miIdTrabajador);
+
+      if (fechaFiltro) {
+        misTareas = misTareas.filter(a => a.fecAsist === fechaFiltro);
+      }
+
+      if (misTareas.length === 0) {
+        container.innerHTML = `<p style="padding:24px;color:var(--ts);text-align:center">No tienes tareas registradas para la fecha seleccionada.</p>`;
+        return;
+      }
+
+      container.innerHTML = misTareas.map(a => {
+        const estado = a.estado || 'PENDIENTE';
+        const tarifa = 0; // No es relevante para el trabajador
+        const tareas = a.tareasCompletadas || 1;
+        const pago = 0; // No mostramos el pago
+        const colorEstado = estado === 'APROBADO' ? 'bv' : estado === 'OBSERVADO' ? 'br' : 'ba';
+
+        return `
+      <div class="tv-row">
+        <div class="tv-info">
+          <div class="tv-name">${labelTarea(a.tipoTarea)}</div>
+          <div class="tv-tarea">Entrada: ${formatHora(a.hour, a.fecha)} · Tareas: ${tareas} · ${a.observacion || '—'}</div>
+        </div>
+        <span class="badge ${colorEstado}" style="margin-bottom:5px">${estado}</span>
+      </div>`;
+      }).join('');
+    }
+
     async function aprobarAsistencia(id) {
       const a = asistencias.find(x => x.id === id);
       if (!a) return;
@@ -4943,7 +5001,7 @@
 
       abrirModal(`
 
-    <h3 class="modal-tit">Registrar Nuevo Personal en PostgreSQL</h3>
+    <h3 class="modal-tit">Registrar Nuevo Personal</h3>
     <form id="form-trabajador" onsubmit="guardarTrabajador(event)">
       <div class="form-grid">
         <div class="fc"><label>Nombres</label><input type="text" id="t-nom" required></div>
@@ -4972,7 +5030,7 @@
 </div>
          <div class="fc full"><label>Cargo o Función</label><select id="t-cargo">${opsCargo || '<option disabled>No se cargaron los cargos</option>'}</select></div>
       </div>
-      <div class="modal-foot"><button type="button" class="btn-s" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn-p">Grabar en BD</button></div>
+      <div class="modal-foot"><button type="button" class="btn-s" onclick="cerrarModal()">Cancelar</button><button type="submit" class="btn-p">Grabar</button></div>
     </form>
   `);
     }
@@ -5738,24 +5796,9 @@
             }
           }
 
-          // Registrar movimiento en caja (EGRESO) en backend
-          try {
-            const cajaBody = { tipo: 'EGRESO', desc: desc, monto: monto, categoria: 'Planilla', ico: '💸' };
-            const rc = await fetch('/api/caja', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cajaBody) });
-            if (rc && rc.ok) {
-              const saved = await rc.json();
-              movCaja.unshift(saved);
-              listarCaja();
-            } else {
-              // si falla, mantener registro local como fallback
-              movCaja.unshift({ id: movCaja.length + 1, tipo: 'EGRESO', desc, monto, fecha: new Date().toISOString().slice(0, 10), ico: '' });
-              listarCaja();
-            }
-          } catch (e) {
-            console.warn('No se pudo guardar movimiento en servidor, guardando localmente', e);
-            movCaja.unshift({ id: movCaja.length + 1, tipo: 'EGRESO', desc, monto, fecha: new Date().toLocaleDateString('en-CA'), ico: '' });
-            listarCaja();
-          }
+          // El movimiento de caja ya se crea en el backend. No es necesario crearlo aquí.
+          // Se recarga la lista de caja para reflejar el cambio.
+          if (modActivo === 'caja') listarCaja();
         } else { mostrarToast('No se pudo marcar como pagada'); }
       } catch (e) { mostrarToast('Sin conexión'); }
     }

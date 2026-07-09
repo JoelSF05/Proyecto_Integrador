@@ -64,10 +64,11 @@ public class PlanillaPagoController {
                 throw new RuntimeException("Los campos fechaInicio y fechaFin son requeridos");
             }
             LocalDate inicio = LocalDate.parse(inicioRaw);
-            LocalDate fin    = LocalDate.parse(finRaw);
+            LocalDate fin = LocalDate.parse(finRaw);
 
             Integer idTrab = body.containsKey("idTrab") && body.get("idTrab") != null
-                ? Integer.valueOf(body.get("idTrab").toString()) : null;
+                    ? Integer.valueOf(body.get("idTrab").toString())
+                    : null;
 
             if (idTrab == null) {
                 planillaService.generarPlanillasPeriodo(inicio, fin);
@@ -95,7 +96,8 @@ public class PlanillaPagoController {
     @PatchMapping("/{id}/pagar")
     public ResponseEntity<?> pagar(@PathVariable Integer id) {
         try {
-            return ResponseEntity.ok(planillaService.marcarPagado(id));
+            PlanillaPago planillaPagada = planillaService.marcarPagado(id);
+            return ResponseEntity.ok(planillaPagada);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -104,7 +106,7 @@ public class PlanillaPagoController {
     /** Anula una planilla */
     @PatchMapping("/{id}/anular")
     public ResponseEntity<?> anular(@PathVariable Integer id,
-                                    @RequestBody(required = false) Map<String, String> body) {
+            @RequestBody(required = false) Map<String, String> body) {
         try {
             String motivo = body != null ? body.getOrDefault("motivo", "Sin motivo") : "Sin motivo";
             return ResponseEntity.ok(planillaService.anular(id, motivo));

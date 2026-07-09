@@ -422,6 +422,7 @@ public class ReporteController {
 
                 List<Map<String, Object>> detalle = movimientos.stream().map(m -> {
                         Map<String, Object> fila = new LinkedHashMap<>();
+                        fila.put("id", m.getId());
                         fila.put("fecha", m.getFecha());
                         fila.put("tipo", m.getTipo());
                         fila.put("categoria", m.getCategoria());

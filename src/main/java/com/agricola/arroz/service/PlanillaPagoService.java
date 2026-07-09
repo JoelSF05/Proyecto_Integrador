@@ -268,6 +268,11 @@ public class PlanillaPagoService {
     public PlanillaPago marcarPagado(Integer idPlanilla) {
         PlanillaPago p = planillaRepository.findById(idPlanilla)
                 .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
+
+        if ("pagado".equalsIgnoreCase(p.getEstado())) {
+            throw new RuntimeException("Esta planilla ya ha sido pagada anteriormente.");
+        }
+
         p.setEstado("pagado");
 
         // Crear movimiento de egreso en caja
