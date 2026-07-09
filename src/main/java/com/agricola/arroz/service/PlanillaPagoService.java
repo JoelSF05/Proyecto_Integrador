@@ -281,7 +281,6 @@ public class PlanillaPagoService {
         if (p.getTrabajador() != null) {
             desc += " a " + p.getTrabajador().getNomTrab() + " " + p.getTrabajador().getApeTrab();
         }
-        desc += " (ID Planilla: " + p.getIdPlanilla() + ")";
         mov.setDesc(desc);
 
         movimientoCajaRepository.save(mov);

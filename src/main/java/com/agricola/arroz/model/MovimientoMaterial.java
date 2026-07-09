@@ -6,13 +6,17 @@ import java.time.ZoneId;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.agricola.arroz.model.UsoMaterial;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
@@ -26,6 +30,7 @@ public class MovimientoMaterial {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_movimiento")
     private Integer idMovimiento;
 
     @ManyToOne
@@ -54,34 +59,80 @@ public class MovimientoMaterial {
     private Usuario usuario;
 
     // Constructor manual
-    public MovimientoMaterial() {}
+    public MovimientoMaterial() {
+    }
 
     // ── Métodos manuales (Fix para fallos de Lombok) ──
 
-    public Integer getIdMovimiento() { return idMovimiento; }
-    public void setIdMovimiento(Integer idMovimiento) { this.idMovimiento = idMovimiento; }
+    public Integer getIdMovimiento() {
+        return idMovimiento;
+    }
 
-    public Material getMaterial() { return material; }
-    public void setMaterial(Material material) { this.material = material; }
+    public void setIdMovimiento(Integer idMovimiento) {
+        this.idMovimiento = idMovimiento;
+    }
 
-    public String getTipoMovimiento() { return tipoMovimiento; }
-    public void setTipoMovimiento(String tipoMovimiento) { this.tipoMovimiento = tipoMovimiento; }
+    public Material getMaterial() {
+        return material;
+    }
 
-    public BigDecimal getCantidad() { return cantidad; }
-    public void setCantidad(BigDecimal cantidad) { this.cantidad = cantidad; }
+    public void setMaterial(Material material) {
+        this.material = material;
+    }
 
-    public BigDecimal getStockAnterior() { return stockAnterior; }
-    public void setStockAnterior(BigDecimal stockAnterior) { this.stockAnterior = stockAnterior; }
+    public String getTipoMovimiento() {
+        return tipoMovimiento;
+    }
 
-    public BigDecimal getStockNuevo() { return stockNuevo; }
-    public void setStockNuevo(BigDecimal stockNuevo) { this.stockNuevo = stockNuevo; }
+    public void setTipoMovimiento(String tipoMovimiento) {
+        this.tipoMovimiento = tipoMovimiento;
+    }
 
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String observacion) { this.observacion = observacion; }
+    public BigDecimal getCantidad() {
+        return cantidad;
+    }
 
-    public LocalDateTime getFechaMovimiento() { return fechaMovimiento; }
-    public void setFechaMovimiento(LocalDateTime fechaMovimiento) { this.fechaMovimiento = fechaMovimiento; }
+    public void setCantidad(BigDecimal cantidad) {
+        this.cantidad = cantidad;
+    }
 
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public BigDecimal getStockAnterior() {
+        return stockAnterior;
+    }
+
+    public void setStockAnterior(BigDecimal stockAnterior) {
+        this.stockAnterior = stockAnterior;
+    }
+
+    public BigDecimal getStockNuevo() {
+        return stockNuevo;
+    }
+
+    public void setStockNuevo(BigDecimal stockNuevo) {
+        this.stockNuevo = stockNuevo;
+    }
+
+    public String getObservacion() {
+        return observacion;
+    }
+
+    public void setObservacion(String observacion) {
+        this.observacion = observacion;
+    }
+
+    public LocalDateTime getFechaMovimiento() {
+        return fechaMovimiento;
+    }
+
+    public void setFechaMovimiento(LocalDateTime fechaMovimiento) {
+        this.fechaMovimiento = fechaMovimiento;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 }

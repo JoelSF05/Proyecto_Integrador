@@ -4,22 +4,22 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agricola.arroz.model.Area;
 import com.agricola.arroz.model.Material;
 import com.agricola.arroz.model.MovimientoMaterial;
+import com.agricola.arroz.model.UsoMaterial;
+import com.agricola.arroz.repository.AreaRepository;
 import com.agricola.arroz.repository.MaterialRepository;
 import com.agricola.arroz.repository.MovimientoMaterialRepository;
+import com.agricola.arroz.repository.UsoMaterialRepository;
 
-/**
- * NUEVO: MaterialService
- * Reemplaza la lógica directa en el Controller.
- * Maneja reglas de negocio y registra movimientos.
- */
 @Service
 public class MaterialService {
 
@@ -30,7 +30,10 @@ public class MaterialService {
     private MovimientoMaterialRepository movimientoRepository;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private UsoMaterialRepository usoMaterialRepository;
+
+    @Autowired
+    private AreaRepository areaRepository;
 
     private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
@@ -60,7 +63,7 @@ public class MaterialService {
     // Actualizar stock y dejar que el trigger de la base de datos registre
     // un único movimiento por cambio real de stock.
     @Transactional
-    public Material actualizarStock(Integer id, BigDecimal nuevoStock, String observacion) {
+    public MovimientoMaterial actualizarStock(Integer id, BigDecimal nuevoStock, String observacion) {
         Material mat = materialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado: " + id));
 
@@ -81,31 +84,63 @@ public class MaterialService {
             movimiento.setStockAnterior(stockAnterior);
             movimiento.setStockNuevo(nuevoStock);
             movimiento.setObservacion(observacion);
-            movimientoRepository.save(movimiento);
+            return movimientoRepository.save(movimiento);
         }
 
         mat.setStockActual(nuevoStock);
-        return materialRepository.save(mat);
+        materialRepository.save(mat);
+        return null; // No hubo movimiento que devolver
     }
 
     /**
      * Registra el uso de un material en una parcela y disminuye el stock.
      */
     @Transactional
-    public void registrarUso(Integer idMat, Integer idHect, String fecha, String hora, BigDecimal cantidad,
+    public void registrarUso(Integer idMat, Integer idArea, String fecha, String hora, BigDecimal cantidad,
             String detalle) {
         Material mat = materialRepository.findById(idMat)
                 .orElseThrow(() -> new RuntimeException("Material no encontrado"));
 
-        // 1. Disminuir el stock (esto también crea un registro en movimientos_material
-        // automáticamente)
-        BigDecimal nuevoStock = mat.getStockActual().subtract(cantidad);
-        actualizarStock(idMat, nuevoStock, "Uso en campo: " + detalle);
+        Area area = areaRepository.findById(idArea)
+                .orElseThrow(() -> new RuntimeException("Área no encontrada"));
 
-        // 2. Insertar en la tabla uso_materiales para seguimiento agronómico
-        String sql = "INSERT INTO uso_materiales (id_mat, id_hect, fec_uso, hora_uso, cantidad, detalle_uso) VALUES (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, idMat, idHect, java.sql.Date.valueOf(fecha), java.sql.Time.valueOf(hora), cantidad,
-                detalle);
+        // Construir la observación
+        String observacionFinal;
+        if (detalle != null && !detalle.trim().isEmpty()) {
+            observacionFinal = String.format("%s (Área: %s)", detalle, area.getNombreArea());
+        } else {
+            observacionFinal = String.format("Uso en campo (%s)", area.getNombreArea());
+        }
+
+        // 1. Actualizar stock y obtener el movimiento generado
+        BigDecimal nuevoStock = mat.getStockActual().subtract(cantidad);
+        if (nuevoStock.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Error: Stock insuficiente. El stock no puede ser negativo.");
+        }
+
+        MovimientoMaterial movimiento = new MovimientoMaterial();
+        movimiento.setMaterial(mat);
+        movimiento.setFechaMovimiento(LocalDateTime.now(PERU_ZONE));
+        movimiento.setCantidad(cantidad);
+        movimiento.setTipoMovimiento("SALIDA");
+        movimiento.setStockAnterior(mat.getStockActual());
+        movimiento.setStockNuevo(nuevoStock);
+        movimiento.setObservacion(observacionFinal);
+        movimientoRepository.save(movimiento);
+
+        // Actualizar el stock en la entidad Material
+        mat.setStockActual(nuevoStock);
+        materialRepository.save(mat);
+
+        // 2. Crear y guardar el registro de uso, vinculándolo al movimiento
+        UsoMaterial uso = new UsoMaterial();
+        uso.setMaterial(mat);
+        uso.setArea(new Area(idArea)); // Asignamos el área por su ID
+        uso.setFechaUso(LocalDate.parse(fecha));
+        uso.setHoraUso(LocalTime.parse(hora));
+        uso.setCantidad(cantidad);
+        uso.setDetalleUso(detalle);
+        usoMaterialRepository.save(uso);
     }
 
     // Actualizar datos generales del material
@@ -122,7 +157,8 @@ public class MaterialService {
         // Si el stock cambió, registrar movimiento
         if (datoNuevo.getStockActual() != null &&
                 !datoNuevo.getStockActual().equals(mat.getStockActual())) {
-            return actualizarStock(id, datoNuevo.getStockActual(), "Edición de material");
+            actualizarStock(id, datoNuevo.getStockActual(), "Edición de material");
+            return materialRepository.findById(id).get();
         }
 
         return materialRepository.save(mat);

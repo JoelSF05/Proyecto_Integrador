@@ -83,8 +83,8 @@ public class MaterialController {
         try {
             BigDecimal nuevoStock = new BigDecimal(body.get("nuevoStock").toString());
             String observacion = (String) body.getOrDefault("observacion", "");
-            Material mat = materialService.actualizarStock(id, nuevoStock, observacion);
-            return ResponseEntity.ok(mat);
+            MovimientoMaterial movimiento = materialService.actualizarStock(id, nuevoStock, observacion);
+            return ResponseEntity.ok(movimiento);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
@@ -121,14 +121,14 @@ public class MaterialController {
     public ResponseEntity<?> registrarUso(@RequestBody Map<String, Object> payload) {
         try {
             Integer idMat = Integer.valueOf(payload.get("idMat").toString());
-            Integer idHect = Integer.valueOf(payload.get("idHect").toString());
-            BigDecimal cantidad = new BigDecimal(payload.get("cantidad").toString());
+            Integer idArea = Integer.valueOf(payload.get("idArea").toString());
             String fecUso = payload.get("fecUso").toString();
             String horaUso = payload.get("horaUso").toString();
+            BigDecimal cantidad = new BigDecimal(payload.get("cantidad").toString());
             String detalleUso = (String) payload.getOrDefault("detalleUso", "");
 
-            materialService.registrarUso(idMat, idHect, fecUso, horaUso, cantidad, detalleUso);
-            
+            materialService.registrarUso(idMat, idArea, fecUso, horaUso, cantidad, detalleUso);
+
             return ResponseEntity.ok(Map.of("mensaje", "Uso registrado y stock actualizado correctamente"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

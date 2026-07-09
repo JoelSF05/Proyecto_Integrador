@@ -353,6 +353,7 @@ public class ReporteController {
                                                         ? fechaHora.toLocalDate().format(
                                                                         DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                                                         : "-");
+
                         fila.put("hora", fechaHora != null ? fechaHora.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
                                         : "-");
                         fila.put("material", m.getMaterial() != null ? m.getMaterial().getNomMat() : "-");
@@ -421,7 +422,6 @@ public class ReporteController {
 
                 List<Map<String, Object>> detalle = movimientos.stream().map(m -> {
                         Map<String, Object> fila = new LinkedHashMap<>();
-                        fila.put("id", m.getId());
                         fila.put("fecha", m.getFecha());
                         fila.put("tipo", m.getTipo());
                         fila.put("categoria", m.getCategoria());
