@@ -55,7 +55,8 @@ public class ReportePdfService {
             document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
             document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
             document.add(new Paragraph("RUC: 20123456789", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "----------------------------------------------------------------------------------------------------------------------------------"));
 
             // Título
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
@@ -73,17 +74,21 @@ public class ReportePdfService {
             // Tabla
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{20, 50, 15, 15});
+            table.setWidths(new float[] { 20, 50, 15, 15 });
 
-            addStyledTableHeader(table, new String[]{"Fecha", "Trabajador", "Entrada", "Salida"});
+            addStyledTableHeader(table, new String[] { "Fecha", "Trabajador", "Entrada", "Salida" });
 
             for (Asistencia a : registros) {
-                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                
-                String nombre = (a.getTrabajador() != null) ? a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab() : "N/A";
+                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()),
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+
+                String nombre = (a.getTrabajador() != null)
+                        ? a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab()
+                        : "N/A";
                 table.addCell(new Phrase(nombre, FontFactory.getFont(FontFactory.HELVETICA, 9)));
 
-                // Las horas ya se guardan en horario local (America/Lima) según el cambio en AsistenciaQrService
+                // Las horas ya se guardan en horario local (America/Lima) según el cambio en
+                // AsistenciaQrService
                 String hEntStr = formatHoraPdf(a.getHoraEntrada());
                 String hSalStr = formatHoraPdf(a.getHoraSalida());
 
@@ -92,7 +97,8 @@ public class ReportePdfService {
             }
 
             document.add(table);
-            document.add(new Paragraph("\nTotal de registros completados: " + registros.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+            document.add(new Paragraph("\nTotal de registros completados: " + registros.size(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
 
             document.close();
         } catch (Exception e) {
@@ -102,34 +108,41 @@ public class ReportePdfService {
     }
 
     private String formatFechaPeru(LocalDate fecha, LocalTime hora) {
-        if (fecha == null) return "N/A";
+        if (fecha == null)
+            return "N/A";
         return fecha.toString();
     }
 
     private String formatHoraPdf(LocalTime hora) {
-        if (hora == null) return "--:--";
+        if (hora == null)
+            return "--:--";
         return String.format("%02d:%02d", hora.getHour(), hora.getMinute());
     }
 
     private String formatMonedaPdf(BigDecimal valor) {
-        if (valor == null) valor = BigDecimal.ZERO;
+        if (valor == null)
+            valor = BigDecimal.ZERO;
         return "S/ " + String.format("%,.2f", valor.setScale(2, RoundingMode.HALF_UP));
     }
 
     private String formatFechaHoraPdf(LocalDateTime fechaHora) {
-        if (fechaHora == null) return "-";
+        if (fechaHora == null)
+            return "-";
         return fechaHora.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
     private String formatCantidadMaterialPdf(BigDecimal cantidad, String unidad) {
-        if (cantidad == null) return "-";
+        if (cantidad == null)
+            return "-";
         String cantidadStr = cantidad.stripTrailingZeros().toPlainString();
-        if (cantidadStr.isEmpty()) cantidadStr = "0";
+        if (cantidadStr.isEmpty())
+            cantidadStr = "0";
         return cantidadStr + (unidad != null && !unidad.isBlank() ? " " + unidad : "");
     }
 
     private String describirMovimientoMaterial(MovimientoMaterial movimiento) {
-        if (movimiento == null || movimiento.getTipoMovimiento() == null) return "-";
+        if (movimiento == null || movimiento.getTipoMovimiento() == null)
+            return "-";
         return switch (movimiento.getTipoMovimiento().trim().toUpperCase()) {
             case "ENTRADA" -> "Ingreso de material";
             case "SALIDA" -> "Salida de material";
@@ -150,7 +163,8 @@ public class ReportePdfService {
             document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
             document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
             document.add(new Paragraph("RUC: 20123456789", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "----------------------------------------------------------------------------------------------------------------------------------"));
 
             // Título
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
@@ -162,49 +176,57 @@ public class ReportePdfService {
             Paragraph sub = new Paragraph("Periodo: " + desde + " al " + hasta, fontSub);
             sub.setAlignment(Element.ALIGN_CENTER);
             document.add(sub);
-            
+
             document.add(Chunk.NEWLINE);
 
             // Tabla
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{12, 25, 12, 16, 8, 27});
+            table.setWidths(new float[] { 12, 25, 12, 16, 8, 27 });
 
-            addStyledTableHeader(table, new String[]{"Fecha", "Trabajador", "DNI", "Horario", "Tareas", "Observación"});
+            addStyledTableHeader(table,
+                    new String[] { "Fecha", "Trabajador", "DNI", "Horario", "Tareas", "Observación" });
 
             int totalTareas = 0;
             for (Asistencia a : registros) {
-                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(formatFechaPeru(a.getFecAsist(), a.getHoraEntrada()),
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 if (a.getTrabajador() != null) {
-                    table.addCell(new Phrase(a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                    table.addCell(new Phrase(a.getTrabajador().getDniTrab(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                    table.addCell(new Phrase(a.getTrabajador().getNomTrab() + " " + a.getTrabajador().getApeTrab(),
+                            FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                    table.addCell(
+                            new Phrase(a.getTrabajador().getDniTrab(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 } else {
                     table.addCell(new Phrase("N/A", FontFactory.getFont(FontFactory.HELVETICA, 9)));
                     table.addCell(new Phrase("-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 }
-                
+
                 // Horario (Rango horario solicitado)
                 String hEntStr = formatHoraPdf(a.getHoraEntrada());
                 String hSalStr = formatHoraPdf(a.getHoraSalida());
 
-                PdfPCell cellHorario = new PdfPCell(new Phrase(hEntStr + " - " + hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                PdfPCell cellHorario = new PdfPCell(
+                        new Phrase(hEntStr + " - " + hSalStr, FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellHorario.setHorizontalAlignment(Element.ALIGN_CENTER);
                 table.addCell(cellHorario);
 
                 int t = (a.getTareasCompletadas() != null) ? a.getTareasCompletadas() : 0;
                 totalTareas += t;
-                PdfPCell cellTareas = new PdfPCell(new Phrase(String.valueOf(t), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                PdfPCell cellTareas = new PdfPCell(
+                        new Phrase(String.valueOf(t), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellTareas.setHorizontalAlignment(Element.ALIGN_CENTER);
                 table.addCell(cellTareas);
-                
-                table.addCell(new Phrase(a.getObservacionSupervisor() != null ? a.getObservacionSupervisor() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
+
+                table.addCell(new Phrase(a.getObservacionSupervisor() != null ? a.getObservacionSupervisor() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
             }
 
             document.add(table);
 
             // Resumen de totales al final
-            Paragraph pTotal = new Paragraph("\nTOTAL REGISTROS: " + registros.size() + " | TOTAL TAREAS DE RIEGO ACUMULADAS: " + totalTareas, 
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10));
+            Paragraph pTotal = new Paragraph(
+                    "\nTOTAL REGISTROS: " + registros.size() + " | TOTAL TAREAS DE RIEGO ACUMULADAS: " + totalTareas,
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10));
             pTotal.setAlignment(Element.ALIGN_RIGHT);
             document.add(pTotal);
 
@@ -236,9 +258,9 @@ public class ReportePdfService {
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{15, 30, 15, 10, 30});
+            table.setWidths(new float[] { 15, 30, 15, 10, 30 });
 
-            addStyledTableHeader(table, new String[]{"Fecha", "Trabajador", "DNI", "Tareas", "Observación"});
+            addStyledTableHeader(table, new String[] { "Fecha", "Trabajador", "DNI", "Tareas", "Observación" });
 
             for (Asistencia a : registros) {
                 table.addCell(a.getFecAsist().toString());
@@ -254,8 +276,9 @@ public class ReportePdfService {
             }
 
             document.add(table);
-            
-            int total = registros.stream().mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0).sum();
+
+            int total = registros.stream()
+                    .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0).sum();
             document.add(new Paragraph("\nTotal acumulado de tareas: " + total));
 
             document.close();
@@ -279,7 +302,8 @@ public class ReportePdfService {
             document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
             document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
             document.add(new Paragraph("RUC: 20123456789", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "----------------------------------------------------------------------------------------------------------------------------------"));
 
             // Título Boleta
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
@@ -298,48 +322,55 @@ public class ReportePdfService {
             addInfoCell(infoTable, "TIPO PAGO:", t.getTipoPago().getEtiqueta());
             addInfoCell(infoTable, "PERIODO:", planilla.getFechaInicio() + " al " + planilla.getFechaFin());
             addInfoCell(infoTable, "EMITIDO EL:", LocalDate.now(PERU_ZONE).toString());
-            
+
             document.add(infoTable);
             document.add(Chunk.NEWLINE);
 
             // Tabla de Desglose
-            document.add(new Paragraph("DETALLE DE ACTIVIDADES REALIZADAS:", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+            document.add(new Paragraph("DETALLE DE ACTIVIDADES REALIZADAS:",
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
             document.add(Chunk.NEWLINE);
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
-            addStyledTableHeader(table, new String[]{"Fecha", "Actividad", "Cant/Días", "Subtotal"});
+            addStyledTableHeader(table, new String[] { "Fecha", "Actividad", "Cant/Días", "Subtotal" });
 
             com.agricola.arroz.model.TipoPago tp = t.getTipoPago();
             BigDecimal tarifa = BigDecimal.ZERO;
             if (tp != null) {
-                if (tp.esPorJornal()) tarifa = t.getSueldoBaseDia();
-                else if (tp.esPorSaco()) tarifa = t.getPagoPorSaco();
-                else if (tp.esPorTarea()) tarifa = t.getPagoPorTarea();
+                if (tp.esPorJornal())
+                    tarifa = t.getSueldoBaseDia();
+                else if (tp.esPorSaco())
+                    tarifa = t.getPagoPorSaco();
+                else if (tp.esPorTarea())
+                    tarifa = t.getPagoPorTarea();
             }
-            if (tarifa == null) tarifa = BigDecimal.ZERO;
+            if (tarifa == null)
+                tarifa = BigDecimal.ZERO;
 
             for (Asistencia a : detalles) {
                 table.addCell(new Phrase(a.getFecAsist().toString(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                
-                String label = a.getTipoTarea() != null ? a.getTipoTarea() : 
-                               (a.getSacosCosechados() != null && a.getSacosCosechados() > 0 ? "POR SACO" : "JORNAL");
-                
+
+                String label = a.getTipoTarea() != null ? a.getTipoTarea()
+                        : (a.getSacosCosechados() != null && a.getSacosCosechados() > 0 ? "POR SACO" : "JORNAL");
+
                 table.addCell(new Phrase(label, FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                
-                int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) ? a.getTareasCompletadas() : 
-                           (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
-                
+
+                int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) ? a.getTareasCompletadas()
+                        : (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
+
                 table.addCell(new Phrase(String.valueOf(cant), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 BigDecimal sub = tarifa.multiply(BigDecimal.valueOf(cant));
-                PdfPCell cellSub = new PdfPCell(new Phrase("S/ " + sub.toString(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                PdfPCell cellSub = new PdfPCell(
+                        new Phrase("S/ " + sub.toString(), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellSub.setHorizontalAlignment(Element.ALIGN_RIGHT);
                 table.addCell(cellSub);
             }
             document.add(table);
 
             // Total
-            Paragraph total = new Paragraph("\nMONTO TOTAL A PAGAR: S/ " + planilla.getMontoTotal(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+            Paragraph total = new Paragraph("\nMONTO TOTAL A PAGAR: S/ " + planilla.getMontoTotal(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
             total.setAlignment(Element.ALIGN_RIGHT);
             document.add(total);
 
@@ -347,11 +378,16 @@ public class ReportePdfService {
             document.add(new Paragraph("\n\n\n\n"));
             PdfPTable firmaTable = new PdfPTable(2);
             firmaTable.setWidthPercentage(80);
-            PdfPCell c1 = new PdfPCell(new Paragraph("__________________________\nFirma del Empleador", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            PdfPCell c2 = new PdfPCell(new Paragraph("__________________________\nFirma del Trabajador", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            c1.setBorder(0); c2.setBorder(0);
-            c1.setHorizontalAlignment(Element.ALIGN_CENTER); c2.setHorizontalAlignment(Element.ALIGN_CENTER);
-            firmaTable.addCell(c1); firmaTable.addCell(c2);
+            PdfPCell c1 = new PdfPCell(new Paragraph("__________________________\nFirma del Empleador",
+                    FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            PdfPCell c2 = new PdfPCell(new Paragraph("__________________________\nFirma del Trabajador",
+                    FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            c1.setBorder(0);
+            c2.setBorder(0);
+            c1.setHorizontalAlignment(Element.ALIGN_CENTER);
+            c2.setHorizontalAlignment(Element.ALIGN_CENTER);
+            firmaTable.addCell(c1);
+            firmaTable.addCell(c2);
             document.add(firmaTable);
 
             document.close();
@@ -373,7 +409,8 @@ public class ReportePdfService {
             Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, new Color(45, 139, 45));
             document.add(new Paragraph("AGROMOYOBAMBA - COMPROBANTE DE LABOR", fontEmpresa));
             document.add(new Paragraph("RUC: 20123456789", FontFactory.getFont(FontFactory.HELVETICA, 8)));
-            document.add(new Paragraph("-----------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "-----------------------------------------------------------------------------------------"));
 
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
             Paragraph titulo = new Paragraph("BOLETA DE LABOR ESPECIFICA", fontTitulo);
@@ -388,35 +425,44 @@ public class ReportePdfService {
             addInfoCell(infoTable, "DNI:", t.getDniTrab());
             addInfoCell(infoTable, "FECHA LABOR:", a.getFecAsist().toString());
             addInfoCell(infoTable, "ACTIVIDAD:", a.getTipoTarea() != null ? a.getTipoTarea() : "JORNAL");
-            
-            int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) ? a.getTareasCompletadas() : 
-                       (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
-            
+
+            int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) ? a.getTareasCompletadas()
+                    : (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
+
             com.agricola.arroz.model.TipoPago tp = t.getTipoPago();
             BigDecimal tarifa = BigDecimal.ZERO;
             if (tp != null) {
-                if (tp.esPorJornal()) tarifa = t.getSueldoBaseDia();
-                else if (tp.esPorSaco()) tarifa = t.getPagoPorSaco();
-                else if (tp.esPorTarea()) tarifa = t.getPagoPorTarea();
+                if (tp.esPorJornal())
+                    tarifa = t.getSueldoBaseDia();
+                else if (tp.esPorSaco())
+                    tarifa = t.getPagoPorSaco();
+                else if (tp.esPorTarea())
+                    tarifa = t.getPagoPorTarea();
             }
-            if (tarifa == null) tarifa = BigDecimal.ZERO;
-            
+            if (tarifa == null)
+                tarifa = BigDecimal.ZERO;
+
             BigDecimal subtotal = tarifa.multiply(BigDecimal.valueOf(cant));
 
             addInfoCell(infoTable, "CANTIDAD:", String.valueOf(cant));
             addInfoCell(infoTable, "PAGO UNITARIO:", "S/ " + tarifa.toString());
             addInfoCell(infoTable, "TOTAL PAGADO:", "S/ " + subtotal.toString());
-            
+
             document.add(infoTable);
             document.add(new Paragraph("\n\n"));
 
             PdfPTable firmaTable = new PdfPTable(2);
             firmaTable.setWidthPercentage(100);
-            PdfPCell c1 = new PdfPCell(new Paragraph("__________________________\nFirma del Empleador", FontFactory.getFont(FontFactory.HELVETICA, 8)));
-            PdfPCell c2 = new PdfPCell(new Paragraph("__________________________\nFirma del Trabajador", FontFactory.getFont(FontFactory.HELVETICA, 8)));
-            c1.setBorder(0); c2.setBorder(0);
-            c1.setHorizontalAlignment(Element.ALIGN_CENTER); c2.setHorizontalAlignment(Element.ALIGN_CENTER);
-            firmaTable.addCell(c1); firmaTable.addCell(c2);
+            PdfPCell c1 = new PdfPCell(new Paragraph("__________________________\nFirma del Empleador",
+                    FontFactory.getFont(FontFactory.HELVETICA, 8)));
+            PdfPCell c2 = new PdfPCell(new Paragraph("__________________________\nFirma del Trabajador",
+                    FontFactory.getFont(FontFactory.HELVETICA, 8)));
+            c1.setBorder(0);
+            c2.setBorder(0);
+            c1.setHorizontalAlignment(Element.ALIGN_CENTER);
+            c2.setHorizontalAlignment(Element.ALIGN_CENTER);
+            firmaTable.addCell(c1);
+            firmaTable.addCell(c2);
             document.add(firmaTable);
 
             document.close();
@@ -440,12 +486,16 @@ public class ReportePdfService {
     private void addInfoCell(PdfPTable table, String label, String value) {
         PdfPCell c1 = new PdfPCell(new Phrase(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9)));
         PdfPCell c2 = new PdfPCell(new Phrase(value, FontFactory.getFont(FontFactory.HELVETICA, 9)));
-        c1.setBorder(0); c2.setBorder(0);
-        c1.setPadding(2); c2.setPadding(2);
-        table.addCell(c1); table.addCell(c2);
+        c1.setBorder(0);
+        c2.setBorder(0);
+        c1.setPadding(2);
+        c2.setPadding(2);
+        table.addCell(c1);
+        table.addCell(c2);
     }
 
-    public byte[] generarPdfCaja(List<MovimientoCaja> movimientos, List<MovimientoCaja> saldoBaseMovimientos, LocalDate desde, LocalDate hasta) {
+    public byte[] generarPdfCaja(List<MovimientoCaja> movimientos, List<MovimientoCaja> saldoBaseMovimientos,
+            LocalDate desde, LocalDate hasta) {
         Document document = new Document(PageSize.A4);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -456,7 +506,8 @@ public class ReportePdfService {
             Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(45, 139, 45));
             document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
             document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "----------------------------------------------------------------------------------------------------------------------------------"));
 
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
             Paragraph titulo = new Paragraph("Reporte de Caja", fontTitulo);
@@ -469,49 +520,60 @@ public class ReportePdfService {
             document.add(sub);
             document.add(Chunk.NEWLINE);
 
-            List<MovimientoCaja> resumenMovimientos = saldoBaseMovimientos != null && !saldoBaseMovimientos.isEmpty()
-                ? saldoBaseMovimientos
-                : movimientos;
+            // 1. Calcular ingresos y egresos SOLO del periodo seleccionado
+            BigDecimal ingresosPeriodo = movimientos.stream()
+                    .filter(m -> "Ingreso".equalsIgnoreCase(m.getTipo()))
+                    .map(MovimientoCaja::getMonto)
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal ingresos = resumenMovimientos.stream()
-                .filter(m -> "Ingreso".equalsIgnoreCase(m.getTipo()))
-                .map(MovimientoCaja::getMonto)
-                .filter(m -> m != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal egresosPeriodo = movimientos.stream()
+                    .filter(m -> "Egreso".equalsIgnoreCase(m.getTipo()))
+                    .map(MovimientoCaja::getMonto)
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal egresos = resumenMovimientos.stream()
-                .filter(m -> "Egreso".equalsIgnoreCase(m.getTipo()))
-                .map(MovimientoCaja::getMonto)
-                .filter(m -> m != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            // 2. Calcular el saldo TOTAL histórico de la base de datos
+            BigDecimal saldoTotal = saldoBaseMovimientos.stream()
+                    .map(m -> "Ingreso".equalsIgnoreCase(m.getTipo()) ? m.getMonto() : m.getMonto().negate())
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             PdfPTable resumen = new PdfPTable(3);
             resumen.setWidthPercentage(100);
-            resumen.setWidths(new float[]{33, 33, 34});
-            addStyledTableHeader(resumen, new String[]{"Ingresos", "Egresos", "Saldo"});
-            resumen.addCell(new Phrase(formatMonedaPdf(ingresos), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            resumen.addCell(new Phrase(formatMonedaPdf(egresos), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            resumen.addCell(new Phrase(formatMonedaPdf(ingresos.subtract(egresos)), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9)));
+            resumen.setWidths(new float[] { 33, 33, 34 });
+            addStyledTableHeader(resumen, new String[] { "Ingresos (Periodo)", "Egresos (Periodo)", "Saldo Total" });
+            resumen.addCell(
+                    new Phrase(formatMonedaPdf(ingresosPeriodo), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatMonedaPdf(egresosPeriodo), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatMonedaPdf(saldoTotal),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9)));
             document.add(resumen);
             document.add(Chunk.NEWLINE);
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{12, 12, 20, 38, 18});
-            addStyledTableHeader(table, new String[]{"Fecha", "Tipo", "Categoría", "Descripción", "Monto"});
+            table.setWidths(new float[] { 12, 12, 20, 38, 18 });
+            addStyledTableHeader(table, new String[] { "Fecha", "Tipo", "Categoría", "Descripción", "Monto" });
 
             for (MovimientoCaja m : movimientos) {
-                table.addCell(new Phrase(m.getFecha() != null ? m.getFecha().toString() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                table.addCell(new Phrase(m.getTipo() != null ? m.getTipo() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                table.addCell(new Phrase(m.getCategoria() != null ? m.getCategoria() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                table.addCell(new Phrase(m.getDesc() != null ? m.getDesc() : "-", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                PdfPCell cellMonto = new PdfPCell(new Phrase(formatMonedaPdf(m.getMonto()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getFecha() != null ? m.getFecha().toString() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getTipo() != null ? m.getTipo() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getCategoria() != null ? m.getCategoria() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(m.getDesc() != null ? m.getDesc() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                PdfPCell cellMonto = new PdfPCell(
+                        new Phrase(formatMonedaPdf(m.getMonto()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 cellMonto.setHorizontalAlignment(Element.ALIGN_RIGHT);
                 table.addCell(cellMonto);
             }
 
             document.add(table);
-            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
 
             document.close();
         } catch (Exception e) {
@@ -531,7 +593,8 @@ public class ReportePdfService {
             Font fontEmpresa = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(45, 139, 45));
             document.add(new Paragraph("AGROMOYOBAMBA - SISTEMA AGRÍCOLA", fontEmpresa));
             document.add(new Paragraph("Moyobamba, San Martín - Perú", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            document.add(new Paragraph("----------------------------------------------------------------------------------------------------------------------------------"));
+            document.add(new Paragraph(
+                    "----------------------------------------------------------------------------------------------------------------------------------"));
 
             Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.BLACK);
             Paragraph titulo = new Paragraph("Reporte de Uso de Materiales", fontTitulo);
@@ -545,59 +608,71 @@ public class ReportePdfService {
             document.add(Chunk.NEWLINE);
 
             BigDecimal totalCantidad = movimientos.stream()
-                .map(MovimientoMaterial::getCantidad)
-                .filter(m -> m != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .map(MovimientoMaterial::getCantidad)
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal totalEntradas = movimientos.stream()
-                .filter(m -> "ENTRADA".equalsIgnoreCase(m.getTipoMovimiento()))
-                .map(MovimientoMaterial::getCantidad)
-                .filter(m -> m != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(m -> "ENTRADA".equalsIgnoreCase(m.getTipoMovimiento()))
+                    .map(MovimientoMaterial::getCantidad)
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal totalSalidas = movimientos.stream()
-                .filter(m -> "SALIDA".equalsIgnoreCase(m.getTipoMovimiento()))
-                .map(MovimientoMaterial::getCantidad)
-                .filter(m -> m != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    .filter(m -> "SALIDA".equalsIgnoreCase(m.getTipoMovimiento()))
+                    .map(MovimientoMaterial::getCantidad)
+                    .filter(m -> m != null)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             Font fontResumen = FontFactory.getFont(FontFactory.HELVETICA, 10, new Color(70, 70, 70));
             Paragraph resumenHeader = new Paragraph(
-                "Entradas de materiales: " + formatCantidadMaterialPdf(totalEntradas, "") +
-                "   •   Salidas de materiales: " + formatCantidadMaterialPdf(totalSalidas, ""),
-                fontResumen
-            );
+                    "Entradas de materiales: " + formatCantidadMaterialPdf(totalEntradas, "") +
+                            "   •   Salidas de materiales: " + formatCantidadMaterialPdf(totalSalidas, ""),
+                    fontResumen);
             resumenHeader.setAlignment(Element.ALIGN_CENTER);
             document.add(resumenHeader);
             document.add(Chunk.NEWLINE);
 
             PdfPTable resumen = new PdfPTable(2);
             resumen.setWidthPercentage(100);
-            resumen.setWidths(new float[]{50, 50});
-            addStyledTableHeader(resumen, new String[]{"Entradas de materiales", "Salidas de materiales"});
-            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalEntradas, ""), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalSalidas, ""), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.setWidths(new float[] { 50, 50 });
+            addStyledTableHeader(resumen, new String[] { "Entradas de materiales", "Salidas de materiales" });
+            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalEntradas, ""),
+                    FontFactory.getFont(FontFactory.HELVETICA, 9)));
+            resumen.addCell(new Phrase(formatCantidadMaterialPdf(totalSalidas, ""),
+                    FontFactory.getFont(FontFactory.HELVETICA, 9)));
             document.add(resumen);
             document.add(Chunk.NEWLINE);
 
-            PdfPTable table = new PdfPTable(5);
+            PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{15, 22, 20, 15, 28});
-            addStyledTableHeader(table, new String[]{"Fecha registro", "Material", "Movimiento", "Cantidad", "Detalle"});
+            table.setWidths(new float[] { 12, 10, 22, 18, 12, 26 });
+            addStyledTableHeader(table,
+                    new String[] { "Fecha", "Hora", "Material", "Movimiento", "Cantidad", "Detalle" });
 
             for (MovimientoMaterial m : movimientos) {
-                table.addCell(new Phrase(formatFechaHoraPdf(m.getFechaMovimiento()), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                LocalDateTime fechaHora = m.getFechaMovimiento();
+                table.addCell(new Phrase(fechaHora != null ? fechaHora.toLocalDate().toString() : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                table.addCell(new Phrase(fechaHora != null ? formatHoraPdf(fechaHora.toLocalTime()) : "-",
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
                 String nombreMat = m.getMaterial() != null ? m.getMaterial().getNomMat() : "-";
                 table.addCell(new Phrase(nombreMat, FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                table.addCell(new Phrase(describirMovimientoMaterial(m), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                String unidad = m.getMaterial() != null && m.getMaterial().getUnidadMedida() != null ? m.getMaterial().getUnidadMedida() : "-";
-                table.addCell(new Phrase(formatCantidadMaterialPdf(m.getCantidad(), unidad), FontFactory.getFont(FontFactory.HELVETICA, 9)));
-                String detalle = m.getObservacion() != null && !m.getObservacion().isBlank() ? m.getObservacion() : "Registro del sistema";
+                table.addCell(
+                        new Phrase(describirMovimientoMaterial(m), FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String unidad = m.getMaterial() != null && m.getMaterial().getUnidadMedida() != null
+                        ? m.getMaterial().getUnidadMedida()
+                        : "-";
+                table.addCell(new Phrase(formatCantidadMaterialPdf(m.getCantidad(), unidad),
+                        FontFactory.getFont(FontFactory.HELVETICA, 9)));
+                String detalle = m.getObservacion() != null && !m.getObservacion().isBlank() ? m.getObservacion()
+                        : "Registro del sistema";
                 table.addCell(new Phrase(detalle, FontFactory.getFont(FontFactory.HELVETICA, 9)));
             }
 
             document.add(table);
-            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
+            document.add(new Paragraph("\nTotal de movimientos: " + movimientos.size(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10)));
 
             document.close();
         } catch (Exception e) {
@@ -623,18 +698,18 @@ public class ReportePdfService {
             Paragraph sub = new Paragraph("Periodo: " + desde + " al " + hasta, fontSub);
             sub.setAlignment(Element.ALIGN_CENTER);
             document.add(sub);
-            
+
             document.add(Chunk.NEWLINE);
 
             // Cálculos
             Map<Trabajador, List<Asistencia>> grouped = registros.stream()
-                .filter(a -> a.getTrabajador() != null)
-                .collect(Collectors.groupingBy(Asistencia::getTrabajador));
+                    .filter(a -> a.getTrabajador() != null)
+                    .collect(Collectors.groupingBy(Asistencia::getTrabajador));
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{30, 15, 35, 20});
-            addStyledTableHeader(table, new String[]{"Trabajador / DNI", "Cargo", "Detalle Labores", "Total"});
+            table.setWidths(new float[] { 30, 15, 35, 20 });
+            addStyledTableHeader(table, new String[] { "Trabajador / DNI", "Cargo", "Detalle Labores", "Total" });
 
             BigDecimal granTotal = BigDecimal.ZERO;
 
@@ -643,27 +718,34 @@ public class ReportePdfService {
                 List<Asistencia> asists = entry.getValue();
 
                 String actividades = asists.stream()
-                    .map(a -> {
-                        if (a.getTipoTarea() != null) return a.getTipoTarea();
-                        return (a.getSacosCosechados() != null && a.getSacosCosechados() > 0) ? "POR SACO" : "JORNAL";
-                    })
-                    .distinct()
-                    .collect(Collectors.joining(", "));
+                        .map(a -> {
+                            if (a.getTipoTarea() != null)
+                                return a.getTipoTarea();
+                            return (a.getSacosCosechados() != null && a.getSacosCosechados() > 0) ? "POR SACO"
+                                    : "JORNAL";
+                        })
+                        .distinct()
+                        .collect(Collectors.joining(", "));
 
                 BigDecimal totalTrabajador = BigDecimal.ZERO;
-                
+
                 com.agricola.arroz.model.TipoPago tp = t.getTipoPago();
                 BigDecimal tarifa = BigDecimal.ZERO;
                 if (tp != null) {
-                    if (tp.esPorJornal()) tarifa = t.getSueldoBaseDia();
-                    else if (tp.esPorSaco()) tarifa = t.getPagoPorSaco();
-                    else if (tp.esPorTarea()) tarifa = t.getPagoPorTarea();
+                    if (tp.esPorJornal())
+                        tarifa = t.getSueldoBaseDia();
+                    else if (tp.esPorSaco())
+                        tarifa = t.getPagoPorSaco();
+                    else if (tp.esPorTarea())
+                        tarifa = t.getPagoPorTarea();
                 }
-                if (tarifa == null) tarifa = BigDecimal.ZERO;
+                if (tarifa == null)
+                    tarifa = BigDecimal.ZERO;
 
                 for (Asistencia a : asists) {
-                    int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0) ? a.getTareasCompletadas() : 
-                               (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
+                    int cant = (a.getTareasCompletadas() != null && a.getTareasCompletadas() > 0)
+                            ? a.getTareasCompletadas()
+                            : (a.getSacosCosechados() != null ? a.getSacosCosechados() : 1);
                     totalTrabajador = totalTrabajador.add(tarifa.multiply(BigDecimal.valueOf(cant)));
                 }
 
@@ -671,15 +753,16 @@ public class ReportePdfService {
                 table.addCell(t.getCargo() != null ? t.getCargo().getNomCargo() : "N/A");
                 table.addCell(actividades);
                 table.addCell("S/ " + totalTrabajador.setScale(2, RoundingMode.HALF_UP).toString());
-                
+
                 granTotal = granTotal.add(totalTrabajador);
             }
 
             document.add(table);
             document.add(Chunk.NEWLINE);
-            
-            Paragraph pTotal = new Paragraph("TOTAL GENERAL DEL PERIODO: S/ " + granTotal.setScale(2, RoundingMode.HALF_UP).toString(), 
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+
+            Paragraph pTotal = new Paragraph(
+                    "TOTAL GENERAL DEL PERIODO: S/ " + granTotal.setScale(2, RoundingMode.HALF_UP).toString(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
             pTotal.setAlignment(Element.ALIGN_RIGHT);
             document.add(pTotal);
 
@@ -691,7 +774,8 @@ public class ReportePdfService {
     }
 
     /**
-     * Genera un PDF con el código QR único del trabajador para el control de asistencia.
+     * Genera un PDF con el código QR único del trabajador para el control de
+     * asistencia.
      */
     public byte[] generarPdfQrTrabajador(Trabajador t) {
         Document document = new Document(PageSize.A4);
@@ -709,7 +793,8 @@ public class ReportePdfService {
             document.add(Chunk.NEWLINE);
 
             // Datos del trabajador
-            Paragraph pNombre = new Paragraph(t.getNomTrab() + " " + t.getApeTrab(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
+            Paragraph pNombre = new Paragraph(t.getNomTrab() + " " + t.getApeTrab(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
             pNombre.setAlignment(Element.ALIGN_CENTER);
             document.add(pNombre);
 
@@ -719,20 +804,21 @@ public class ReportePdfService {
             document.add(Chunk.NEWLINE);
 
             // Generar QR usando ZXing
-            String qrData = (t.getQrToken() != null && !t.getQrToken().isEmpty()) ? t.getQrToken() : "TOKEN_NO_ASIGNADO";
-            
+            String qrData = (t.getQrToken() != null && !t.getQrToken().isEmpty()) ? t.getQrToken()
+                    : "TOKEN_NO_ASIGNADO";
+
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(qrData, BarcodeFormat.QR_CODE, 200, 200);
             BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
             Image imgQr = Image.getInstance(bufferedImage, null);
-            
+
             imgQr.setAlignment(Element.ALIGN_CENTER);
             imgQr.scaleAbsolute(200f, 200f);
             document.add(imgQr);
 
             document.add(Chunk.NEWLINE);
-            Paragraph pFooter = new Paragraph("Escanee este código en el campo para registrar su ingreso y salida.", 
-                FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, Color.GRAY));
+            Paragraph pFooter = new Paragraph("Escanee este código en el campo para registrar su ingreso y salida.",
+                    FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, Color.GRAY));
             pFooter.setAlignment(Element.ALIGN_CENTER);
             document.add(pFooter);
 

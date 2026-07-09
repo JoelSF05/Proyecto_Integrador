@@ -30,7 +30,7 @@ public class UsuarioDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.findByNombreUsuario(username)
-            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
         if (Boolean.TRUE.equals(usuario.getBloqueado())) {
             throw new LockedException("Cuenta bloqueada por demasiados intentos fallidos");
@@ -42,15 +42,19 @@ public class UsuarioDetailsService implements UserDetailsService {
         String rol = (usuario.getRol() != null) ? usuario.getRol() : "TRABAJADOR";
 
         // Devolvemos un UserDetails con un password "decorado" que incluye el id
-        // para poder identificar al usuario en el postCheck sin consultar la BD de nuevo
+        // para poder identificar al usuario en el postCheck sin consultar la BD de
+        // nuevo
         return User.builder()
-            .username(usuario.getNombreUsuario())
-            .password(usuario.getContrasenaHash())
-            .roles(rol)
-            .build();
+                .username(usuario.getNombreUsuario())
+                .password(usuario.getContrasenaHash())
+                .roles(rol)
+                .build();
     }
 
-    /** Llamado desde el AuthenticationSuccessHandler — resetea intentos y guarda ultimoLogin */
+    /**
+     * Llamado desde el AuthenticationSuccessHandler — resetea intentos y guarda
+     * ultimoLogin
+     */
     public void registrarLoginExitoso(String username) {
         usuarioRepository.findByNombreUsuario(username).ifPresent(u -> {
             u.setIntentosFallidos(0);

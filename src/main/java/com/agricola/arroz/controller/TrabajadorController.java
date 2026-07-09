@@ -17,10 +17,10 @@ import java.util.Map;
 /**
  * VERSIÓN MEJORADA de TrabajadorController
  * Cambios:
- *  - Usa TrabajadorService en vez de repository directamente
- *  - Retorna ResponseEntity con mensajes de error claros
- *  - Soft delete (no borra físicamente)
- *  - @Valid para validaciones automáticas del modelo
+ * - Usa TrabajadorService en vez de repository directamente
+ * - Retorna ResponseEntity con mensajes de error claros
+ * - Soft delete (no borra físicamente)
+ * - @Valid para validaciones automáticas del modelo
  */
 @RestController
 @RequestMapping("/api/trabajadores")
@@ -34,6 +34,7 @@ public class TrabajadorController {
 
     @GetMapping
     public List<Trabajador> listarTodos() {
+        // La lógica para cargar el nombre del cargo ahora está en el Service.
         return trabajadorService.listarActivos();
     }
 
@@ -45,7 +46,7 @@ public class TrabajadorController {
             return ResponseEntity.ok(trabajadorService.listarPorTipoPago(tipoPago));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Tipo de pago no válido: " + tipo));
+                    .body(Map.of("error", "Tipo de pago no válido: " + tipo));
         }
     }
 
@@ -60,7 +61,7 @@ public class TrabajadorController {
             return ResponseEntity.ok(trabajadorService.buscarPorId(id));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -70,18 +71,21 @@ public class TrabajadorController {
             return ResponseEntity.ok(trabajadorService.buscarPorDni(dni));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
     @PostMapping
     public ResponseEntity<?> crear(@Valid @RequestBody Trabajador trabajador) {
         try {
+            Trabajador nuevoTrabajador = trabajadorService.crear(trabajador);
+            // Forzar la carga del nombre del cargo antes de devolverlo
+            nuevoTrabajador.setCargoNombre(nuevoTrabajador.getCargo().getNomCargo());
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(trabajadorService.crear(trabajador));
+                    .body(nuevoTrabajador);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -90,10 +94,13 @@ public class TrabajadorController {
             @PathVariable Integer id,
             @Valid @RequestBody Trabajador trabajador) {
         try {
-            return ResponseEntity.ok(trabajadorService.actualizar(id, trabajador));
+            Trabajador trabajadorActualizado = trabajadorService.actualizar(id, trabajador);
+            // Forzar la carga del nombre del cargo antes de devolverlo
+            trabajadorActualizado.setCargoNombre(trabajadorActualizado.getCargo().getNomCargo());
+            return ResponseEntity.ok(trabajadorActualizado);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -105,7 +112,7 @@ public class TrabajadorController {
             return ResponseEntity.ok(Map.of("mensaje", "Trabajador desactivado correctamente"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }

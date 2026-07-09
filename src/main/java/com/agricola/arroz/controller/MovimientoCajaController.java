@@ -74,10 +74,8 @@ public class MovimientoCajaController {
                 return ResponseEntity.badRequest().body(Map.of("error", "El monto debe ser mayor que 0", "monto", m.getMonto()));
             }
 
-            String fechaStr = (String) body.get("fecha");
-            if (fechaStr != null && !fechaStr.isBlank()) m.setFecha(LocalDate.parse(fechaStr));
-            else m.setFecha(LocalDate.now(PERU_ZONE));
-
+            // Forzar siempre la fecha del servidor en la zona horaria de Perú para consistencia.
+            m.setFecha(LocalDate.now(PERU_ZONE));
             // categoría obligatoria en el esquema
             m.setCategoria((String) body.getOrDefault("categoria", "General"));
 

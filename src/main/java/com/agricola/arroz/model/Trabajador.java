@@ -16,11 +16,13 @@ import lombok.Setter;
 
 /**
  * Modelo Trabajador con Lombok.
+ * 
  * @Getter + @Setter elimina todos los getters/setters manuales.
  * @NoArgsConstructor elimina el constructor vacío manual.
  *
- * NOTA: Los métodos con lógica especial (getCargoId, getCargoNombre)
- * se mantienen escritos a mano — Lombok no los toca.
+ *                    NOTA: Los métodos con lógica especial (getCargoId,
+ *                    getCargoNombre)
+ *                    se mantienen escritos a mano — Lombok no los toca.
  */
 @Getter
 @Setter
@@ -75,8 +77,10 @@ public class Trabajador {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de Lombok)
-    public Trabajador() {}
+    // Constructor por defecto requerido por JPA/Hibernate (Fix para fallos de
+    // Lombok)
+    public Trabajador() {
+    }
 
     @PrePersist
     public void prePersist() {
@@ -107,33 +111,73 @@ public class Trabajador {
         return dniTrab;
     }
 
-    public void setNomTrab(String nomTrab) { this.nomTrab = nomTrab; }
-    public void setApeTrab(String apeTrab) { this.apeTrab = apeTrab; }
-    public void setDniTrab(String dniTrab) { this.dniTrab = dniTrab; }
+    public void setNomTrab(String nomTrab) {
+        this.nomTrab = nomTrab;
+    }
+
+    public void setApeTrab(String apeTrab) {
+        this.apeTrab = apeTrab;
+    }
+
+    public void setDniTrab(String dniTrab) {
+        this.dniTrab = dniTrab;
+    }
 
     public TipoPago getTipoPago() {
         return tipoPago;
     }
 
-    public void setTipoPago(TipoPago tipoPago) { this.tipoPago = tipoPago; }
+    public void setTipoPago(TipoPago tipoPago) {
+        this.tipoPago = tipoPago;
+    }
 
-    public BigDecimal getSueldoBaseDia() { return sueldoBaseDia; }
-    public void setSueldoBaseDia(BigDecimal sueldoBaseDia) { this.sueldoBaseDia = sueldoBaseDia; }
+    public BigDecimal getSueldoBaseDia() {
+        return sueldoBaseDia;
+    }
 
-    public BigDecimal getPagoPorSaco() { return pagoPorSaco; }
-    public void setPagoPorSaco(BigDecimal pagoPorSaco) { this.pagoPorSaco = pagoPorSaco; }
+    public void setSueldoBaseDia(BigDecimal sueldoBaseDia) {
+        this.sueldoBaseDia = sueldoBaseDia;
+    }
 
-    public BigDecimal getPagoPorTarea() { return pagoPorTarea; }
-    public void setPagoPorTarea(BigDecimal pagoPorTarea) { this.pagoPorTarea = pagoPorTarea; }
+    public BigDecimal getPagoPorSaco() {
+        return pagoPorSaco;
+    }
 
-    public String getQrToken() { return qrToken; }
-    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
+    public void setPagoPorSaco(BigDecimal pagoPorSaco) {
+        this.pagoPorSaco = pagoPorSaco;
+    }
 
-    public Boolean getActivo() { return activo; }
-    public void setActivo(Boolean activo) { this.activo = activo; }
+    public BigDecimal getPagoPorTarea() {
+        return pagoPorTarea;
+    }
 
-    public Cargo getCargo() { return cargo; }
-    public void setCargo(Cargo cargo) { this.cargo = cargo; }
+    public void setPagoPorTarea(BigDecimal pagoPorTarea) {
+        this.pagoPorTarea = pagoPorTarea;
+    }
+
+    public String getQrToken() {
+        return qrToken;
+    }
+
+    public void setQrToken(String qrToken) {
+        this.qrToken = qrToken;
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
+    public Cargo getCargo() {
+        return cargo;
+    }
+
+    public void setCargo(Cargo cargo) {
+        this.cargo = cargo;
+    }
 
     public Integer getCargoId() {
         return cargoId != null ? cargoId : (cargo != null ? cargo.getIdCargo() : null);
@@ -142,5 +186,11 @@ public class Trabajador {
     @JsonProperty("cargoNombre")
     public String getCargoNombre() {
         return cargo != null ? cargo.getNomCargo() : null;
+    }
+
+    @Transient
+    public void setCargoNombre(String cargoNombre) {
+        // Este método es un 'setter' temporal para ayudar a la serialización. No afecta
+        // a la BD.
     }
 }

@@ -14,11 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agricola.arroz.model.MovimientoCaja;
 import com.agricola.arroz.model.Asistencia;
 import com.agricola.arroz.model.PlanillaPago;
 import com.agricola.arroz.model.TipoPago;
 import com.agricola.arroz.model.Trabajador;
 import com.agricola.arroz.repository.AsistenciaRepository;
+import com.agricola.arroz.repository.MovimientoCajaRepository;
 import com.agricola.arroz.repository.PlanillaPagoRepository;
 import com.agricola.arroz.repository.TrabajadorRepository;
 
@@ -26,10 +28,10 @@ import com.agricola.arroz.repository.TrabajadorRepository;
  * PlanillaPagoService — genera y consulta planillas de pago.
  *
  * Lógica de cálculo:
- *   JORNAL/TIEMPO      → días presentes × sueldo_base_dia
- *   POR_SACO/DESTAJO   → total sacos × pago_por_saco
- *   TRANSPLANTE/SACA/
- *   CARGA/RIEGO        → total tareas × pago_por_tarea
+ * JORNAL/TIEMPO → días presentes × sueldo_base_dia
+ * POR_SACO/DESTAJO → total sacos × pago_por_saco
+ * TRANSPLANTE/SACA/
+ * CARGA/RIEGO → total tareas × pago_por_tarea
  */
 @Service
 public class PlanillaPagoService {
@@ -42,6 +44,9 @@ public class PlanillaPagoService {
 
     @Autowired
     private TrabajadorRepository trabajadorRepository;
+
+    @Autowired
+    private MovimientoCajaRepository movimientoCajaRepository;
 
     private static final ZoneId PERU_ZONE = ZoneId.of("America/Lima");
 
@@ -59,7 +64,7 @@ public class PlanillaPagoService {
 
     public PlanillaPago listarPorId(Integer idPlanilla) {
         return planillaRepository.findById(idPlanilla)
-            .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
+                .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
     }
 
     /**
@@ -69,16 +74,17 @@ public class PlanillaPagoService {
     @Transactional
     public PlanillaPago generarPlanilla(Integer idTrab, LocalDate fechaInicio, LocalDate fechaFin) {
         Trabajador trabajador = trabajadorRepository.findById(idTrab)
-            .orElseThrow(() -> new RuntimeException("Trabajador no encontrado: " + idTrab));
+                .orElseThrow(() -> new RuntimeException("Trabajador no encontrado: " + idTrab));
 
-        List<Asistencia> asistencias =
-            asistenciaRepository.findByTrabajadorIdTrabAndFecAsistBetween(idTrab, fechaInicio, fechaFin);
+        List<Asistencia> asistencias = asistenciaRepository.findByTrabajadorIdTrabAndFecAsistBetween(idTrab,
+                fechaInicio, fechaFin);
 
         PlanillaPago existente = planillaRepository
-            .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFinOrderByIdPlanillaDesc(idTrab, fechaInicio, fechaFin);
+                .findFirstByTrabajadorIdTrabAndFechaInicioAndFechaFinOrderByIdPlanillaDesc(idTrab, fechaInicio,
+                        fechaFin);
 
         // Si la planilla ya fue pagada o anulada, no la sobrescribimos
-        if (existente != null && ("pagado".equalsIgnoreCase(existente.getEstado()) 
+        if (existente != null && ("pagado".equalsIgnoreCase(existente.getEstado())
                 || "anulado".equalsIgnoreCase(existente.getEstado()))) {
             return existente;
         }
@@ -100,26 +106,27 @@ public class PlanillaPagoService {
 
         if (tipo.esPorJornal()) {
             BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
-            // Al permitir múltiples registros por día, contamos días únicos para el pago de jornal
+            // Al permitir múltiples registros por día, contamos días únicos para el pago de
+            // jornal
             long diasUnicos = asistencias.stream()
-                .filter(a -> Boolean.TRUE.equals(a.getPresente()))
-                .map(Asistencia::getFecAsist)
-                .distinct()
-                .count();
+                    .filter(a -> Boolean.TRUE.equals(a.getPresente()))
+                    .map(Asistencia::getFecAsist)
+                    .distinct()
+                    .count();
             planilla.setTotalDias((int) diasUnicos);
             montoTotal = tarifa.multiply(BigDecimal.valueOf(diasUnicos));
         } else if (tipo.esPorSaco()) {
             BigDecimal tarifa = trabajador.getPagoPorSaco() != null ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
             int totalSacos = asistencias.stream()
-                .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
-                .sum();
+                    .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
+                    .sum();
             planilla.setTotalSacos(totalSacos);
             montoTotal = tarifa.multiply(BigDecimal.valueOf(totalSacos));
         } else if (tipo.esPorTarea()) {
             BigDecimal tarifa = trabajador.getPagoPorTarea() != null ? trabajador.getPagoPorTarea() : BigDecimal.ZERO;
             int totalTareas = asistencias.stream()
-                .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
-                .sum();
+                    .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
+                    .sum();
             planilla.setTotalTareas(totalTareas);
             planilla.setTipoTareaPlanilla(tipo.name());
             montoTotal = tarifa.multiply(BigDecimal.valueOf(totalTareas));
@@ -130,7 +137,8 @@ public class PlanillaPagoService {
     }
 
     /**
-     * Genera planillas para todos los trabajadores que tengan asistencias en el período.
+     * Genera planillas para todos los trabajadores que tengan asistencias en el
+     * período.
      */
     @Transactional
     public void generarPlanillasPeriodo(LocalDate desde, LocalDate hasta) {
@@ -141,10 +149,10 @@ public class PlanillaPagoService {
 
         // Obtener todos los IDs de trabajadores únicos que tienen asistencia
         List<Integer> idTrabajadores = todas.stream()
-            .map(a -> a.getTrabajador() != null ? a.getTrabajador().getIdTrab() : null)
-            .filter(id -> id != null)
-            .distinct()
-            .collect(Collectors.toList());
+                .map(a -> a.getTrabajador() != null ? a.getTrabajador().getIdTrab() : null)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
 
         if (idTrabajadores.isEmpty()) {
             return;
@@ -153,46 +161,48 @@ public class PlanillaPagoService {
         // Cargar todos los trabajadores en una sola consulta
         List<Trabajador> trabajadores = trabajadorRepository.findAllById(idTrabajadores);
         Map<Integer, Trabajador> trabajadorMap = trabajadores.stream()
-            .collect(Collectors.toMap(Trabajador::getIdTrab, t -> t));
+                .collect(Collectors.toMap(Trabajador::getIdTrab, t -> t));
 
-        // Cargar todas las planillas existentes para este rango exacto en una sola consulta
+        // Cargar todas las planillas existentes para este rango exacto en una sola
+        // consulta
         List<PlanillaPago> planillasExistentes = planillaRepository.findByFechaInicioAndFechaFin(desde, hasta);
-        
+
         // Agrupar planillas existentes por trabajador ID
         Map<Integer, List<PlanillaPago>> planillasPorTrabajador = planillasExistentes.stream()
-            .filter(p -> p.getTrabajador() != null)
-            .collect(Collectors.groupingBy(p -> p.getTrabajador().getIdTrab()));
+                .filter(p -> p.getTrabajador() != null)
+                .collect(Collectors.groupingBy(p -> p.getTrabajador().getIdTrab()));
 
         // Agrupar asistencias por trabajador ID
         Map<Integer, List<Asistencia>> asistenciasPorTrabajador = todas.stream()
-            .filter(a -> a.getTrabajador() != null)
-            .collect(Collectors.groupingBy(a -> a.getTrabajador().getIdTrab()));
+                .filter(a -> a.getTrabajador() != null)
+                .collect(Collectors.groupingBy(a -> a.getTrabajador().getIdTrab()));
 
         // Generar planillas para cada trabajador
         for (Integer idTrab : idTrabajadores) {
             Trabajador trabajador = trabajadorMap.get(idTrab);
-            if (trabajador == null) continue;
+            if (trabajador == null)
+                continue;
 
             List<Asistencia> asistencias = asistenciasPorTrabajador.getOrDefault(idTrab, Collections.emptyList());
             List<PlanillaPago> existingList = planillasPorTrabajador.getOrDefault(idTrab, Collections.emptyList());
-            
+
             // Si hay duplicados, preferir la pagada; si no, la de mayor ID
             PlanillaPago planilla = null;
             if (!existingList.isEmpty()) {
                 // Primero buscar si alguna ya fue pagada
                 planilla = existingList.stream()
-                    .filter(p -> "pagado".equalsIgnoreCase(p.getEstado()))
-                    .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
-                    .orElse(null);
+                        .filter(p -> "pagado".equalsIgnoreCase(p.getEstado()))
+                        .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
+                        .orElse(null);
                 // Si ya fue pagada, no la tocamos
                 if (planilla != null) {
                     continue;
                 }
                 // Si no, tomar la de mayor ID
                 planilla = existingList.stream()
-                    .filter(p -> !"anulado".equalsIgnoreCase(p.getEstado()))
-                    .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
-                    .orElse(null);
+                        .filter(p -> !"anulado".equalsIgnoreCase(p.getEstado()))
+                        .max(Comparator.comparing(PlanillaPago::getIdPlanilla))
+                        .orElse(null);
             }
 
             if (planilla == null) {
@@ -202,7 +212,7 @@ public class PlanillaPagoService {
                 planilla.setFechaFin(hasta);
                 planilla.setEstado("pendiente");
             }
-            
+
             planilla.setFechaGeneracion(LocalDateTime.now(PERU_ZONE));
 
             TipoPago tipo = trabajador.getTipoPago();
@@ -222,26 +232,28 @@ public class PlanillaPagoService {
             planilla.setTipoTareaPlanilla(null);
 
             if (tipo.esPorJornal()) {
-                BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia() : BigDecimal.ZERO;
+                BigDecimal tarifa = trabajador.getSueldoBaseDia() != null ? trabajador.getSueldoBaseDia()
+                        : BigDecimal.ZERO;
                 long diasUnicos = asistencias.stream()
-                    .filter(a -> Boolean.TRUE.equals(a.getPresente()))
-                    .map(Asistencia::getFecAsist)
-                    .distinct()
-                    .count();
+                        .filter(a -> Boolean.TRUE.equals(a.getPresente()))
+                        .map(Asistencia::getFecAsist)
+                        .distinct()
+                        .count();
                 planilla.setTotalDias((int) diasUnicos);
                 montoTotal = tarifa.multiply(BigDecimal.valueOf(diasUnicos));
             } else if (tipo.esPorSaco()) {
                 BigDecimal tarifa = trabajador.getPagoPorSaco() != null ? trabajador.getPagoPorSaco() : BigDecimal.ZERO;
                 int totalSacos = asistencias.stream()
-                    .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
-                    .sum();
+                        .mapToInt(a -> a.getSacosCosechados() != null ? a.getSacosCosechados() : 0)
+                        .sum();
                 planilla.setTotalSacos(totalSacos);
                 montoTotal = tarifa.multiply(BigDecimal.valueOf(totalSacos));
             } else if (tipo.esPorTarea()) {
-                BigDecimal tarifa = trabajador.getPagoPorTarea() != null ? trabajador.getPagoPorTarea() : BigDecimal.ZERO;
+                BigDecimal tarifa = trabajador.getPagoPorTarea() != null ? trabajador.getPagoPorTarea()
+                        : BigDecimal.ZERO;
                 int totalTareas = asistencias.stream()
-                    .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
-                    .sum();
+                        .mapToInt(a -> a.getTareasCompletadas() != null ? a.getTareasCompletadas() : 0)
+                        .sum();
                 planilla.setTotalTareas(totalTareas);
                 planilla.setTipoTareaPlanilla(tipo.name());
                 montoTotal = tarifa.multiply(BigDecimal.valueOf(totalTareas));
@@ -255,15 +267,31 @@ public class PlanillaPagoService {
     @Transactional
     public PlanillaPago marcarPagado(Integer idPlanilla) {
         PlanillaPago p = planillaRepository.findById(idPlanilla)
-            .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
+                .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
         p.setEstado("pagado");
+
+        // Crear movimiento de egreso en caja
+        MovimientoCaja mov = new MovimientoCaja();
+        mov.setFecha(LocalDate.now(PERU_ZONE));
+        mov.setTipo("Egreso");
+        mov.setCategoria("Planilla");
+        mov.setMonto(p.getMontoTotal());
+
+        String desc = "Pago planilla";
+        if (p.getTrabajador() != null) {
+            desc += " a " + p.getTrabajador().getNomTrab() + " " + p.getTrabajador().getApeTrab();
+        }
+        desc += " (ID Planilla: " + p.getIdPlanilla() + ")";
+        mov.setDesc(desc);
+
+        movimientoCajaRepository.save(mov);
         return planillaRepository.save(p);
     }
 
     @Transactional
     public PlanillaPago anular(Integer idPlanilla, String motivo) {
         PlanillaPago p = planillaRepository.findById(idPlanilla)
-            .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
+                .orElseThrow(() -> new RuntimeException("Planilla no encontrada: " + idPlanilla));
         p.setEstado("anulado");
         p.setObservacion(motivo);
         return planillaRepository.save(p);
