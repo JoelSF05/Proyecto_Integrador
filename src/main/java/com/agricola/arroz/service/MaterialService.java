@@ -135,7 +135,7 @@ public class MaterialService {
         // 2. Crear y guardar el registro de uso, vinculándolo al movimiento
         UsoMaterial uso = new UsoMaterial();
         uso.setMaterial(mat);
-        uso.setArea(new Area(idArea)); // Asignamos el área por su ID
+        uso.setArea(area); // Asignamos la instancia de Area ya recuperada
         uso.setFechaUso(LocalDate.parse(fecha));
         uso.setHoraUso(LocalTime.parse(hora));
         uso.setCantidad(cantidad);
