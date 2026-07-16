@@ -3147,9 +3147,9 @@
       // Filtro por rol
       const PERMISOS = {
         TRABAJADOR: ['mi-asistencia', 'mis-tareas'],
-        SUPERVISOR: ['dashboard', 'verificar-tareas', 'incidencias', 'resumen-diario', 'riego', 'materiales', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'reportes', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'mis-tareas'],
-        INGENIERO: ['dashboard', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'mis-tareas'],
-        CONTADOR: ['dashboard', 'caja', 'reportes', 'mis-tareas'],
+        SUPERVISOR: ['dashboard', 'mi-asistencia', 'verificar-tareas', 'incidencias', 'resumen-diario', 'riego', 'materiales', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'reportes', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'mis-tareas'],
+        INGENIERO: ['dashboard', 'mi-asistencia', 'control-plagas', 'calendario-fitosanitario', 'recomendaciones', 'transplante', 'saca-arroz', 'carga-arroz', 'movilidad', 'mis-tareas'],
+        CONTADOR: ['dashboard', 'mi-asistencia', 'caja', 'reportes', 'mis-tareas'],
         ADMIN: null, // todo
       };
 
@@ -3248,15 +3248,15 @@
       if (id === 'dashboard') {
         return `
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-ico ki-verde">👷</div><div><span class="kpi-num" id="kpi-personal">0</span><span class="kpi-lbl">Personal en Campo</span></div></div>
-        <div class="kpi-card"><div class="kpi-ico ki-dorado">🌾</div><div><span class="kpi-num" id="kpi-sacos">0</span><span class="kpi-lbl">Sacos Totales</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-verde">👷</div><div><span class="kpi-num" id="kpi-personal">0</span><span class="kpi-lbl">Personal Activo</span></div></div>
+        <div class="kpi-card"><div class="kpi-ico ki-dorado">📝</div><div><span class="kpi-num" id="kpi-tareas">0</span><span class="kpi-lbl">Tareas Totales</span></div></div>
         <div class="kpi-card"><div class="kpi-ico ki-purp">💰</div><div><span class="kpi-num" id="kpi-pago" style="font-size:22px">S/0</span><span class="kpi-lbl">Planilla Estimada</span></div></div>
         <div class="kpi-card"><div class="kpi-ico ki-rojo">⚠️</div><div><span class="kpi-num" id="kpi-alertas" style="color:#dc2626">0</span><span class="kpi-lbl">Alertas Críticas</span></div></div>
       </div>
 
       <div class="info-cols" style="grid-template-columns: 1.8fr 1.2fr; margin-bottom:18px">
         <div class="card">
-          <div class="card-hdr"><h3>📈 Rendimiento de Cosecha (Sacos/Semana)</h3></div>
+          <div class="card-hdr"><h3>📈 Rendimiento de Labores (Tareas/Semana)</h3></div>
           <div class="chart-wrap" id="dash-chart-barras"></div>
         </div>
         <div class="card">
@@ -3948,9 +3948,9 @@
 
     async function initDashboard() {
       if (!materiales.length) await cargarMateriales();
-      document.getElementById('kpi-personal').textContent = trabajadores.length;
-      let totalSacos = asistencias.reduce((acc, cur) => acc + (cur.sacos || 0), 0);
-      document.getElementById('kpi-sacos').textContent = totalSacos;
+      document.getElementById('kpi-personal').textContent = trabajadores.filter(t => t.activo).length;
+      let totalTareas = asistencias.reduce((acc, cur) => acc + (cur.tareasCompletadas || 0) + (cur.sacos > 0 ? 1 : 0), 0);
+      document.getElementById('kpi-tareas').textContent = totalTareas;
 
       // KPI: pago estimado total
       let pagoTotal = 0;
@@ -3962,7 +3962,7 @@
       });
       if (document.getElementById('kpi-pago')) document.getElementById('kpi-pago').textContent = 'S/' + Math.round(pagoTotal);
 
-      // ── Gráfico de sacos reales por semana del mes actual ──
+      // ── Gráfico de tareas por semana del mes actual ──
       const hoy = new Date();
       const mes = hoy.getMonth();
       const anio = hoy.getFullYear();
@@ -3974,11 +3974,12 @@
         const d = new Date(a.fecAsist + 'T00:00:00');
         if (d.getMonth() === mes && d.getFullYear() === anio) {
           const sem = Math.min(3, Math.floor((d.getDate() - 1) / 7));
-          porSemana[sem] += (parseInt(a.sacos) || 0);
+          const tareasEnRegistro = (a.tareasCompletadas || 0) + (a.sacos > 0 ? 1 : 0);
+          porSemana[sem] += tareasEnRegistro;
         }
       });
 
-      const maxSacos = Math.max(...porSemana, 1);
+      const maxTareas = Math.max(...porSemana, 1);
       const totalMes = porSemana.reduce((a, b) => a + b, 0);
       const etiquetas = [`01-07 ${nombreMes}`, `08-14 ${nombreMes}`, `15-21 ${nombreMes}`, `22+ ${nombreMes}`];
       const semanaActualIdx = Math.min(3, Math.floor((hoy.getDate() - 1) / 7));
@@ -3988,11 +3989,11 @@
         const barsHtml = porSemana.map((v, i) => `
       <div class="ch-fila">
         <span class="ch-lbl" style="${i === semanaActualIdx ? 'font-weight:700;color:var(--v2)' : ''}">${etiquetas[i]}</span>
-        <div class="ch-bar-bg"><div class="ch-bar" style="width:${Math.round((v / maxSacos) * 100)}%; background:${i === semanaActualIdx ? 'var(--d1)' : 'var(--v3)'}"></div></div>
-        <span class="ch-val">${v} sacos</span>
+        <div class="ch-bar-bg"><div class="ch-bar" style="width:${Math.round((v / maxTareas) * 100)}%; background:${i === semanaActualIdx ? 'var(--d1)' : 'var(--v3)'}"></div></div>
+        <span class="ch-val">${v} tareas</span>
       </div>`).join('');
 
-        chart.innerHTML = barsHtml + `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--borde); font-size:12px; color:var(--ts); display:flex; justify-content:space-between"><span>Total ${hoy.toLocaleString('es-PE', { month: 'long' })}: <strong>${totalMes} sacos</strong></span> <span>Promedio: <strong>${Math.round(totalMes / 4)}/sem</strong></span></div>`;
+        chart.innerHTML = barsHtml + `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--borde); font-size:12px; color:var(--ts); display:flex; justify-content:space-between"><span>Total ${hoy.toLocaleString('es-PE', { month: 'long' })}: <strong>${totalMes} tareas</strong></span> <span>Promedio: <strong>${Math.round(totalMes / 4)}/sem</strong></span></div>`;
       }
 
       // KPI alertas de plagas
@@ -4691,9 +4692,12 @@
       <div class="tv-row">
         <div class="tv-info">
           <div class="tv-name">${labelTarea(a.tipoTarea)}</div>
-          <div class="tv-tarea">Entrada: ${formatHora(a.hour, a.fecha)} · Tareas: ${tareas} · ${a.observacion || '—'}</div>
+           <div class="tv-tarea">Entrada: ${formatHora(a.horaEntrada, a.fecAsist)} · Tareas: ${tareas} · ${a.observacion || '—'}</div>
         </div>
         <span class="badge ${colorEstado}" style="margin-bottom:5px">${estado}</span>
+        <div class="tv-acc">
+            <button class="tbtn" onclick="verAsistencia(${a.id})">Ver Detalle</button>
+        </div>
       </div>`;
       }).join('');
     }
@@ -4751,18 +4755,45 @@
       const a = asistencias.find(x => x.id === id);
       if (!a) return mostrarToast('Registro no encontrado');
       const trab = trabajadores.find(t => t.id === a.trabId) || { nombre: 'Trabajador', apellido: '' };
-      const html = `
-    <h3 class="modal-tit">Detalle de Asistencia</h3>
-    <div style="padding:8px 0">
-      <div><strong>Trabajador:</strong> ${trab.nombre} ${trab.apellido}</div>
-      <div><strong>Fecha:</strong> ${a.fecAsist}</div>
-      <div><strong>Hora:</strong> ${a.hora}</div>
-      <div><strong>Tarea:</strong> ${labelTarea(a.tipoTarea)}</div>
-      <div><strong>Tareas completadas:</strong> ${a.tareasCompletadas || 1}</div>
-      <div><strong>Estado:</strong> ${(a.estado || 'PENDIENTE')}</div>
-      <div style="margin-top:8px"><strong>Observación:</strong><div style="margin-top:6px;padding:8px;background:#f7f7f7;border-radius:6px">${a.observacion || '—'}</div></div>
-    </div>
-  `;
+
+      // Determinar si el usuario es un supervisor/admin o un trabajador viendo su propia tarea
+      const esSupervisor = ['ADMIN', 'SUPERVISOR'].includes(SESSION.rol);
+
+      let html = `<h3 class="modal-tit">Detalle de Labor</h3>`;
+
+      if (esSupervisor) {
+        // Vista completa para supervisores
+        const pago = (parseFloat(trab.pagoPorTarea || trab.sueldoDia || 0) * (a.tareasCompletadas || 1)) + (parseFloat(trab.pagoPorSaco || 0) * (a.sacos || 0));
+        html += `
+          <div class="form-grid">
+            <div class="fc"><label>Trabajador</label><p>${trab.nombre} ${trab.apellido}</p></div>
+            <div class="fc"><label>Fecha</label><p>${formatFecha(a.fecAsist)}</p></div>
+            <div class="fc"><label>Tarea</label><p>${labelTarea(a.tipoTarea)}</p></div>
+            <div class="fc"><label>Cantidad</label><p>${a.tareasCompletadas || a.sacos || 1}</p></div>
+            <div class="fc"><label>Estado</label><p>${a.estado || 'PENDIENTE'}</p></div>
+            <div class="fc"><label>Pago Estimado</label><p style="font-weight:700;color:var(--v2)">S/${pago.toFixed(2)}</p></div>
+            <div class="fc full"><label>Observación del Supervisor</label>
+              <div style="padding:8px;background:var(--bg);border-radius:6px;font-size:13px;min-height:30px">${a.observacion || '—'}</div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Vista detallada para trabajadores (sin pago)
+        html += `
+          <div class="form-grid">
+            <div class="fc"><label>Trabajador</label><p>${trab.nombre} ${trab.apellido}</p></div>
+            <div class="fc"><label>Fecha</label><p>${formatFecha(a.fecAsist)}</p></div>
+            <div class="fc"><label>Tarea</label><p>${labelTarea(a.tipoTarea)}</p></div>
+            <div class="fc"><label>Cantidad</label><p>${a.tareasCompletadas || a.sacos || 1}</p></div>
+            <div class="fc"><label>Estado</label><p>${a.estado || 'PENDIENTE'}</p></div>
+            <div class="fc full"><label>Observación del Supervisor</label>
+              <div style="padding:8px;background:var(--bg);border-radius:6px;font-size:13px;min-height:30px">${a.observacion || '—'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `<div class="modal-foot"><button class="btn-s" onclick="cerrarModal()">Cerrar</button></div>`;
       abrirModal(html);
     }
 
@@ -6270,7 +6301,7 @@
       <div class="fc"><label>Responsable</label>
         <select id="gas-responsable">
           <option value="">— Seleccione —</option>
-          ${trabajadores.map(t => `<option value="${t.nombre} ${t.apellido}">${t.nombre} ${t.apellido}</option>`).join('')}
+          ${trabajadores.filter(t => (t.cargo || '').toLowerCase().includes('supervisor')).map(t => `<option value="${t.nombre} ${t.apellido}">${t.nombre} ${t.apellido}</option>`).join('')}
         </select>
       </div>
       <div class="fc"><label>Observación</label><input type="text" id="gas-obs" placeholder="Opcional"></div>
